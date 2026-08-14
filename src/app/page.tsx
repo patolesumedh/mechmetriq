@@ -1,69 +1,299 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Button, ButtonLink } from "@/components/ui/Button";
 
-export default function Home() {
+const PROCESSES = [
+  { code: "CNC", name: "CNC Machining" },
+  { code: "3D", name: "3D Printing" },
+  { code: "SM", name: "Sheet Metal" },
+  { code: "IM", name: "Injection Moulding" },
+  { code: "CA", name: "Casting" },
+  { code: "LC", name: "Laser Cutting" },
+];
+
+const PRODUCTS = [
+  { img: "ALUMINIUM SHEET", cat: "Metals", name: "Al 6061 Sheet, 2mm", price: "₹340" },
+  { img: "SS ROD", cat: "Metals", name: "SS 304 Round Rod, 12mm", price: "₹410" },
+  { img: "ABS BLOCK", cat: "Plastics", name: "ABS Engineering Block", price: "₹185" },
+  { img: "MS PLATE", cat: "Metals", name: "Mild Steel Plate, 5mm", price: "₹78" },
+];
+
+const TESTIMONIALS = [
+  {
+    quote:
+      "We cut our sourcing time for custom brackets from two weeks to two days. The instant quote is scarily accurate.",
+    initials: "RK",
+    name: "Rahul Kapoor",
+    role: "Procurement Lead, OEM",
+  },
+  {
+    quote:
+      "As a vendor, the RFQ inbox keeps our shop floor busy without us chasing a single lead ourselves.",
+    initials: "SM",
+    name: "Sana Mirza",
+    role: "Owner, Precision Fab Works",
+  },
+  {
+    quote: "GST invoicing and delivery tracking on raw material orders alone was worth switching for.",
+    initials: "AV",
+    name: "Arjun Verma",
+    role: "Founder, Startup Hardware Co.",
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="bg-surface">
+      <header className="sticky top-0 z-10 border-b border-grid bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between px-8 py-4">
+          <div>
+            <Link href="/" className="flex items-center gap-2 text-[19px] font-bold tracking-tight">
+              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-linear-to-br from-brand to-brand-dark text-[15px] font-extrabold text-white">
+                M
+              </span>
+              MECHmetrIQ
+            </Link>
+            <div className="ml-[38px] mt-px text-[10px] font-semibold uppercase tracking-wide text-muted">
+              Mechanical Intelligence. Smarter Quotations.
+            </div>
+          </div>
+          <nav className="flex gap-7 text-sm text-ink-2">
+            <Link href="/how-it-works">How It Works</Link>
+            <Link href="/services">Services</Link>
+            <Link href="/marketplace">Marketplace</Link>
+            <Link href="/pricing">Pricing</Link>
+            <Link href="/for-vendors">For Vendors</Link>
+            <Link href="/about">About</Link>
+          </nav>
+          <div className="flex items-center gap-2.5">
+            <ButtonLink href="/login" variant="outline">
+              Log In
+            </ButtonLink>
+            <ButtonLink href="/register">Get Started</ButtonLink>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <div className="bg-[radial-gradient(600px_300px_at_85%_-10%,var(--color-brand-light),transparent_60%)] pb-16 pt-[76px]">
+        <div className="mx-auto grid max-w-[1180px] grid-cols-[1.05fr_.95fr] items-center gap-14 px-8">
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-3 py-1.5 text-[12.5px] font-bold text-brand-dark">
+              &bull; Verified vendors &middot; GST-ready &middot; Pan-India
+            </span>
+            <h1 className="my-4 text-[46px] font-bold leading-[1.08] tracking-tight">
+              Upload a part.
+              <br />
+              Get an instant quote.
+            </h1>
+            <p className="mb-7 max-w-[480px] text-[17px] leading-relaxed text-ink-2">
+              One platform for on-demand custom manufacturing and raw materials sourcing. Upload a
+              CAD file for instant pricing, or buy metals, plastics and sheets straight from
+              verified vendors.
+            </p>
+            <div className="mb-8 flex gap-3">
+              <ButtonLink href="/register?intent=quote" size="lg">
+                Get Instant Quote &rarr;
+              </ButtonLink>
+              <ButtonLink href="/marketplace" variant="outline" size="lg">
+                Browse Marketplace
+              </ButtonLink>
+            </div>
+            <div className="flex items-center gap-6 text-[13px] text-muted">
+              <span>
+                <b className="text-ink">1,200+</b> vendors
+              </span>
+              <span>&middot;</span>
+              <span>
+                <b className="text-ink">40,000+</b> parts quoted
+              </span>
+              <span>&middot;</span>
+              <span>
+                <b className="text-ink">4.8/5</b> avg. rating
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-grid bg-surface p-[22px] shadow-[0_20px_50px_-20px_rgba(11,11,11,0.18)]">
+            <div className="mb-4 flex items-center justify-between">
+              <b>Instant Quote</b>
+              <span className="rounded-md bg-good-bg px-2.5 py-1 text-xs font-bold text-good">
+                &bull; Live pricing
+              </span>
+            </div>
+            <div className="mb-4 rounded-[10px] border border-dashed border-grid bg-plane p-6 text-center text-[13px] text-muted">
+              <b className="mb-1 block text-[14px] text-ink">Drop CAD file here</b>
+              STEP &middot; STL &middot; IGES &middot; DXF &middot; PDF &mdash; up to 50MB
+            </div>
+            <div className="mb-2.5 grid grid-cols-2 gap-2.5">
+              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
+                Process: CNC Machining
+              </div>
+              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
+                Material: Al 6061
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
+                Quantity: 50 pcs
+              </div>
+              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
+                Lead time: Standard
+              </div>
+            </div>
+            <div className="mt-3.5 flex items-center justify-between rounded-[10px] bg-brand-light px-4 py-3.5">
+              <div>
+                <div className="text-[11.5px] uppercase tracking-wide text-ink-2">
+                  Estimated price
+                </div>
+                <div className="text-[22px] font-extrabold text-brand-dark">₹18,450</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[11.5px] uppercase tracking-wide text-ink-2">Lead time</div>
+                <div className="text-sm font-bold">6&ndash;8 days</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Processes */}
+      <section className="mx-auto max-w-[1180px] px-8 py-16">
+        <div className="mx-auto mb-10 max-w-[600px] text-center">
+          <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wide text-brand">
+            Capabilities
+          </div>
+          <h2 className="mb-2.5 text-[32px] font-bold tracking-tight">
+            Manufacturing processes we cover
+          </h2>
+          <p className="text-[15px] text-ink-2">
+            Every job is routed to verified vendors who specialise in that exact process.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="grid grid-cols-6 gap-3.5">
+          {PROCESSES.map((p) => (
+            <div key={p.code} className="rounded-xl border border-grid px-3.5 py-5 text-center">
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-brand-light text-sm font-extrabold text-brand-dark">
+                {p.code}
+              </div>
+              <div className="text-[13px] font-semibold">{p.name}</div>
+            </div>
+          ))}
         </div>
-      </main>
+      </section>
+
+      {/* Marketplace teaser */}
+      <section className="mx-auto max-w-[1180px] px-8 py-16">
+        <div className="mx-auto mb-10 max-w-[600px] text-center">
+          <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wide text-brand">
+            Raw Materials Marketplace
+          </div>
+          <h2 className="mb-2.5 text-[32px] font-bold tracking-tight">
+            Buy metals, plastics &amp; sheets directly
+          </h2>
+          <p className="text-[15px] text-ink-2">
+            Standard stock from verified vendors &mdash; priced, graded and ready to ship.
+          </p>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {PRODUCTS.map((p) => (
+            <div key={p.name} className="overflow-hidden rounded-xl border border-grid">
+              <div className="flex h-[110px] items-center justify-center bg-linear-to-br from-[#eef2f6] to-[#e3e8ee] text-[11px] tracking-wide text-muted">
+                {p.img}
+              </div>
+              <div className="p-3.5">
+                <div className="mb-1 text-[11px] uppercase tracking-wide text-muted">{p.cat}</div>
+                <div className="mb-1.5 text-[13.5px] font-semibold">{p.name}</div>
+                <div className="text-sm font-extrabold">
+                  {p.price} <span className="text-[11.5px] font-normal text-muted">/ kg</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="mx-auto max-w-[1180px] px-8">
+        <div className="grid grid-cols-4 rounded-2xl bg-ink px-12 py-10 text-white">
+          {[
+            ["1,200+", "Verified vendors"],
+            ["₹210 Cr+", "Orders processed"],
+            ["40,000+", "Parts quoted"],
+            ["18 hrs", "Avg. quote turnaround"],
+          ].map(([value, label]) => (
+            <div key={label}>
+              <b className="block text-[30px] font-extrabold">{value}</b>
+              <span className="text-[12.5px] text-[#c3c2b7]">{label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="mx-auto max-w-[1180px] px-8 py-16">
+        <div className="mx-auto mb-10 max-w-[600px] text-center">
+          <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wide text-brand">
+            Testimonials
+          </div>
+          <h2 className="text-[32px] font-bold tracking-tight">
+            Trusted by procurement teams &amp; makers
+          </h2>
+        </div>
+        <div className="grid grid-cols-3 gap-4.5">
+          {TESTIMONIALS.map((t) => (
+            <div key={t.name} className="rounded-2xl border border-grid p-5.5">
+              <p className="mb-4 text-[13.5px] leading-relaxed text-ink-2">&ldquo;{t.quote}&rdquo;</p>
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8.5 w-8.5 items-center justify-center rounded-full bg-brand-light text-xs font-bold text-brand-dark">
+                  {t.initials}
+                </div>
+                <div>
+                  <b className="block text-[13px]">{t.name}</b>
+                  <span className="text-[11.5px] text-muted">{t.role}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <footer className="border-t border-grid bg-plane px-8 pb-6 pt-12">
+        <div className="mx-auto max-w-[1180px]">
+          <div className="mb-8 grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-8">
+            <div>
+              <div className="flex items-center gap-2 text-[19px] font-bold">
+                <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-linear-to-br from-brand to-brand-dark text-[15px] font-extrabold text-white">
+                  M
+                </span>
+                MECHmetrIQ
+              </div>
+              <p className="mt-3 max-w-[260px] text-[13px] leading-relaxed text-ink-2">
+                Custom manufacturing and raw materials, sourced and delivered from one platform.
+              </p>
+            </div>
+            {[
+              ["Platform", ["Instant Quote", "Marketplace", "Pricing", "For Vendors"]],
+              ["Company", ["About", "Blog", "Contact", "Careers"]],
+              ["Legal", ["Terms", "Privacy", "Refund Policy", "Shipping Policy"]],
+            ].map(([heading, links]) => (
+              <div key={heading as string}>
+                <h4 className="mb-3.5 text-[12.5px] uppercase tracking-wide text-muted">
+                  {heading as string}
+                </h4>
+                {(links as string[]).map((l) => (
+                  <div key={l} className="mb-2.5 text-[13.5px] text-ink-2">
+                    {l}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between border-t border-grid pt-5 text-[12.5px] text-muted">
+            <span>&copy; 2026 MECHmetrIQ. All rights reserved.</span>
+            <span>Made for makers, vendors &amp; procurement teams across India.</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,26 +1,55 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------
+   MECHmetrIQ design tokens
+   Ported from the HTML mockups — keep these in sync with any brand update.
+--------------------------------------------------------------------- */
+@theme {
+  --color-brand: #2a78d6;
+  --color-brand-dark: #1c5cab;
+  --color-brand-light: #eaf2fc;
+
+  --color-accent-orange: #eb6834;
+  --color-accent-orange-bg: #fdeee3;
+  --color-accent-aqua: #1baf7a;
+  --color-accent-yellow: #eda100;
+  --color-accent-violet: #4a3aa7;
+  --color-accent-magenta: #e87ba4;
+  --color-accent-red: #e34948;
+
+  --color-good: #0ca30c;
+  --color-good-bg: #e7f8e7;
+  --color-warn: #fab219;
+  --color-warn-bg: #fff6e2;
+  --color-crit: #d03b3b;
+  --color-crit-bg: #fbe9e9;
+
+  --color-surface: #ffffff;
+  --color-plane: #f7f7f5;
+  --color-ink: #0b0b0b;
+  --color-ink-2: #52514e;
+  --color-muted: #898781;
+  --color-grid: #e5e4dd;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-card: 10px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-plane);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Shared low-level primitives used across dashboard shells */
+.sidebar-nav-item {
+  @apply flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-medium text-ink-2 hover:bg-plane;
+}
+.sidebar-nav-item.active {
+  @apply bg-brand-light font-bold text-brand-dark;
 }

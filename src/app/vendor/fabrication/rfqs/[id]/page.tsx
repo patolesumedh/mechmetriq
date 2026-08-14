@@ -1,0 +1,162 @@
+import { notFound, redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { Topbar } from "@/components/dashboard/Topbar";
+import { Card, CardHeader } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { formatDate, quoteStatusTone } from "../../badge-utils";
+import { QuoteForm } from "./QuoteForm";
+
+export default async function RfqDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: vendorProfile } = await supabase
+    .from("vendor_profiles")
+    .select("id")
+    .eq("id", user.id)
+    .single();
+
+  if (!vendorProfile) redirect("/login");
+
+  const { data: rfq } = await supabase
+    .from("rfqs")
+    .select(
+      "*, process:master_items!rfqs_process_id_fkey(name), material:master_items!rfqs_material_id_fkey(id, name), delivery_address:addresses(pincode, label)"
+    )
+    .eq("id", id)
+    .single();
+
+  if (!rfq) notFound();
+
+  const r = rfq as unknown as {
+    id: string;
+    quantity: number;
+    tolerance: string | null;
+    surface_finish: string | null;
+    colour_coating: string | null;
+    lead_time_pref: string | null;
+    special_instructions: string | null;
+    cad_file_urls: string[] | null;
+    status: "pending" | "quoted" | "accepted" | "expired" | "cancelled";
+    created_at: string;
+    process: { name: string } | null;
+    material: { id: string; name: string } | null;
+    delivery_address: { pincode: string; label: string } | null;
+  };
+
+  const [{ data: existingQuote }, { data: materialOptions }] = await Promise.all([
+    supabase
+      .from("quotes")
+      .select("*")
+      .eq("rfq_id", id)
+      .eq("vendor_id", vendorProfile.id)
+      .maybeSingle(),
+    supabase.from("master_items").select("*").eq("type", "material").eq("status", "active").order("name"),
+  ]);
+
+  return (
+    <div>
+      <Topbar
+        title={`RFQ ${r.id.slice(0, 8).toUpperCase()}`}
+        pill={{ label: r.status === "pending" ? "New" : r.status, tone: "orange" }}
+      />
+
+      <div className="mt-6 grid grid-cols-2 gap-4.5">
+        <div>
+          <Card>
+            <CardHeader title="Request Details" />
+            <div className="divide-y divide-grid">
+              <SpecRow label="Process" value={r.process?.name ?? "—"} />
+              <SpecRow label="Material" value={r.material?.name ?? "—"} />
+              <SpecRow label="Quantity" value={`${r.quantity} pcs`} />
+              <SpecRow label="Tolerance" value={r.tolerance ?? "—"} />
+              <SpecRow label="Surface finish" value={r.surface_finish ?? "—"} />
+              <SpecRow label="Colour / coating" value={r.colour_coating ?? "—"} />
+              <SpecRow label="Target lead time" value={r.lead_time_pref ?? "—"} />
+              <SpecRow label="Delivery pincode" value={r.delivery_address?.pincode ?? "—"} />
+              <SpecRow label="Received" value={formatDate(r.created_at)} />
+            </div>
+            {r.special_instructions && (
+              <div className="border-t border-grid px-5 py-3.5 text-[13px] text-ink-2">
+                <span className="mb-1 block font-semibold text-ink">Special instructions</span>
+                {r.special_instructions}
+              </div>
+            )}
+            {r.cad_file_urls && r.cad_file_urls.length > 0 && (
+              <div className="space-y-2 border-t border-grid px-5 py-3.5">
+                {r.cad_file_urls.map((url, i) => (
+                  <a
+                    key={i}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-lg border border-grid bg-plane px-3.5 py-2.5 text-[12.5px] font-semibold text-brand"
+                  >
+                    CAD file {i + 1} — Download &amp; view
+                  </a>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <div>
+          {existingQuote ? (
+            <Card>
+              <CardHeader title="Your Quote" />
+              <div className="p-5">
+                <div className="mb-4">
+                  <Badge tone={quoteStatusTone(existingQuote.status)}>{existingQuote.status}</Badge>
+                </div>
+                <div className="divide-y divide-grid">
+                  <SpecRow label="Unit price" value={`₹${existingQuote.unit_price}`} />
+                  <SpecRow label="Total price" value={`₹${existingQuote.total_price}`} />
+                  <SpecRow label="Lead time" value={`${existingQuote.lead_time_days} days`} />
+                  <SpecRow label="Valid until" value={formatDate(existingQuote.validity_date)} />
+                </div>
+                {existingQuote.notes && (
+                  <div className="mt-3.5 text-[13px] text-ink-2">
+                    <span className="mb-1 block font-semibold text-ink">Notes</span>
+                    {existingQuote.notes}
+                  </div>
+                )}
+              </div>
+            </Card>
+          ) : r.status === "pending" || r.status === "quoted" ? (
+            <QuoteForm
+              rfqId={r.id}
+              quantity={r.quantity}
+              materialOptions={materialOptions ?? []}
+              defaultMaterialId={r.material?.id ?? null}
+            />
+          ) : (
+            <Card>
+              <div className="px-5 py-8 text-center text-[13px] text-muted">
+                This RFQ is no longer open for quotes.
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SpecRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between px-5 py-3 text-[13px]">
+      <span className="text-ink-2">{label}</span>
+      <b className="text-ink">{value}</b>
+    </div>
+  );
+}
