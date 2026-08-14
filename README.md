@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MECHmetrIQ
 
-## Getting Started
+Mechanical Intelligence. Smarter Quotations.
 
-First, run the development server:
+A two-engine platform: custom manufacturing quote-to-order (buyer uploads a
+part spec → Machining/Fabrication vendors submit quotes → order → production
+→ delivery) plus a raw materials marketplace (buyer browses/buys listed
+metals, plastics, sheets from Raw Material Supplier vendors). Fabrication and
+Raw Material vendors are separate roles with separate onboarding, KYC, and
+dashboards.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Built with Next.js 16 (App Router), React 19, Tailwind CSS v4, and Supabase
+(Postgres, Auth, RLS).
+
+## Stack
+
+- **Next.js 16.3.1** — App Router, Turbopack, Server Actions. Note: this
+  version renames `middleware.ts` to `proxy.ts` (see `src/proxy.ts`) and
+  requires `params`/`cookies()`/`headers()` to be awaited everywhere.
+- **React 19**, **TypeScript**, **Tailwind CSS v4** (CSS-first config via the
+  `@theme` block in `src/app/globals.css` — no `tailwind.config.js`).
+- **Supabase** — Postgres schema + Row Level Security policies per role
+  (buyer/vendor/admin) in `supabase/migrations/`, seed data for the Category
+  & Material Master in `supabase/seed.sql`.
+
+## Project structure
+
+```
+src/app/
+  page.tsx                homepage
+  login/, register/       auth (buyer/vendor sign-up, vendor-type branching)
+  buyer/                  buyer dashboard: quotes, orders, marketplace, checkout
+  vendor/fabrication/     Machining/Fabrication vendor dashboard
+  vendor/raw_material/    Raw Material Supplier vendor dashboard
+  admin/                  admin dashboard: users, vendor KYC, catalog, disputes
+src/components/           shared UI (Sidebar, Topbar, Card, Badge, Button)
+src/lib/                  Supabase clients, generated DB types, cn() helper
+src/proxy.ts              Next 16 proxy (session refresh) — replaces middleware.ts
+supabase/migrations/      schema, security/perf fixes, RLS fixes (run in order)
+supabase/seed.sql         Category & Material Master starter data
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Getting started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+   ```bash
+   npm install
+   ```
 
-## Learn More
+2. Copy `.env.local.example` to `.env.local` and fill in your Supabase
+   project's URL and anon/publishable key (Project Settings → API in the
+   Supabase dashboard):
 
-To learn more about Next.js, take a look at the following resources:
+   ```bash
+   cp .env.local.example .env.local
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Apply the database schema to your Supabase project, in order:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```bash
+   supabase link --project-ref <your-project-ref>
+   supabase db push   # applies supabase/migrations/*.sql in order
+   ```
 
-## Deploy on Vercel
+   Or paste each file in `supabase/migrations/` (0001, then 0002, then 0003)
+   into the Supabase SQL editor, followed by `supabase/seed.sql`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. Run the dev server:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000).
+
+## Deploying
+
+1. Push this repo to GitHub.
+2. Import the repo in [Vercel](https://vercel.com/new), add the two env vars
+   from `.env.local` in the Vercel project settings, and deploy.
+
+## Database
+
+See `supabase/migrations/0001_init.sql` for the full schema: profiles,
+vendor_profiles (with `vendor_type` splitting Fabrication vs Raw Material),
+master_items (Category & Material Master — processes/materials/units/finishes
+with self-referencing grades), rfqs, quotes, listings, orders, order_items,
+payments, payouts, reviews, disputes, support_tickets, coupons — plus a
+trigger that auto-populates `profiles`/`vendor_profiles` from
+`auth.users.raw_user_meta_data` on signup, and RLS policies scoping every
+table to the appropriate role.
