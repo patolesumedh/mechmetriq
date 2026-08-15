@@ -64,6 +64,21 @@ export default async function RfqDetailPage({
     supabase.from("master_items").select("*").eq("type", "material").eq("status", "active").order("name"),
   ]);
 
+  // cad_file_urls stores private storage paths (bucket: rfq-attachments), not
+  // public URLs — resolve short-lived signed URLs to actually render them.
+  let cadFileLinks: { name: string; url: string }[] = [];
+  if (r.cad_file_urls && r.cad_file_urls.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from("rfq-attachments")
+      .createSignedUrls(r.cad_file_urls, 60 * 60);
+    cadFileLinks = (signed ?? [])
+      .map((s, i) => ({
+        name: r.cad_file_urls![i].split("/").pop() ?? `CAD file ${i + 1}`,
+        url: s.signedUrl,
+      }))
+      .filter((f): f is { name: string; url: string } => !!f.url);
+  }
+
   return (
     <div>
       <Topbar
@@ -92,17 +107,17 @@ export default async function RfqDetailPage({
                 {r.special_instructions}
               </div>
             )}
-            {r.cad_file_urls && r.cad_file_urls.length > 0 && (
+            {cadFileLinks.length > 0 && (
               <div className="space-y-2 border-t border-grid px-5 py-3.5">
-                {r.cad_file_urls.map((url, i) => (
+                {cadFileLinks.map((file, i) => (
                   <a
                     key={i}
-                    href={url}
+                    href={file.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="block rounded-lg border border-grid bg-plane px-3.5 py-2.5 text-[12.5px] font-semibold text-brand"
+                    className="block truncate rounded-lg border border-grid bg-plane px-3.5 py-2.5 text-[12.5px] font-semibold text-brand"
                   >
-                    CAD file {i + 1} — Download &amp; view
+                    📎 {file.name} — Download &amp; view
                   </a>
                 ))}
               </div>

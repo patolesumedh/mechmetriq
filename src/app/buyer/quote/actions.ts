@@ -36,6 +36,26 @@ export async function createRfqAction(
     return { error: "Please enter a valid quantity." };
   }
 
+  const files = formData
+    .getAll("cad_files")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+
+  const cadFileUrls: string[] = [];
+  for (const file of files) {
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${user.id}/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("rfq-attachments")
+      .upload(path, file, {
+        contentType: file.type || undefined,
+        upsert: false,
+      });
+    if (uploadError) {
+      return { error: `Failed to upload "${file.name}": ${uploadError.message}` };
+    }
+    cadFileUrls.push(path);
+  }
+
   const { error } = await supabase.from("rfqs").insert({
     buyer_id: user.id,
     process_id: processId,
@@ -47,6 +67,7 @@ export async function createRfqAction(
     lead_time_pref: leadTimePref,
     delivery_address_id: deliveryAddressId || null,
     special_instructions: specialInstructions,
+    cad_file_urls: cadFileUrls.length > 0 ? cadFileUrls : null,
     status: "pending",
   });
 

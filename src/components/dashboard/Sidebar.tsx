@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { logoutAction } from "@/lib/actions/auth";
 
 export interface NavItem {
   label: string;
@@ -60,10 +61,24 @@ export function Sidebar({
         <div className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-brand-light text-[12.5px] font-bold text-brand-dark">
           {footer.initials}
         </div>
-        <div>
-          <b className="block text-[13px]">{footer.name}</b>
-          <span className="text-[11.5px] text-muted">{footer.subtitle}</span>
+        <div className="min-w-0 flex-1">
+          <b className="block truncate text-[13px]">{footer.name}</b>
+          <span className="block truncate text-[11.5px] text-muted">{footer.subtitle}</span>
         </div>
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            title="Log out"
+            aria-label="Log out"
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-muted transition-colors hover:bg-crit-bg hover:text-[#a12525]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+          </button>
+        </form>
       </div>
     </aside>
   );
