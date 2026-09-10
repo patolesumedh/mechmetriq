@@ -1,5 +1,6 @@
-import Link from "next/link";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/Button";
+import { SiteHeader } from "@/components/marketing/SiteHeader";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 
 const PROCESSES = [
   { code: "CNC", name: "CNC Machining" },
@@ -43,35 +44,7 @@ const TESTIMONIALS = [
 export default function HomePage() {
   return (
     <div className="bg-surface">
-      <header className="sticky top-0 z-10 border-b border-grid bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between px-8 py-4">
-          <div>
-            <Link href="/" className="flex items-center gap-2 text-[19px] font-bold tracking-tight">
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-linear-to-br from-brand to-brand-dark text-[15px] font-extrabold text-white">
-                M
-              </span>
-              MECHmetrIQ
-            </Link>
-            <div className="ml-[38px] mt-px text-[10px] font-semibold uppercase tracking-wide text-muted">
-              Mechanical Intelligence. Smarter Quotations.
-            </div>
-          </div>
-          <nav className="flex gap-7 text-sm text-ink-2">
-            <Link href="/how-it-works">How It Works</Link>
-            <Link href="/services">Services</Link>
-            <Link href="/marketplace">Marketplace</Link>
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/for-vendors">For Vendors</Link>
-            <Link href="/about">About</Link>
-          </nav>
-          <div className="flex items-center gap-2.5">
-            <ButtonLink href="/login" variant="outline">
-              Log In
-            </ButtonLink>
-            <ButtonLink href="/register">Get Started</ButtonLink>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Hero */}
       <div className="bg-[radial-gradient(600px_300px_at_85%_-10%,var(--color-brand-light),transparent_60%)] pb-16 pt-[76px]">
@@ -94,7 +67,7 @@ export default function HomePage() {
               <ButtonLink href="/register?intent=quote" size="lg">
                 Get Instant Quote &rarr;
               </ButtonLink>
-              <ButtonLink href="/marketplace" variant="outline" size="lg">
+              <ButtonLink href="/#marketplace" variant="outline" size="lg">
                 Browse Marketplace
               </ButtonLink>
             </div>
@@ -182,7 +155,7 @@ export default function HomePage() {
       </section>
 
       {/* Marketplace teaser */}
-      <section className="mx-auto max-w-[1180px] px-8 py-16">
+      <section id="marketplace" className="mx-auto max-w-[1180px] scroll-mt-20 px-8 py-16">
         <div className="mx-auto mb-10 max-w-[600px] text-center">
           <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wide text-brand">
             Raw Materials Marketplace
@@ -257,43 +230,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t border-grid bg-plane px-8 pb-6 pt-12">
-        <div className="mx-auto max-w-[1180px]">
-          <div className="mb-8 grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-8">
-            <div>
-              <div className="flex items-center gap-2 text-[19px] font-bold">
-                <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-linear-to-br from-brand to-brand-dark text-[15px] font-extrabold text-white">
-                  M
-                </span>
-                MECHmetrIQ
-              </div>
-              <p className="mt-3 max-w-[260px] text-[13px] leading-relaxed text-ink-2">
-                Custom manufacturing and raw materials, sourced and delivered from one platform.
-              </p>
-            </div>
-            {[
-              ["Platform", ["Instant Quote", "Marketplace", "Pricing", "For Vendors"]],
-              ["Company", ["About", "Blog", "Contact", "Careers"]],
-              ["Legal", ["Terms", "Privacy", "Refund Policy", "Shipping Policy"]],
-            ].map(([heading, links]) => (
-              <div key={heading as string}>
-                <h4 className="mb-3.5 text-[12.5px] uppercase tracking-wide text-muted">
-                  {heading as string}
-                </h4>
-                {(links as string[]).map((l) => (
-                  <div key={l} className="mb-2.5 text-[13.5px] text-ink-2">
-                    {l}
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between border-t border-grid pt-5 text-[12.5px] text-muted">
-            <span>&copy; 2026 MECHmetrIQ. All rights reserved.</span>
-            <span>Made for makers, vendors &amp; procurement teams across India.</span>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
