@@ -53,3 +53,26 @@ body {
 .sidebar-nav-item.active {
   @apply bg-brand-light font-bold text-brand-dark;
 }
+
+/* Fade + slide-in used by the animated Instant Quote hero demo whenever a
+   field's value changes. Reused generically for any "value just appeared"
+   moment. */
+@keyframes field-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-field-in {
+  animation: field-in 420ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-field-in {
+    animation-duration: 1ms;
+  }
+}

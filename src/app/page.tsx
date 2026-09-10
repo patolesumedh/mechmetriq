@@ -1,6 +1,7 @@
 import { ButtonLink } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
+import { InstantQuoteDemo } from "@/components/marketing/InstantQuoteDemo";
 
 const PROCESSES = [
   { code: "CNC", name: "CNC Machining" },
@@ -86,46 +87,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-grid bg-surface p-[22px] shadow-[0_20px_50px_-20px_rgba(11,11,11,0.18)]">
-            <div className="mb-4 flex items-center justify-between">
-              <b>Instant Quote</b>
-              <span className="rounded-md bg-good-bg px-2.5 py-1 text-xs font-bold text-good">
-                &bull; Live pricing
-              </span>
-            </div>
-            <div className="mb-4 rounded-[10px] border border-dashed border-grid bg-plane p-6 text-center text-[13px] text-muted">
-              <b className="mb-1 block text-[14px] text-ink">Drop CAD file here</b>
-              STEP &middot; STL &middot; IGES &middot; DXF &middot; PDF &mdash; up to 50MB
-            </div>
-            <div className="mb-2.5 grid grid-cols-2 gap-2.5">
-              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
-                Process: CNC Machining
-              </div>
-              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
-                Material: Al 6061
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
-                Quantity: 50 pcs
-              </div>
-              <div className="rounded-lg border border-grid px-3 py-2.5 text-[13px] text-ink-2">
-                Lead time: Standard
-              </div>
-            </div>
-            <div className="mt-3.5 flex items-center justify-between rounded-[10px] bg-brand-light px-4 py-3.5">
-              <div>
-                <div className="text-[11.5px] uppercase tracking-wide text-ink-2">
-                  Estimated price
-                </div>
-                <div className="text-[22px] font-extrabold text-brand-dark">₹18,450</div>
-              </div>
-              <div className="text-right">
-                <div className="text-[11.5px] uppercase tracking-wide text-ink-2">Lead time</div>
-                <div className="text-sm font-bold">6&ndash;8 days</div>
-              </div>
-            </div>
-          </div>
+          <InstantQuoteDemo />
         </div>
       </div>
 
