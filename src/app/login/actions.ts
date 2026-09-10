@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 
 export interface LoginState {
   error?: string;
@@ -21,20 +22,5 @@ export async function loginAction(
     return { error: error.message };
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", data.user.id)
-    .single();
-
-  if (profile?.role === "admin") redirect("/admin");
-  if (profile?.role === "vendor") {
-    const { data: vendorProfile } = await supabase
-      .from("vendor_profiles")
-      .select("vendor_type")
-      .eq("id", data.user.id)
-      .single();
-    redirect(`/vendor/${vendorProfile?.vendor_type ?? "fabrication"}`);
-  }
-  redirect("/buyer");
+  redirect(await getDashboardPath(supabase, data.user.id));
 }

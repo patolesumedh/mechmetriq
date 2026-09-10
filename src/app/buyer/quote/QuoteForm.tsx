@@ -160,12 +160,19 @@ export function QuoteForm({
             <option value="" disabled>
               Select a process
             </option>
-            {processes.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            {processes.map((p) => {
+              const isLive = p.name.trim().toLowerCase() === "cnc machining";
+              return (
+                <option key={p.id} value={p.id} disabled={!isLive}>
+                  {isLive ? p.name : `${p.name} (Coming Soon)`}
+                </option>
+              );
+            })}
           </select>
+          <p className="mt-1.5 text-[11.5px] text-muted">
+            We&rsquo;re only quoting CNC Machining jobs right now &mdash; other processes are
+            coming soon.
+          </p>
         </div>
         <div>
           <label className={labelClass}>Material</label>
@@ -219,12 +226,11 @@ export function QuoteForm({
 
       <div className="mb-4">
         <label className={labelClass}>Preferred lead time</label>
-        <input
-          name="lead_time_pref"
-          type="text"
-          placeholder="e.g. 2 weeks"
-          className={inputClass}
-        />
+        <select name="lead_time_pref" defaultValue="" className={inputClass}>
+          <option value="">Select a lead time</option>
+          <option value="Standard">Standard</option>
+          <option value="Express">Express</option>
+        </select>
       </div>
 
       <div className="mb-4">

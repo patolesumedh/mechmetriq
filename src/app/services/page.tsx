@@ -1,37 +1,44 @@
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { CtaBanner } from "@/components/marketing/CtaBanner";
+import { cn } from "@/lib/cn";
 
 const PROCESSES = [
   {
     code: "CNC",
     name: "CNC Machining",
     body: "Precision milling and turning for metals and plastics, from prototypes to production runs.",
+    comingSoon: false,
   },
   {
     code: "3D",
     name: "3D Printing",
     body: "FDM, SLA and SLS printing for rapid prototypes and low-volume functional parts.",
+    comingSoon: true,
   },
   {
     code: "SM",
     name: "Sheet Metal",
     body: "Bending, punching and forming for brackets, enclosures and structural components.",
+    comingSoon: true,
   },
   {
     code: "IM",
     name: "Injection Moulding",
     body: "Tooling and moulding for medium-to-high volume plastic parts.",
+    comingSoon: true,
   },
   {
     code: "CA",
     name: "Casting",
     body: "Sand and die casting for complex metal geometries at scale.",
+    comingSoon: true,
   },
   {
     code: "LC",
     name: "Laser Cutting",
     body: "Fast, clean cutting of sheet stock across metals and select plastics.",
+    comingSoon: true,
   },
 ];
 
@@ -98,8 +105,21 @@ export default function ServicesPage() {
         </div>
         <div className="grid grid-cols-3 gap-4">
           {PROCESSES.map((p) => (
-            <div key={p.code} className="rounded-xl border border-grid p-5">
-              <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-[10px] bg-brand-light text-sm font-extrabold text-brand-dark">
+            <div
+              key={p.code}
+              className={cn("relative rounded-xl border border-grid p-5", p.comingSoon && "bg-plane")}
+            >
+              {p.comingSoon && (
+                <span className="absolute right-4 top-4 whitespace-nowrap rounded-full bg-warn-bg px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-warn">
+                  Coming Soon
+                </span>
+              )}
+              <div
+                className={cn(
+                  "mb-3 flex h-9 w-9 items-center justify-center rounded-[10px] text-sm font-extrabold",
+                  p.comingSoon ? "bg-white text-muted" : "bg-brand-light text-brand-dark",
+                )}
+              >
                 {p.code}
               </div>
               <b className="mb-1.5 block text-[14.5px]">{p.name}</b>

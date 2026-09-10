@@ -2,14 +2,15 @@ import { ButtonLink } from "@/components/ui/Button";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { InstantQuoteDemo } from "@/components/marketing/InstantQuoteDemo";
+import { cn } from "@/lib/cn";
 
 const PROCESSES = [
-  { code: "CNC", name: "CNC Machining" },
-  { code: "3D", name: "3D Printing" },
-  { code: "SM", name: "Sheet Metal" },
-  { code: "IM", name: "Injection Moulding" },
-  { code: "CA", name: "Casting" },
-  { code: "LC", name: "Laser Cutting" },
+  { code: "CNC", name: "CNC Machining", comingSoon: false },
+  { code: "3D", name: "3D Printing", comingSoon: true },
+  { code: "SM", name: "Sheet Metal", comingSoon: true },
+  { code: "IM", name: "Injection Moulding", comingSoon: true },
+  { code: "CA", name: "Casting", comingSoon: true },
+  { code: "LC", name: "Laser Cutting", comingSoon: true },
 ];
 
 const PRODUCTS = [
@@ -106,11 +107,29 @@ export default function HomePage() {
         </div>
         <div className="grid grid-cols-6 gap-3.5">
           {PROCESSES.map((p) => (
-            <div key={p.code} className="rounded-xl border border-grid px-3.5 py-5 text-center">
-              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-[10px] bg-brand-light text-sm font-extrabold text-brand-dark">
+            <div
+              key={p.code}
+              className={cn(
+                "relative rounded-xl border border-grid px-3.5 py-5 text-center",
+                p.comingSoon && "bg-plane",
+              )}
+            >
+              {p.comingSoon && (
+                <span className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-warn-bg px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-wide text-warn">
+                  Coming Soon
+                </span>
+              )}
+              <div
+                className={cn(
+                  "mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-[10px] text-sm font-extrabold",
+                  p.comingSoon ? "bg-white text-muted" : "bg-brand-light text-brand-dark",
+                )}
+              >
                 {p.code}
               </div>
-              <div className="text-[13px] font-semibold">{p.name}</div>
+              <div className={cn("text-[13px] font-semibold", p.comingSoon && "text-ink-2")}>
+                {p.name}
+              </div>
             </div>
           ))}
         </div>

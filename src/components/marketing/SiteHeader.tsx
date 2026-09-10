@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { createClient } from "@/lib/supabase/client";
+import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 
 const NAV_LINKS = [
   { label: "How It Works", href: "/how-it-works" },
@@ -14,8 +17,51 @@ const NAV_LINKS = [
   { label: "About", href: "/about" },
 ];
 
+/**
+ * Resolves the signed-in visitor's dashboard path (or null if signed out).
+ * The marketing site is otherwise fully static/public, so this is a
+ * client-side check — it lets the header offer a direct way back into the
+ * dashboard instead of a stale "Log In" / "Get Started" pair that makes an
+ * already-authenticated visitor think they've been signed out.
+ */
+function useDashboardHref() {
+  const [href, setHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    let active = true;
+
+    async function resolve() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!active) return;
+      if (!user) {
+        setHref(null);
+        return;
+      }
+
+      const path = await getDashboardPath(supabase, user.id);
+      if (!active) return;
+      setHref(path);
+    }
+
+    resolve();
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(() => resolve());
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
+
+  return href;
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
+  const dashboardHref = useDashboardHref();
 
   return (
     <header className="sticky top-0 z-10 border-b border-grid bg-white/95 backdrop-blur">
@@ -46,10 +92,16 @@ export function SiteHeader() {
           })}
         </nav>
         <div className="flex items-center gap-2.5">
-          <ButtonLink href="/login" variant="outline">
-            Log In
-          </ButtonLink>
-          <ButtonLink href="/register">Get Started</ButtonLink>
+          {dashboardHref ? (
+            <ButtonLink href={dashboardHref}>Go to Dashboard &rarr;</ButtonLink>
+          ) : (
+            <>
+              <ButtonLink href="/login" variant="outline">
+                Log In
+              </ButtonLink>
+              <ButtonLink href="/register">Get Started</ButtonLink>
+            </>
+          )}
         </div>
       </div>
     </header>
