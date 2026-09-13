@@ -11,9 +11,93 @@ const initialState: QuoteFormState = {};
 const inputClass =
   "w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand";
 const labelClass = "mb-1.5 block text-[12.5px] font-semibold text-ink-2";
+const hintClass = "mt-1.5 text-[11.5px] text-muted";
 
 const ACCEPTED_EXTENSIONS = ".step,.stp,.iges,.igs,.dwg,.dxf,.stl,.pdf,.png,.jpg,.jpeg";
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
+const SUBPROCESS_OPTIONS = [
+  "No Preference",
+  "CNC Milling",
+  "CNC Turning (Lathe)",
+  "CNC Mill and Turning Combo",
+  "CNC Router",
+  "Swiss-Type Turning",
+  "Micro Machining",
+  "Other",
+];
+
+const FINISH_OPTIONS = [
+  "Standard",
+  "Black Anodize",
+  "Black Hardcoat Anodize",
+  "Blue Anodize",
+  "Clear Anodize",
+  "Clear Hardcoat Anodize",
+  "Gold Anodize",
+  "Gray Hardcoat Anodize",
+  "Green Anodize",
+  "Orange Anodize",
+  "PTFE Impregnated Hard Anodize",
+  "Purple Anodize",
+  "Red Anodize",
+  "Yellow Anodize",
+  "Chem Film Clear",
+  "Chem Film Gold",
+  "Case Harden",
+  "Temper",
+  "Through Harden",
+  "Bead Blast",
+  "Tumbled",
+  "Electroless Nickel Plating",
+  "Gold Plating",
+  "Silver Plating",
+  "Zinc Plating",
+  "Electropolish",
+  "Cerakote",
+  "Powder Coating",
+  "Other",
+];
+
+const TOLERANCE_OPTIONS = [
+  '±0.010" (±0.25mm)',
+  '±0.005" (±0.13mm)',
+  'Tighter than ±0.005" (±0.13mm)',
+];
+const DEFAULT_TOLERANCE = TOLERANCE_OPTIONS[1];
+
+const ROUGHNESS_OPTIONS = [
+  "125μin / 3.2μm Ra",
+  "63μin / 1.6μm Ra",
+  "32μin / 0.8μm Ra",
+  "16μin / 0.4μm Ra",
+];
+const DEFAULT_ROUGHNESS = ROUGHNESS_OPTIONS[0];
+
+const PART_MARKING_OPTIONS = ["Silkscreen", "Ink Stamp", "Bag and Tag", "Engraving", "Laser Mark"];
+
+const INSPECTION_OPTIONS = [
+  "Standard Inspection",
+  "Formal Inspection with Dimensional Report",
+  "CMM Inspection with Dimensional Report",
+  "First Article Inspection Report (FAIR AS9102)",
+  "Source Inspection",
+  "Build and Hold First Article Inspection",
+  "Custom Inspection",
+];
+const DEFAULT_INSPECTION = INSPECTION_OPTIONS[0];
+
+const CERTIFICATE_OPTIONS = [
+  "ITAR/EAR Registration",
+  "Cybersecurity Maturity Model Certification (CMMC)",
+  "AS9100 Certified",
+  "ISO 9001 Certified",
+  "Hardware Certification",
+  "Certificate of Conformance",
+  "Material Traceability",
+  "JCP/eJCP Certified",
+  "Material Certification",
+];
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -126,6 +210,83 @@ function FileDropzone({ name }: { name: string }) {
   );
 }
 
+function CheckboxGroup({
+  name,
+  options,
+  defaultSelected = [],
+  scrollable = false,
+}: {
+  name: string;
+  options: string[];
+  defaultSelected?: string[];
+  scrollable?: boolean;
+}) {
+  const [selected, setSelected] = useState<string[]>(defaultSelected);
+
+  function toggle(opt: string) {
+    setSelected((prev) => (prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt]));
+  }
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg border border-grid",
+        scrollable && "max-h-[230px] overflow-y-auto"
+      )}
+    >
+      {options.map((opt) => (
+        <label
+          key={opt}
+          className="flex cursor-pointer items-center gap-2.5 border-b border-grid px-3.5 py-2.5 text-[13px] last:border-b-0 hover:bg-plane"
+        >
+          <input
+            type="checkbox"
+            name={name}
+            value={opt}
+            checked={selected.includes(opt)}
+            onChange={() => toggle(opt)}
+            className="h-3.5 w-3.5 flex-none accent-[var(--color-brand)]"
+          />
+          {opt}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function ToggleQuantity({
+  label,
+  description,
+  qtyName,
+}: {
+  label: string;
+  description: string;
+  qtyName: string;
+}) {
+  const [enabled, setEnabled] = useState(false);
+
+  return (
+    <div className="rounded-lg border border-grid p-3.5">
+      <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-ink">
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => setEnabled(e.target.checked)}
+          className="h-3.5 w-3.5 accent-[var(--color-brand)]"
+        />
+        {label}
+      </label>
+      <p className="mt-1 text-[11.5px] leading-relaxed text-muted">{description}</p>
+      {enabled && (
+        <div className="mt-2.5 max-w-[140px]">
+          <label className={labelClass}>Total quantity</label>
+          <input name={qtyName} type="number" min={1} defaultValue={1} className={inputClass} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function QuoteForm({
   processes,
   materials,
@@ -169,7 +330,7 @@ export function QuoteForm({
               );
             })}
           </select>
-          <p className="mt-1.5 text-[11.5px] text-muted">
+          <p className={hintClass}>
             We&rsquo;re only quoting CNC Machining jobs right now &mdash; other processes are
             coming soon.
           </p>
@@ -187,32 +348,42 @@ export function QuoteForm({
         </div>
       </div>
 
+      <div className="mb-4">
+        <label className={labelClass}>Preferred subprocess</label>
+        <select name="subprocess" defaultValue="No Preference" className={inputClass}>
+          {SUBPROCESS_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+        <p className={hintClass}>Applies to CNC Machining.</p>
+      </div>
+
       <div className="mb-4 grid grid-cols-2 gap-3.5">
         <div>
           <label className={labelClass}>Quantity *</label>
           <input name="quantity" type="number" min={1} required className={inputClass} />
         </div>
         <div>
-          <label className={labelClass}>Tolerance</label>
-          <input
-            name="tolerance"
-            type="text"
-            placeholder="e.g. ±0.05mm"
-            className={inputClass}
-          />
+          <label className={labelClass}>Precision tolerance</label>
+          <select name="tolerance" defaultValue={DEFAULT_TOLERANCE} className={inputClass}>
+            {TOLERANCE_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
+      <div className="mb-4">
+        <label className={labelClass}>Finish</label>
+        <p className={cn(hintClass, "mb-1.5 mt-0")}>Select all that apply.</p>
+        <CheckboxGroup name="finish_options" options={FINISH_OPTIONS} defaultSelected={["Standard"]} scrollable />
+      </div>
+
       <div className="mb-4 grid grid-cols-2 gap-3.5">
-        <div>
-          <label className={labelClass}>Surface finish</label>
-          <input
-            name="surface_finish"
-            type="text"
-            placeholder="e.g. Anodized"
-            className={inputClass}
-          />
-        </div>
         <div>
           <label className={labelClass}>Colour / coating</label>
           <input
@@ -222,6 +393,59 @@ export function QuoteForm({
             className={inputClass}
           />
         </div>
+        <div>
+          <label className={labelClass}>Precision surface roughness</label>
+          <select name="surface_roughness" defaultValue={DEFAULT_ROUGHNESS} className={inputClass}>
+            {ROUGHNESS_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-3.5">
+        <ToggleQuantity
+          label="My part requires threads and tapped holes"
+          description="Attach a drawing that calls out thread type and depth to avoid delays."
+          qtyName="threads_qty"
+        />
+        <ToggleQuantity
+          label="My part requires inserts"
+          description="Attach a drawing that calls out insert part number, quantity, and install location."
+          qtyName="inserts_qty"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className={labelClass}>Part marking</label>
+        <p className={cn(hintClass, "mb-1.5 mt-0")}>Select all that apply.</p>
+        <CheckboxGroup name="part_marking" options={PART_MARKING_OPTIONS} />
+      </div>
+
+      <div className="mb-4">
+        <label className={labelClass}>Inspection</label>
+        <select name="inspection" defaultValue={DEFAULT_INSPECTION} className={inputClass}>
+          {INSPECTION_OPTIONS.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+        <p className={hintClass}>
+          Inspection documentation won&rsquo;t ship with parts unless you choose an option with a
+          dimensional report.
+        </p>
+      </div>
+
+      <div className="mb-4">
+        <label className={labelClass}>Certificates and supplier qualifications</label>
+        <p className={cn(hintClass, "mb-1.5 mt-0")}>
+          Select any required certificates. Applied to all parts in this order unless otherwise
+          stated.
+        </p>
+        <CheckboxGroup name="certificates" options={CERTIFICATE_OPTIONS} />
       </div>
 
       <div className="mb-4">
@@ -256,7 +480,11 @@ export function QuoteForm({
       </div>
 
       <div className="mb-5">
-        <label className={labelClass}>Special instructions</label>
+        <label className={labelClass}>Special instructions / notes</label>
+        <p className={cn(hintClass, "mb-1.5 mt-0")}>
+          Additional specifications that would help us create your part &mdash; e.g. repeat part
+          from a previous order, design changes, or anything outside the options above.
+        </p>
         <textarea name="special_instructions" rows={4} className={inputClass} />
       </div>
 
@@ -265,7 +493,7 @@ export function QuoteForm({
         disabled={pending}
         className="rounded-[9px] bg-brand px-5 py-3 text-[14.5px] font-bold text-white disabled:opacity-60"
       >
-        {pending ? "Submitting…" : "Submit RFQ"}
+        {pending ? "Submitting…" : "Get Quote"}
       </button>
     </form>
   );

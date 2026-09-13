@@ -41,9 +41,17 @@ export default async function RfqDetailPage({
   const r = rfq as unknown as {
     id: string;
     quantity: number;
+    subprocess: string | null;
     tolerance: string | null;
     surface_finish: string | null;
+    finish_options: string[] | null;
     colour_coating: string | null;
+    surface_roughness: string | null;
+    threads_qty: number | null;
+    inserts_qty: number | null;
+    part_marking: string[] | null;
+    inspection: string | null;
+    certificates: string[] | null;
     lead_time_pref: string | null;
     special_instructions: string | null;
     cad_file_urls: string[] | null;
@@ -92,11 +100,33 @@ export default async function RfqDetailPage({
             <CardHeader title="Request Details" />
             <div className="divide-y divide-grid">
               <SpecRow label="Process" value={r.process?.name ?? "—"} />
+              <SpecRow label="Preferred subprocess" value={r.subprocess ?? "—"} />
               <SpecRow label="Material" value={r.material?.name ?? "—"} />
               <SpecRow label="Quantity" value={`${r.quantity} pcs`} />
-              <SpecRow label="Tolerance" value={r.tolerance ?? "—"} />
-              <SpecRow label="Surface finish" value={r.surface_finish ?? "—"} />
+              <SpecRow label="Precision tolerance" value={r.tolerance ?? "—"} />
+              <SpecRow
+                label="Finish"
+                value={r.finish_options && r.finish_options.length > 0 ? r.finish_options.join(", ") : r.surface_finish ?? "—"}
+              />
               <SpecRow label="Colour / coating" value={r.colour_coating ?? "—"} />
+              <SpecRow label="Precision surface roughness" value={r.surface_roughness ?? "—"} />
+              <SpecRow
+                label="Threads & tapped holes"
+                value={r.threads_qty ? `${r.threads_qty} qty` : "Not required"}
+              />
+              <SpecRow
+                label="Inserts"
+                value={r.inserts_qty ? `${r.inserts_qty} qty` : "Not required"}
+              />
+              <SpecRow
+                label="Part marking"
+                value={r.part_marking && r.part_marking.length > 0 ? r.part_marking.join(", ") : "—"}
+              />
+              <SpecRow label="Inspection" value={r.inspection ?? "—"} />
+              <SpecRow
+                label="Certificates required"
+                value={r.certificates && r.certificates.length > 0 ? r.certificates.join(", ") : "—"}
+              />
               <SpecRow label="Target lead time" value={r.lead_time_pref ?? "—"} />
               <SpecRow label="Delivery pincode" value={r.delivery_address?.pincode ?? "—"} />
               <SpecRow label="Received" value={formatDate(r.created_at)} />
