@@ -1,10 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { updateOnboardingAction, type OnboardingState } from "./actions";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import type { Tables } from "@/lib/types/database";
+import type { KycView } from "@/lib/kyc/server";
+import { AddressField, BankFields, ConsentBlock, PanField } from "@/components/kyc/KycFields";
+
+const SECRET_INPUTS = ["pan", "bank_account_number", "bank_account_number_confirm", "ifsc_code"];
 
 const inputClass =
   "w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand";
@@ -23,16 +27,37 @@ const initialState: OnboardingState = {};
 
 export function OnboardingForm({
   vendorProfile,
+  kyc,
   processOptions,
   materialOptions,
-  saved,
 }: {
   vendorProfile: Tables<"vendor_profiles">;
+  kyc: KycView;
   processOptions: Tables<"master_items">[];
   materialOptions: Tables<"master_items">[];
-  saved: boolean;
 }) {
   const [state, formAction, pending] = useActionState(updateOnboardingAction, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+  const fe = state.fieldErrors;
+
+  // After a successful save, clear the typed PAN / account / IFSC so full
+  // values don't linger on screen; the masked "on file" hint replaces them.
+  useEffect(() => {
+    if (!state.savedAt || !formRef.current) return;
+    for (const n of SECRET_INPUTS) {
+      const el = formRef.current.elements.namedItem(n);
+      if (el instanceof HTMLInputElement) el.value = "";
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [state.savedAt]);
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // Submit without React's automatic form reset, so a validation error
+    // doesn't wipe everything the vendor typed.
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startTransition(() => formAction(data));
+  }
   const [capabilities, setCapabilities] = useState<string[]>(vendorProfile.capabilities ?? []);
   const [materials, setMaterials] = useState<string[]>(vendorProfile.materials_machined ?? []);
 
@@ -41,10 +66,10 @@ export function OnboardingForm({
   }
 
   return (
-    <form action={formAction} className="max-w-[760px]">
-      {saved && !state.error && (
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-[760px]" noValidate>
+      {state.success && !state.error && (
         <div className="mb-5 rounded-lg bg-good-bg px-3.5 py-3 text-[13px] font-medium text-[#0a6b0a]">
-          Your KYC details were saved. Our team will review your submission shortly.
+          {state.success}
         </div>
       )}
       {state.error && (
@@ -68,8 +93,10 @@ export function OnboardingForm({
             required
             defaultValue={vendorProfile.company_name}
             placeholder="e.g. Precision Fab Works Pvt Ltd"
-            className={inputClass}
+            maxLength={200}
+            className={inputClass + (fe?.company_name ? " border-crit" : "")}
           />
+          {fe?.company_name && <p className="mt-1 text-[12px] text-crit">{fe.company_name}</p>}
         </div>
         <div className="mb-3.5 grid grid-cols-2 gap-3">
           <div>
@@ -93,46 +120,38 @@ export function OnboardingForm({
               name="gstin"
               defaultValue={vendorProfile.gstin ?? ""}
               placeholder="15-character GSTIN"
-              className={inputClass}
+              maxLength={15}
+              autoComplete="off"
+              className={inputClass + " uppercase" + (fe?.gstin ? " border-crit" : "")}
             />
+            {fe?.gstin && <p className="mt-1 text-[12px] text-crit">{fe.gstin}</p>}
           </div>
         </div>
         <div className="mb-3.5 grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClass}>PAN</label>
-            <input
-              name="pan"
-              defaultValue={vendorProfile.pan ?? ""}
-              placeholder="10-character PAN"
-              className={inputClass}
-            />
-          </div>
+          <PanField kyc={kyc} errors={fe} />
           <div>
             <label className={labelClass}>Registered pincode</label>
             <input
               name="registered_pincode"
               defaultValue={vendorProfile.registered_pincode ?? ""}
               placeholder="6-digit pincode"
-              className={inputClass}
+              inputMode="numeric"
+              maxLength={6}
+              className={inputClass + (fe?.registered_pincode ? " border-crit" : "")}
             />
+            {fe?.registered_pincode && (
+              <p className="mt-1 text-[12px] text-crit">{fe.registered_pincode}</p>
+            )}
           </div>
         </div>
-        <div>
-          <label className={labelClass}>Registered address</label>
-          <input
-            name="registered_address"
-            defaultValue={vendorProfile.registered_address ?? ""}
-            placeholder="Full address"
-            className={inputClass}
-          />
-        </div>
+        <AddressField kyc={kyc} errors={fe} />
       </Card>
 
       <Card className="mb-4.5 p-6">
         <h3 className="mb-1 text-[14.5px] font-semibold">Manufacturing Capabilities</h3>
         <p className="mb-4.5 text-[12.5px] text-muted">
-          Select every process your shop floor can produce &mdash; this drives which RFQs you
-          receive.
+          Select every process your shop floor can produce &mdash; this decides which orders are
+          assigned to you.
         </p>
 
         <div className="mb-4.5">
@@ -167,7 +186,7 @@ export function OnboardingForm({
         </div>
 
         <div className="mb-4.5">
-          <label className={labelClass}>Materials you can machine</label>
+          <label className={labelClass}>Materials you work with</label>
           <div className="flex flex-wrap gap-2">
             {materialOptions.map((m) => {
               const on = materials.includes(m.name);
@@ -224,51 +243,16 @@ export function OnboardingForm({
         <p className="mb-4.5 text-[12.5px] text-muted">
           Used to process your payouts once orders are delivered.
         </p>
-        <div className="mb-3.5 grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClass}>Bank account number</label>
-            <input
-              name="bank_account_number"
-              defaultValue={vendorProfile.bank_account_number ?? ""}
-              placeholder="9-18 digits"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>IFSC code</label>
-            <input
-              name="ifsc_code"
-              defaultValue={vendorProfile.ifsc_code ?? ""}
-              placeholder="11-character IFSC"
-              className={inputClass}
-            />
-          </div>
-        </div>
-        <div className="mb-3.5">
-          <label className={labelClass}>Cancelled cheque / bank doc URL</label>
-          <input
-            name="cancelled_cheque_url"
-            defaultValue={vendorProfile.cancelled_cheque_url ?? ""}
-            placeholder="https://… (upload elsewhere, paste link here)"
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Certifications URL (optional)</label>
-          <input
-            name="certifications_url"
-            defaultValue={vendorProfile.certifications_url ?? ""}
-            placeholder="https://… ISO, AS9100, etc."
-            className={inputClass}
-          />
-        </div>
+        <BankFields kyc={kyc} vendorId={vendorProfile.id} errors={fe} />
       </Card>
+
+      <ConsentBlock kyc={kyc} errors={fe} />
 
       <div className="flex justify-end gap-2.5">
         <Button type="submit" variant="primary" size="lg" disabled={pending}>
           {pending
             ? "Saving…"
-            : vendorProfile.kyc_status === "draft"
+            : vendorProfile.kyc_status === "draft" || vendorProfile.kyc_status === "rejected"
               ? "Submit for Approval →"
               : "Save Changes"}
         </Button>

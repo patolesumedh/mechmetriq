@@ -51,7 +51,7 @@ export default async function FabricationVendorLayout({
         items={[
           { label: "Overview", href: "/vendor/fabrication" },
           { label: "RFQ Inbox", href: "/vendor/fabrication/rfqs" },
-          { label: "My Quotes", href: "/vendor/fabrication/quotes" },
+          { label: "My Quotes", href: "/vendor/fabrication/quotes", soon: true },
           { label: "Jobs & Orders", href: "/vendor/fabrication/orders" },
           { label: "Earnings", href: "/vendor/fabrication/earnings" },
           { label: "KYC / Profile", href: "/vendor/fabrication/onboarding" },
@@ -95,7 +95,7 @@ export default async function FabricationVendorLayout({
               {kycStatus === "on_hold" &&
                 "Your vendor account is on hold. Contact support for details."}
               {kycStatus === "draft" &&
-                "Complete your KYC to start receiving RFQs and quoting jobs."}
+                "Complete your KYC to start receiving orders."}
             </span>
             <Link href="/vendor/fabrication/onboarding" className="font-bold underline">
               {kycStatus === "draft" ? "Complete KYC →" : "View KYC / Profile →"}

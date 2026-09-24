@@ -1,8 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState, useEffect, useRef } from "react";
 import { updateKycAction, type OnboardingState } from "./actions";
 import type { Tables } from "@/lib/types/database";
+import type { KycView } from "@/lib/kyc/server";
+import { AddressField, BankFields, ConsentBlock, PanField } from "@/components/kyc/KycFields";
+
+const SECRET_INPUTS = ["pan", "bank_account_number", "bank_account_number_confirm", "ifsc_code"];
 
 const initialState: OnboardingState = {};
 
@@ -12,16 +16,39 @@ const labelClass = "mb-1.5 block text-[12.5px] font-semibold text-ink-2";
 
 export function OnboardingForm({
   vendor,
+  kyc,
   materials,
 }: {
   vendor: Tables<"vendor_profiles">;
+  kyc: KycView;
   materials: { id: string; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(updateKycAction, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+  const fe = state.fieldErrors;
+
+  useEffect(() => {
+    if (!state.savedAt || !formRef.current) return;
+    for (const n of SECRET_INPUTS) {
+      const el = formRef.current.elements.namedItem(n);
+      if (el instanceof HTMLInputElement) el.value = "";
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [state.savedAt]);
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    startTransition(() => formAction(data));
+  }
+
+  const errText = (k: string) =>
+    fe?.[k] ? <p className="mt-1 text-[12px] text-crit">{fe[k]}</p> : null;
+  const cls = (k: string) => inputClass + (fe?.[k] ? " border-crit" : "");
   const materialsHandled = new Set(vendor.materials_handled ?? []);
 
   return (
-    <form action={formAction} className="max-w-[760px]">
+    <form ref={formRef} onSubmit={onSubmit} className="max-w-[760px]" noValidate>
       {state.error && (
         <div className="mb-4 rounded-lg bg-crit-bg px-3.5 py-3 text-[13px] font-medium text-[#a12525]">
           {state.error}
@@ -48,8 +75,10 @@ export function OnboardingForm({
             required
             defaultValue={vendor.company_name}
             placeholder="e.g. Apex Alloys Pvt Ltd"
-            className={inputClass}
+            maxLength={200}
+            className={cls("company_name")}
           />
+          {errText("company_name")}
         </div>
         <div className="mb-3.5 grid grid-cols-2 gap-3">
           <div>
@@ -70,23 +99,15 @@ export function OnboardingForm({
               required
               defaultValue={vendor.gstin ?? ""}
               placeholder="15-character GSTIN"
-              className={inputClass}
+              maxLength={15}
+              autoComplete="off"
+              className={cls("gstin") + " uppercase"}
             />
+            {errText("gstin")}
           </div>
         </div>
         <div className="mb-3.5 grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClass}>
-              PAN <span className="text-crit">*</span>
-            </label>
-            <input
-              name="pan"
-              required
-              defaultValue={vendor.pan ?? ""}
-              placeholder="10-character PAN"
-              className={inputClass}
-            />
-          </div>
+          <PanField kyc={kyc} errors={fe} required />
           <div>
             <label className={labelClass}>
               Warehouse / dispatch pincode <span className="text-crit">*</span>
@@ -96,22 +117,14 @@ export function OnboardingForm({
               required
               defaultValue={vendor.warehouse_pincode ?? ""}
               placeholder="6-digit pincode"
-              className={inputClass}
+              inputMode="numeric"
+              maxLength={6}
+              className={cls("warehouse_pincode")}
             />
+            {errText("warehouse_pincode")}
           </div>
         </div>
-        <div>
-          <label className={labelClass}>
-            Registered address <span className="text-crit">*</span>
-          </label>
-          <input
-            name="registered_address"
-            required
-            defaultValue={vendor.registered_address ?? ""}
-            placeholder="Full address"
-            className={inputClass}
-          />
-        </div>
+        <AddressField kyc={kyc} errors={fe} />
       </div>
 
       <div className="mb-4.5 rounded-[10px] border border-grid bg-surface p-6">
@@ -148,15 +161,6 @@ export function OnboardingForm({
             className={inputClass}
           />
         </div>
-        <div className="mt-3.5">
-          <label className={labelClass}>Certifications URL (optional)</label>
-          <input
-            name="certifications_url"
-            defaultValue={vendor.certifications_url ?? ""}
-            placeholder="Link to mill test certificate, ISO, etc."
-            className={inputClass}
-          />
-        </div>
       </div>
 
       <div className="mb-4.5 rounded-[10px] border border-grid bg-surface p-6">
@@ -164,36 +168,10 @@ export function OnboardingForm({
         <p className="mb-4.5 text-[12.5px] text-muted">
           Used to process your marketplace payouts.
         </p>
-        <div className="mb-3.5 grid grid-cols-2 gap-3">
-          <div>
-            <label className={labelClass}>Bank account number</label>
-            <input
-              name="bank_account_number"
-              defaultValue={vendor.bank_account_number ?? ""}
-              placeholder="9-18 digits"
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <label className={labelClass}>IFSC code</label>
-            <input
-              name="ifsc_code"
-              defaultValue={vendor.ifsc_code ?? ""}
-              placeholder="11-character IFSC"
-              className={inputClass}
-            />
-          </div>
-        </div>
-        <div>
-          <label className={labelClass}>Cancelled cheque / bank doc URL</label>
-          <input
-            name="cancelled_cheque_url"
-            defaultValue={vendor.cancelled_cheque_url ?? ""}
-            placeholder="Link to uploaded document"
-            className={inputClass}
-          />
-        </div>
+        <BankFields kyc={kyc} vendorId={vendor.id} errors={fe} />
       </div>
+
+      <ConsentBlock kyc={kyc} errors={fe} />
 
       <div className="flex justify-end">
         <button
@@ -203,7 +181,7 @@ export function OnboardingForm({
         >
           {pending
             ? "Saving…"
-            : vendor.kyc_status === "draft"
+            : vendor.kyc_status === "draft" || vendor.kyc_status === "rejected"
               ? "Submit for Approval →"
               : "Save Changes"}
         </button>

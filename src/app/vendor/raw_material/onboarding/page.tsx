@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { OnboardingForm } from "./OnboardingForm";
+import { PrivacyCard } from "@/components/kyc/PrivacyCard";
+import { loadKycRow, toKycView } from "@/lib/kyc/server";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -18,6 +20,7 @@ export default async function OnboardingPage() {
     .single();
 
   if (!vendor) redirect("/login");
+  const kyc = toKycView(await loadKycRow(supabase, user.id));
 
   const { data: materials } = await supabase
     .from("master_items")
@@ -37,7 +40,8 @@ export default async function OnboardingPage() {
         }}
       />
       <div className="mt-6">
-        <OnboardingForm vendor={vendor} materials={materials ?? []} />
+        <OnboardingForm vendor={vendor} kyc={kyc} materials={materials ?? []} />
+        <PrivacyCard kyc={kyc} />
       </div>
     </div>
   );

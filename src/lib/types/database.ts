@@ -149,6 +149,48 @@ export type Database = {
           },
         ]
       }
+      kyc_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          fields: string[]
+          id: number
+          vendor_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          fields?: string[]
+          id?: number
+          vendor_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          fields?: string[]
+          id?: number
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kyc_audit_log_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           auto_publish: boolean
@@ -842,30 +884,89 @@ export type Database = {
           },
         ]
       }
+      vendor_kyc: {
+        Row: {
+          account_holder_name: string | null
+          bank_account_enc: string | null
+          bank_account_last4: string | null
+          cancelled_cheque_path: string | null
+          certification_paths: string[]
+          consent_at: string | null
+          consent_version: string | null
+          created_at: string
+          deletion_requested_at: string | null
+          ifsc_enc: string | null
+          ifsc_last4: string | null
+          pan_enc: string | null
+          pan_last4: string | null
+          registered_address: string | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          account_holder_name?: string | null
+          bank_account_enc?: string | null
+          bank_account_last4?: string | null
+          cancelled_cheque_path?: string | null
+          certification_paths?: string[]
+          consent_at?: string | null
+          consent_version?: string | null
+          created_at?: string
+          deletion_requested_at?: string | null
+          ifsc_enc?: string | null
+          ifsc_last4?: string | null
+          pan_enc?: string | null
+          pan_last4?: string | null
+          registered_address?: string | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          account_holder_name?: string | null
+          bank_account_enc?: string | null
+          bank_account_last4?: string | null
+          cancelled_cheque_path?: string | null
+          certification_paths?: string[]
+          consent_at?: string | null
+          consent_version?: string | null
+          created_at?: string
+          deletion_requested_at?: string | null
+          ifsc_enc?: string | null
+          ifsc_last4?: string | null
+          pan_enc?: string | null
+          pan_last4?: string | null
+          registered_address?: string | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_kyc_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_profiles: {
         Row: {
-          bank_account_number: string | null
           business_type: string | null
-          cancelled_cheque_url: string | null
           capabilities: string[] | null
           categories_supplied: string[] | null
           category_permissions: string[] | null
-          certifications_url: string | null
           commission_override: number | null
           company_name: string
           created_at: string
           gstin: string | null
           id: string
-          ifsc_code: string | null
           internal_notes: string | null
           kyc_rejection_reason: string | null
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           materials_handled: string[] | null
           materials_machined: string[] | null
           min_order_policy: string | null
-          pan: string | null
           rating: number | null
-          registered_address: string | null
           registered_pincode: string | null
           typical_lead_time: string | null
           updated_at: string
@@ -873,28 +974,22 @@ export type Database = {
           warehouse_pincode: string | null
         }
         Insert: {
-          bank_account_number?: string | null
           business_type?: string | null
-          cancelled_cheque_url?: string | null
           capabilities?: string[] | null
           categories_supplied?: string[] | null
           category_permissions?: string[] | null
-          certifications_url?: string | null
           commission_override?: number | null
           company_name: string
           created_at?: string
           gstin?: string | null
           id: string
-          ifsc_code?: string | null
           internal_notes?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           materials_handled?: string[] | null
           materials_machined?: string[] | null
           min_order_policy?: string | null
-          pan?: string | null
           rating?: number | null
-          registered_address?: string | null
           registered_pincode?: string | null
           typical_lead_time?: string | null
           updated_at?: string
@@ -902,28 +997,22 @@ export type Database = {
           warehouse_pincode?: string | null
         }
         Update: {
-          bank_account_number?: string | null
           business_type?: string | null
-          cancelled_cheque_url?: string | null
           capabilities?: string[] | null
           categories_supplied?: string[] | null
           category_permissions?: string[] | null
-          certifications_url?: string | null
           commission_override?: number | null
           company_name?: string
           created_at?: string
           gstin?: string | null
           id?: string
-          ifsc_code?: string | null
           internal_notes?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           materials_handled?: string[] | null
           materials_machined?: string[] | null
           min_order_policy?: string | null
-          pan?: string | null
           rating?: number | null
-          registered_address?: string | null
           registered_pincode?: string | null
           typical_lead_time?: string | null
           updated_at?: string
@@ -947,6 +1036,10 @@ export type Database = {
     Functions: {
       is_admin: { Args: never; Returns: boolean }
       is_vendor_owner: { Args: { v_id: string }; Returns: boolean }
+      log_kyc_event: {
+        Args: { p_action: string; p_fields?: string[]; p_vendor_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       coupon_type: "percent" | "flat"
