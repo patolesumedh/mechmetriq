@@ -1,73 +1,66 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { saveVendorKyc } from "@/lib/kyc/save";
+import { GSTIN_RE, PINCODE_RE, clean, cleanUpper, type FieldErrors, type KycFormState } from "@/lib/kyc/rules";
 
-export interface OnboardingState {
-  error?: string;
-}
+export type OnboardingState = KycFormState;
+
+const BUSINESS_TYPES = new Set([
+  "Proprietorship",
+  "Partnership",
+  "Private Limited",
+  "LLP",
+  "Public Limited",
+  "Other",
+]);
 
 export async function updateOnboardingAction(
   _prevState: OnboardingState,
   formData: FormData
 ): Promise<OnboardingState> {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) redirect("/login");
 
-  const companyName = (formData.get("company_name") as string)?.trim();
-  const businessType = (formData.get("business_type") as string) || null;
-  const gstin = (formData.get("gstin") as string) || null;
-  const pan = (formData.get("pan") as string) || null;
-  const registeredAddress = (formData.get("registered_address") as string) || null;
-  const registeredPincode = (formData.get("registered_pincode") as string) || null;
-  const typicalLeadTime = (formData.get("typical_lead_time") as string) || null;
-  const minOrderPolicy = (formData.get("min_order_policy") as string) || null;
-  const bankAccountNumber = (formData.get("bank_account_number") as string) || null;
-  const ifscCode = (formData.get("ifsc_code") as string) || null;
-  const cancelledChequeUrl = (formData.get("cancelled_cheque_url") as string) || null;
-  const certificationsUrl = (formData.get("certifications_url") as string) || null;
-  const capabilities = formData.getAll("capabilities") as string[];
-  const materialsMachined = formData.getAll("materials_machined") as string[];
+  const companyName = clean(formData.get("company_name"));
+  const businessType = clean(formData.get("business_type"));
+  const gstin = cleanUpper(formData.get("gstin"));
+  const pincode = clean(formData.get("registered_pincode"));
+  const typicalLeadTime = clean(formData.get("typical_lead_time"));
+  const minOrderPolicy = clean(formData.get("min_order_policy"));
+  const capabilities = formData.getAll("capabilities").map(String).filter(Boolean);
+  const materialsMachined = formData.getAll("materials_machined").map(String).filter(Boolean);
 
-  if (!companyName) {
-    return { error: "Company / legal business name is required." };
-  }
+  const errors: FieldErrors = {};
+  if (!companyName) errors.company_name = "Legal business name is required.";
+  if (companyName.length > 200) errors.company_name = "Name is too long.";
+  if (businessType && !BUSINESS_TYPES.has(businessType)) errors.business_type = "Pick a business type.";
+  if (gstin && !GSTIN_RE.test(gstin)) errors.gstin = "GSTIN should look like 27ABCDE1234F1Z5.";
+  if (pincode && !PINCODE_RE.test(pincode)) errors.registered_pincode = "Pincode should be 6 digits.";
 
-  const { data: existing } = await supabase
-    .from("vendor_profiles")
-    .select("kyc_status")
-    .eq("id", user.id)
-    .single();
-
-  const { error } = await supabase
-    .from("vendor_profiles")
-    .update({
+  const result = await saveVendorKyc({
+    supabase,
+    vendorId: user.id,
+    formData,
+    gstin: gstin || null,
+    profileErrors: errors,
+    profileUpdate: {
       company_name: companyName,
-      business_type: businessType,
-      gstin,
-      pan,
-      registered_address: registeredAddress,
-      registered_pincode: registeredPincode,
+      business_type: businessType || null,
+      gstin: gstin || null,
+      registered_pincode: pincode || null,
       capabilities,
       materials_machined: materialsMachined,
-      typical_lead_time: typicalLeadTime,
-      min_order_policy: minOrderPolicy,
-      bank_account_number: bankAccountNumber,
-      ifsc_code: ifscCode,
-      cancelled_cheque_url: cancelledChequeUrl,
-      certifications_url: certificationsUrl,
-      kyc_status: existing?.kyc_status === "draft" ? "pending" : existing?.kyc_status,
-    })
-    .eq("id", user.id);
+      typical_lead_time: typicalLeadTime.slice(0, 100) || null,
+      min_order_policy: minOrderPolicy.slice(0, 200) || null,
+    },
+  });
 
-  if (error) {
-    return { error: error.message };
-  }
-
-  redirect("/vendor/fabrication/onboarding?saved=1");
+  if (result.success) revalidatePath("/vendor/fabrication", "layout");
+  return result;
 }

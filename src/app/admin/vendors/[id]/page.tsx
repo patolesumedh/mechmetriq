@@ -6,6 +6,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatDate, kycTone, titleCase } from "../../_lib/format";
+import { loadKycForAdmin } from "@/lib/kyc/server";
 import {
   approveVendorAction,
   rejectVendorAction,
@@ -35,6 +36,10 @@ export default async function AdminVendorDetailPage({
   ]);
 
   if (!vendor) notFound();
+
+  // Decrypts PAN / bank details and creates 5-minute document links.
+  // Every call is written to kyc_audit_log.
+  const kyc = await loadKycForAdmin(supabase, id);
 
   const isFabrication = vendor.vendor_type === "fabrication";
   const skillTags = isFabrication ? vendor.capabilities : vendor.materials_handled;
@@ -81,8 +86,8 @@ export default async function AdminVendorDetailPage({
                 <Field label="Email" value={profile?.email ?? "—"} />
                 <Field label="Phone" value={profile?.phone ?? "—"} />
                 <Field label="GSTIN" value={vendor.gstin ?? "—"} />
-                <Field label="PAN" value={vendor.pan ?? "—"} />
-                <Field label="Registered address" value={vendor.registered_address ?? "—"} />
+                <Field label="PAN" value={kyc?.pan ?? "—"} />
+                <Field label="Registered address" value={kyc?.row.registered_address ?? "—"} />
                 <Field label="Registered pincode" value={vendor.registered_pincode ?? "—"} />
                 <Field label="Warehouse pincode" value={vendor.warehouse_pincode ?? "—"} />
                 <Field label="Typical lead time" value={vendor.typical_lead_time ?? "—"} />
@@ -135,10 +140,60 @@ export default async function AdminVendorDetailPage({
             <Card>
               <CardHeader title="Bank Details & Documents" />
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-[13px]">
-                <Field label="Bank account number" value={vendor.bank_account_number ?? "—"} />
-                <Field label="IFSC code" value={vendor.ifsc_code ?? "—"} />
-                <DocField label="Certifications" url={vendor.certifications_url} />
-                <DocField label="Cancelled cheque" url={vendor.cancelled_cheque_url} />
+                {kyc?.decryptError && (
+                  <div className="col-span-2 rounded-lg bg-crit-bg px-3.5 py-3 text-[12.5px] text-[#a12525]">
+                    Encrypted fields can&rsquo;t be read: KYC_ENCRYPTION_KEY is missing or wrong on
+                    the server.
+                  </div>
+                )}
+                <Field label="Account holder name" value={kyc?.row.account_holder_name ?? "—"} />
+                <Field label="Bank account number" value={kyc?.account ?? "—"} />
+                <Field label="IFSC code" value={kyc?.ifsc ?? "—"} />
+                <DocField label="Cancelled cheque / passbook" url={kyc?.chequeUrl ?? null} />
+                <div className="col-span-2">
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                    Certifications
+                  </div>
+                  {kyc?.certificationUrls.length ? (
+                    <ul className="space-y-1">
+                      {kyc.certificationUrls.map((c) => (
+                        <li key={c.name}>
+                          {c.url ? (
+                            <a
+                              href={c.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-brand"
+                            >
+                              {c.name} &rarr;
+                            </a>
+                          ) : (
+                            c.name
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-ink-2">Not uploaded</span>
+                  )}
+                </div>
+                <Field
+                  label="Privacy consent"
+                  value={
+                    kyc?.row.consent_at
+                      ? `${formatDate(kyc.row.consent_at)} (${kyc.row.consent_version})`
+                      : "Not given"
+                  }
+                />
+                {kyc?.row.deletion_requested_at && (
+                  <Field
+                    label="Data deletion requested"
+                    value={formatDate(kyc.row.deletion_requested_at)}
+                  />
+                )}
+                <p className="col-span-2 text-[11.5px] text-muted">
+                  Document links expire after 5 minutes. Views of this page are logged.
+                </p>
               </div>
             </Card>
           </div>
@@ -263,7 +318,7 @@ function DocField({ label, url }: { label: string; url: string | null }) {
         {label}
       </div>
       {url ? (
-        <a href={url} target="_blank" rel="noreferrer" className="font-semibold text-brand">
+        <a href={url} target="_blank" rel="noreferrer noopener" className="font-semibold text-brand">
           View document &rarr;
         </a>
       ) : (

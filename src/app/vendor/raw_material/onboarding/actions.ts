@@ -2,78 +2,52 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { saveVendorKyc } from "@/lib/kyc/save";
+import { GSTIN_RE, PINCODE_RE, clean, cleanUpper, type FieldErrors, type KycFormState } from "@/lib/kyc/rules";
 
-export interface OnboardingState {
-  error?: string;
-  success?: string;
-}
+export type OnboardingState = KycFormState;
 
 export async function updateKycAction(
   _prevState: OnboardingState,
   formData: FormData
 ): Promise<OnboardingState> {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "You must be logged in." };
 
-  const companyName = (formData.get("company_name") as string | null)?.trim();
-  const businessType = (formData.get("business_type") as string | null)?.trim();
-  const gstin = (formData.get("gstin") as string | null)?.trim();
-  const pan = (formData.get("pan") as string | null)?.trim();
-  const registeredAddress = (formData.get("registered_address") as string | null)?.trim();
-  const warehousePincode = (formData.get("warehouse_pincode") as string | null)?.trim();
-  const minOrderPolicy = (formData.get("min_order_policy") as string | null)?.trim();
-  const bankAccountNumber = (formData.get("bank_account_number") as string | null)?.trim();
-  const ifscCode = (formData.get("ifsc_code") as string | null)?.trim();
-  const cancelledChequeUrl = (formData.get("cancelled_cheque_url") as string | null)?.trim();
-  const certificationsUrl = (formData.get("certifications_url") as string | null)?.trim();
+  const companyName = clean(formData.get("company_name"));
+  const businessType = clean(formData.get("business_type"));
+  const gstin = cleanUpper(formData.get("gstin"));
+  const warehousePincode = clean(formData.get("warehouse_pincode"));
+  const minOrderPolicy = clean(formData.get("min_order_policy"));
   const materialsHandled = formData.getAll("materials_handled").map(String).filter(Boolean);
 
-  if (!companyName || !gstin || !pan || !registeredAddress || !warehousePincode) {
-    return {
-      error:
-        "Please fill in company name, GSTIN, PAN, registered address, and warehouse pincode.",
-    };
-  }
+  const errors: FieldErrors = {};
+  if (!companyName) errors.company_name = "Legal business name is required.";
+  if (companyName.length > 200) errors.company_name = "Name is too long.";
+  if (!gstin) errors.gstin = "GSTIN is required.";
+  else if (!GSTIN_RE.test(gstin)) errors.gstin = "GSTIN should look like 27ABCDE1234F1Z5.";
+  if (!warehousePincode) errors.warehouse_pincode = "Warehouse pincode is required.";
+  else if (!PINCODE_RE.test(warehousePincode)) errors.warehouse_pincode = "Pincode should be 6 digits.";
 
-  const { data: existing } = await supabase
-    .from("vendor_profiles")
-    .select("kyc_status")
-    .eq("id", user.id)
-    .single();
-
-  const { error } = await supabase
-    .from("vendor_profiles")
-    .update({
+  const result = await saveVendorKyc({
+    supabase,
+    vendorId: user.id,
+    formData,
+    gstin: gstin || null,
+    profileErrors: errors,
+    profileUpdate: {
       company_name: companyName,
-      business_type: businessType || null,
+      business_type: businessType.slice(0, 60) || null,
       gstin: gstin || null,
-      pan: pan || null,
-      registered_address: registeredAddress || null,
       warehouse_pincode: warehousePincode || null,
       materials_handled: materialsHandled.length ? materialsHandled : null,
-      min_order_policy: minOrderPolicy || null,
-      bank_account_number: bankAccountNumber || null,
-      ifsc_code: ifscCode || null,
-      cancelled_cheque_url: cancelledChequeUrl || null,
-      certifications_url: certificationsUrl || null,
-      kyc_status: existing?.kyc_status === "draft" ? "pending" : existing?.kyc_status,
-    })
-    .eq("id", user.id);
+      min_order_policy: minOrderPolicy.slice(0, 200) || null,
+    },
+  });
 
-  if (error) {
-    return { error: error.message };
-  }
-
-  revalidatePath("/vendor/raw_material", "layout");
-
-  return {
-    success:
-      existing?.kyc_status === "draft"
-        ? "Your KYC details have been submitted for admin review."
-        : "Your KYC details have been saved.",
-  };
+  if (result.success) revalidatePath("/vendor/raw_material", "layout");
+  return result;
 }

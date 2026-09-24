@@ -2,13 +2,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { OnboardingForm } from "./OnboardingForm";
+import { PrivacyCard } from "@/components/kyc/PrivacyCard";
+import { loadKycRow, toKycView } from "@/lib/kyc/server";
 
-export default async function OnboardingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ saved?: string }>;
-}) {
-  const { saved } = await searchParams;
+export default async function OnboardingPage() {
   const supabase = await createClient();
 
   const {
@@ -17,7 +14,7 @@ export default async function OnboardingPage({
 
   if (!user) redirect("/login");
 
-  const [{ data: vendorProfile }, { data: processOptions }, { data: materialOptions }] =
+  const [{ data: vendorProfile }, { data: processOptions }, { data: materialOptions }, kycRow] =
     await Promise.all([
       supabase.from("vendor_profiles").select("*").eq("id", user.id).single(),
       supabase
@@ -33,7 +30,9 @@ export default async function OnboardingPage({
         .eq("status", "active")
         .is("parent_id", null)
         .order("name"),
+      loadKycRow(supabase, user.id),
     ]);
+  const kyc = toKycView(kycRow);
 
   if (!vendorProfile) redirect("/login");
 
@@ -46,10 +45,11 @@ export default async function OnboardingPage({
       <div className="pt-6">
         <OnboardingForm
           vendorProfile={vendorProfile}
+          kyc={kyc}
           processOptions={processOptions ?? []}
           materialOptions={materialOptions ?? []}
-          saved={saved === "1"}
         />
+        <PrivacyCard kyc={kyc} />
       </div>
     </div>
   );

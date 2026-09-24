@@ -9,6 +9,8 @@ export interface NavItem {
   label: string;
   href: string;
   count?: number;
+  /** Shows a "Soon" tag for parked features. */
+  soon?: boolean;
 }
 
 export function Sidebar({
@@ -48,6 +50,11 @@ export function Sidebar({
               )}
             >
               <span>{item.label}</span>
+              {item.soon && (
+                <span className="rounded-full bg-plane px-[7px] py-px text-[10.5px] font-semibold text-muted">
+                  Soon
+                </span>
+              )}
               {typeof item.count === "number" && (
                 <span className="rounded-full bg-accent-orange px-[7px] py-px text-[10.5px] font-extrabold text-white">
                   {item.count}
