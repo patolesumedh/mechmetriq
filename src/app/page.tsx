@@ -3,6 +3,13 @@ import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { InstantQuoteDemo } from "@/components/marketing/InstantQuoteDemo";
 import { cn } from "@/lib/cn";
+import Link from "next/link";
+import { getFeaturedItems } from "@/lib/rawMaterials/featured";
+import { inr } from "@/lib/rawMaterials/format";
+import { ShapeIcon } from "./raw-materials/_components/ShapeIcon";
+
+// Marketplace teaser shows live rate-card prices; refresh at most every 5 minutes.
+export const revalidate = 300;
 
 const PROCESSES = [
   { code: "CNC", name: "CNC Machining", comingSoon: false },
@@ -13,12 +20,6 @@ const PROCESSES = [
   { code: "LC", name: "Laser Cutting", comingSoon: true },
 ];
 
-const PRODUCTS = [
-  { img: "ALUMINIUM SHEET", cat: "Metals", name: "Al 6061 Sheet, 2mm", price: "₹340" },
-  { img: "SS ROD", cat: "Metals", name: "SS 304 Round Rod, 12mm", price: "₹410" },
-  { img: "ABS BLOCK", cat: "Plastics", name: "ABS Engineering Block", price: "₹185" },
-  { img: "MS PLATE", cat: "Metals", name: "Mild Steel Plate, 5mm", price: "₹78" },
-];
 
 const TESTIMONIALS = [
   {
@@ -43,7 +44,8 @@ const TESTIMONIALS = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const featured = await getFeaturedItems();
   return (
     <div className="bg-surface">
       <SiteHeader />
@@ -137,32 +139,56 @@ export default function HomePage() {
 
       {/* Marketplace teaser */}
       <section id="marketplace" className="mx-auto max-w-[1180px] scroll-mt-20 px-8 py-16">
-        <div className="mx-auto mb-10 max-w-[600px] text-center">
-          <div className="mb-2 text-[12.5px] font-bold uppercase tracking-wide text-brand">
-            Raw Materials Marketplace
-          </div>
+        <div className="mx-auto mb-10 max-w-[640px] text-center">
+          <Link
+            href="/raw-materials"
+            className="mb-2 inline-block text-[12.5px] font-bold uppercase tracking-wide text-brand hover:text-brand-dark hover:underline"
+          >
+            Raw Materials Marketplace &rarr;
+          </Link>
           <h2 className="mb-2.5 text-[32px] font-bold tracking-tight">
-            Buy metals, plastics &amp; sheets directly
+            <Link href="/raw-materials" className="hover:text-brand-dark">
+              Buy metals by the kg &mdash; cut to size, with MTC
+            </Link>
           </h2>
           <p className="text-[15px] text-ink-2">
-            Standard stock from verified vendors &mdash; priced, graded and ready to ship.
+            Bars, sheets, plates, pipes and sections in 87 grades &mdash; transparent ₹/kg rates, supplied by
+            verified vendors.
           </p>
         </div>
         <div className="grid grid-cols-4 gap-4">
-          {PRODUCTS.map((p) => (
-            <div key={p.name} className="overflow-hidden rounded-xl border border-grid">
-              <div className="flex h-[110px] items-center justify-center bg-linear-to-br from-[#eef2f6] to-[#e3e8ee] text-[11px] tracking-wide text-muted">
-                {p.img}
+          {featured.map((p) => (
+            <Link
+              key={p.href}
+              href={p.href}
+              className="group overflow-hidden rounded-xl border border-grid transition-colors hover:border-brand"
+            >
+              <div className="flex h-[110px] items-center justify-center bg-linear-to-br from-[#eef2f6] to-[#e3e8ee] text-brand-dark">
+                <ShapeIcon formula={p.formula} className="h-12 w-12" />
               </div>
               <div className="p-3.5">
-                <div className="mb-1 text-[11px] uppercase tracking-wide text-muted">{p.cat}</div>
-                <div className="mb-1.5 text-[13.5px] font-semibold">{p.name}</div>
+                <div className="mb-1 text-[11px] uppercase tracking-wide text-muted">
+                  {p.materialName || "Metals"}
+                  {p.shapeName && ` · ${p.shapeName}`}
+                </div>
+                <div className="mb-1.5 text-[13.5px] font-semibold group-hover:text-brand-dark">{p.label}</div>
                 <div className="text-sm font-extrabold">
-                  {p.price} <span className="text-[11.5px] font-normal text-muted">/ kg</span>
+                  {p.ratePerKg !== null ? (
+                    <>
+                      {inr(p.ratePerKg)} <span className="text-[11.5px] font-normal text-muted">/ kg</span>
+                    </>
+                  ) : (
+                    <span className="text-[12.5px] font-semibold text-brand">See price &rarr;</span>
+                  )}
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
+        </div>
+        <div className="mt-8 text-center">
+          <ButtonLink href="/raw-materials" size="lg">
+            Browse the marketplace &rarr;
+          </ButtonLink>
         </div>
       </section>
 

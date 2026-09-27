@@ -18,6 +18,7 @@ async function requireAdmin() {
 function refresh() {
   revalidatePath("/admin/raw-materials");
   revalidatePath("/raw-materials", "layout");
+  revalidatePath("/"); // homepage teaser shows live rates
 }
 
 /** Saves every changed base rate in one material's block. Inputs: rate:<grade_id>. */
