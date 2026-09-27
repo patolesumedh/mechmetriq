@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { initialsFrom } from "./_lib/helpers";
 
 const KYC_BANNER_COPY: Record<string, string> = {
-  draft: "Complete your KYC to start listing materials.",
+  draft: "Complete your KYC to start receiving orders.",
   pending: "Your KYC is pending review by our team.",
   rejected: "Your KYC was rejected. Please review and resubmit your details.",
   on_hold: "Your KYC is on hold. Contact support for more details.",
@@ -46,7 +46,7 @@ export default async function RawMaterialVendorLayout({
         sectionLabel="Raw Material Vendor"
         items={[
           { label: "Overview", href: "/vendor/raw_material" },
-          { label: "My Listings", href: "/vendor/raw_material/listings" },
+          { label: "What I Supply", href: "/vendor/raw_material/supply" },
           { label: "Orders", href: "/vendor/raw_material/orders" },
           { label: "Earnings", href: "/vendor/raw_material/earnings" },
           { label: "KYC / Profile", href: "/vendor/raw_material/onboarding" },
@@ -65,7 +65,7 @@ export default async function RawMaterialVendorLayout({
                 {vendor.kyc_status.replace("_", " ")}
               </span>
               {KYC_BANNER_COPY[vendor.kyc_status] ??
-                "Complete your KYC to start listing materials."}
+                "Complete your KYC to start receiving orders."}
             </p>
             <Link
               href="/vendor/raw_material/onboarding"

@@ -24,6 +24,12 @@ export default async function AdminLayout({
 
   if (!profile || profile.role !== "admin") redirect("/login");
 
+  const { count: rmPending } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("order_type", "raw_material")
+    .eq("status", "draft");
+
   return (
     <div className="flex min-h-screen">
       <Sidebar
@@ -34,6 +40,7 @@ export default async function AdminLayout({
           { label: "Vendors", href: "/admin/vendors" },
           { label: "Orders", href: "/admin/orders" },
           { label: "Quotes & RFQs", href: "/admin/quotes" },
+          { label: "Raw Material Marketplace", href: "/admin/raw-materials", count: rmPending || undefined },
           { label: "Category & Material Master", href: "/admin/catalog" },
           { label: "Disputes", href: "/admin/disputes" },
           { label: "Settings", href: "/admin/settings" },

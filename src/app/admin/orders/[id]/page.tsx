@@ -13,13 +13,19 @@ import {
   paymentStatusTone,
   titleCase,
 } from "../../_lib/format";
+import { RmLinesTable, RmTotals } from "@/components/rawMaterials/RmOrderParts";
+import { rmStatusLabel } from "@/lib/rawMaterials/format";
+import { RmApprovalCard } from "./RmApprovalCard";
 
 export default async function AdminOrderDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ rm_error?: string; rm_done?: string }>;
 }) {
   const { id } = await params;
+  const { rm_error: rmError, rm_done: rmDone } = await searchParams;
   const supabase = await createClient();
 
   const { data: order } = await supabase.from("orders").select("*").eq("id", id).single();
@@ -34,7 +40,9 @@ export default async function AdminOrderDetailPage({
     { data: disputes },
   ] = await Promise.all([
     supabase.from("profiles").select("full_name, email, phone").eq("id", order.buyer_id).single(),
-    supabase.from("vendor_profiles").select("company_name, gstin").eq("id", order.vendor_id).single(),
+    order.vendor_id
+      ? supabase.from("vendor_profiles").select("company_name, gstin").eq("id", order.vendor_id).single()
+      : Promise.resolve({ data: null }),
     order.delivery_address_id
       ? supabase
           .from("addresses")
@@ -42,10 +50,24 @@ export default async function AdminOrderDetailPage({
           .eq("id", order.delivery_address_id)
           .single()
       : Promise.resolve({ data: null }),
-    supabase.from("order_items").select("*").eq("order_id", id),
+    supabase.from("order_items").select("*").eq("order_id", id).order("rm_line_no"),
     supabase.from("payments").select("*").eq("order_id", id).order("created_at", { ascending: false }),
     supabase.from("disputes").select("id, status").eq("order_id", id),
   ]);
+
+  const isRm = order.order_type === "raw_material";
+  const needsApproval = isRm && order.status === "draft";
+  const [{ data: eligible }, { data: rmVendors }] = needsApproval
+    ? await Promise.all([
+        supabase.rpc("rm_eligible_vendors", { p_order_id: id }),
+        supabase
+          .from("vendor_profiles")
+          .select("id, company_name")
+          .eq("vendor_type", "raw_material")
+          .eq("kyc_status", "approved")
+          .order("company_name"),
+      ])
+    : [{ data: null }, { data: null }];
 
   return (
     <div>
@@ -93,6 +115,12 @@ export default async function AdminOrderDetailPage({
             </div>
           </Card>
 
+          {isRm ? (
+            <Card>
+              <CardHeader title={`Line Items · ${rmStatusLabel(order.status)}`} />
+              <RmLinesTable items={items ?? []} />
+            </Card>
+          ) : (
           <Card>
             <CardHeader title="Line Items" />
             <Table>
@@ -117,6 +145,7 @@ export default async function AdminOrderDetailPage({
               </tbody>
             </Table>
           </Card>
+          )}
 
           <Card>
             <CardHeader title="Payments" />
@@ -151,6 +180,29 @@ export default async function AdminOrderDetailPage({
         </div>
 
         <div className="space-y-4.5">
+          {needsApproval && (
+            <RmApprovalCard
+              orderId={order.id}
+              eligible={eligible ?? []}
+              allVendors={rmVendors ?? []}
+              error={rmError}
+              done={rmDone}
+            />
+          )}
+          {isRm && !needsApproval && rmDone && (
+            <Card className="border-[#bfe3bf] bg-good-bg px-5 py-3 text-[13px] text-[#0a6b0a]">Order {rmDone}.</Card>
+          )}
+          {isRm ? (
+            <Card>
+              <CardHeader title="Totals" />
+              <div className="p-5">
+                <RmTotals order={order} />
+                {order.rm_admin_note && (
+                  <p className="mt-3 text-[12.5px] text-ink-2">Note: {order.rm_admin_note}</p>
+                )}
+              </div>
+            </Card>
+          ) : (
           <Card>
             <CardHeader title="Totals" />
             <div className="space-y-2.5 p-5 text-[13px]">
@@ -163,6 +215,7 @@ export default async function AdminOrderDetailPage({
               </div>
             </div>
           </Card>
+          )}
 
           <Card>
             <CardHeader title="Buyer" />
@@ -178,12 +231,16 @@ export default async function AdminOrderDetailPage({
             <div className="space-y-2 p-5 text-[13px]">
               <Field label="Company">{vendor?.company_name ?? "—"}</Field>
               <Field label="GSTIN">{vendor?.gstin ?? "—"}</Field>
-              <Link
-                href={`/admin/vendors/${order.vendor_id}`}
-                className="text-[12.5px] font-semibold text-brand"
-              >
-                View vendor profile &rarr;
-              </Link>
+              {order.vendor_id ? (
+                <Link
+                  href={`/admin/vendors/${order.vendor_id}`}
+                  className="text-[12.5px] font-semibold text-brand"
+                >
+                  View vendor profile &rarr;
+                </Link>
+              ) : (
+                <p className="text-[12.5px] text-muted">Assigned on approval.</p>
+              )}
             </div>
           </Card>
 

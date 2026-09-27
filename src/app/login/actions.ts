@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardPath } from "@/lib/auth/getDashboardPath";
+import { safeNextPath } from "@/lib/rawMaterials/format";
 
 export interface LoginState {
   error?: string;
@@ -22,5 +23,8 @@ export async function loginAction(
     return { error: error.message };
   }
 
-  redirect(await getDashboardPath(supabase, data.user.id));
+  const dashboard = await getDashboardPath(supabase, data.user.id);
+  // Honour ?next= only for buyers (the marketplace/cart); everyone else goes home.
+  const next = safeNextPath(formData.get("next") as string | null);
+  redirect(next && dashboard === "/buyer" ? next : dashboard);
 }

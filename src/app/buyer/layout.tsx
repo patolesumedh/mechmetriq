@@ -28,6 +28,11 @@ export default async function BuyerLayout({
     redirect("/login");
   }
 
+  const { count: cartCount } = await supabase
+    .from("rm_cart_items")
+    .select("id", { count: "exact", head: true })
+    .eq("buyer_id", user.id);
+
   return (
     <div className="flex min-h-screen">
       <Sidebar
@@ -37,7 +42,8 @@ export default async function BuyerLayout({
           { label: "Get Instant Quote", href: "/buyer/quote" },
           { label: "My Quotes", href: "/buyer/quotes" },
           { label: "My Orders", href: "/buyer/orders" },
-          { label: "Marketplace", href: "/buyer/marketplace" },
+          { label: "Raw Materials", href: "/raw-materials" },
+          { label: "Cart", href: "/buyer/cart", count: cartCount || undefined },
           { label: "Addresses", href: "/buyer/addresses" },
           { label: "Profile", href: "/buyer/profile" },
         ]}

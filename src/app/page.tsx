@@ -69,7 +69,7 @@ export default function HomePage() {
               <ButtonLink href="/register?intent=quote" size="lg">
                 Get Instant Quote &rarr;
               </ButtonLink>
-              <ButtonLink href="/#marketplace" variant="outline" size="lg">
+              <ButtonLink href="/raw-materials" variant="outline" size="lg">
                 Browse Marketplace
               </ButtonLink>
             </div>

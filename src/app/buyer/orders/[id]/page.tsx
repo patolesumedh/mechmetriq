@@ -10,13 +10,17 @@ import {
   paymentStatusTone,
   statusLabel,
 } from "../../_lib/ui";
+import { RmOrderDetail } from "./RmOrderDetail";
 
 export default async function OrderDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ placed?: string }>;
 }) {
   const { id } = await params;
+  const { placed } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -27,6 +31,22 @@ export default async function OrderDetailPage({
   const { data: order } = await supabase.from("orders").select("*").eq("id", id).single();
   if (!order || order.buyer_id !== user.id) notFound();
 
+  if (order.order_type === "raw_material") {
+    const [{ data: rmItems }, { data: rmAddress }] = await Promise.all([
+      supabase.from("order_items").select("*").eq("order_id", order.id).order("rm_line_no"),
+      order.delivery_address_id
+        ? supabase
+            .from("addresses")
+            .select("label, full_address, pincode")
+            .eq("id", order.delivery_address_id)
+            .single()
+        : Promise.resolve({ data: null }),
+    ]);
+    return (
+      <RmOrderDetail order={order} items={rmItems ?? []} address={rmAddress} justPlaced={placed === "1"} />
+    );
+  }
+
   const [{ data: items }, { data: payments }, { data: vendor }, { data: address }] =
     await Promise.all([
       supabase.from("order_items").select("*").eq("order_id", order.id),
@@ -35,7 +55,9 @@ export default async function OrderDetailPage({
         .select("*")
         .eq("order_id", order.id)
         .order("created_at", { ascending: false }),
-      supabase.from("vendor_profiles").select("company_name").eq("id", order.vendor_id).single(),
+      order.vendor_id
+        ? supabase.from("vendor_profiles").select("company_name").eq("id", order.vendor_id).single()
+        : Promise.resolve({ data: null }),
       order.delivery_address_id
         ? supabase.from("addresses").select("*").eq("id", order.delivery_address_id).single()
         : Promise.resolve({ data: null }),
