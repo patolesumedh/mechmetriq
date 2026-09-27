@@ -31,8 +31,8 @@ const FAB_STEPS = [
 
 const MATERIAL_STEPS = [
   { n: "1", title: "Register & verify (KYC)", body: "Sign up as a Raw Material Supplier and complete KYC verification." },
-  { n: "2", title: "List your stock", body: "Add materials with grade, dimensions, pricing and available quantity." },
-  { n: "3", title: "Receive orders", body: "Buyers order directly from your listings in the marketplace." },
+  { n: "2", title: "Declare what you supply", body: "Tell us the shapes and grades you stock and where you dispatch from." },
+  { n: "3", title: "Receive assigned orders", body: "We price orders from our rate card and assign them to you — no bidding, no chasing buyers." },
   { n: "4", title: "Ship & invoice", body: "Fulfil the order and dispatch with GST-compliant invoicing." },
 ];
 

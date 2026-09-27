@@ -11,7 +11,7 @@ import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 const NAV_LINKS = [
   { label: "How It Works", href: "/how-it-works" },
   { label: "Services", href: "/services" },
-  { label: "Marketplace", href: "/#marketplace" },
+  { label: "Marketplace", href: "/raw-materials" },
   { label: "Pricing", href: "/pricing" },
   { label: "For Vendors", href: "/for-vendors" },
   { label: "About", href: "/about" },
@@ -79,7 +79,7 @@ export function SiteHeader() {
         </div>
         <nav className="flex gap-7 text-sm text-ink-2">
           {NAV_LINKS.map((link) => {
-            const active = link.href !== "/#marketplace" && pathname === link.href;
+            const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
               <Link
                 key={link.href}

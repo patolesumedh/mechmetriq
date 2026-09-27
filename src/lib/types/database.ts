@@ -331,6 +331,24 @@ export type Database = {
       }
       order_items: {
         Row: {
+          rm_line_no: number | null
+          rm_cut: boolean | null
+          rm_cut_charge: number | null
+          rm_dims: Json | null
+          rm_discount: number | null
+          rm_grade_id: string | null
+          rm_gst_rate: number | null
+          rm_hsn_code: string | null
+          rm_length_mm: number | null
+          rm_material_value: number | null
+          rm_mtc: boolean | null
+          rm_mtc_fee: number | null
+          rm_piece_weight_kg: number | null
+          rm_rate_per_kg: number | null
+          rm_sell_by: string | null
+          rm_shape_id: string | null
+          rm_taxable_value: number | null
+          rm_weight_kg: number | null
           description: string
           id: string
           line_total: number
@@ -340,6 +358,24 @@ export type Database = {
           unit_price: number
         }
         Insert: {
+          rm_line_no?: number | null
+          rm_cut?: boolean | null
+          rm_cut_charge?: number | null
+          rm_dims?: Json | null
+          rm_discount?: number | null
+          rm_grade_id?: string | null
+          rm_gst_rate?: number | null
+          rm_hsn_code?: string | null
+          rm_length_mm?: number | null
+          rm_material_value?: number | null
+          rm_mtc?: boolean | null
+          rm_mtc_fee?: number | null
+          rm_piece_weight_kg?: number | null
+          rm_rate_per_kg?: number | null
+          rm_sell_by?: string | null
+          rm_shape_id?: string | null
+          rm_taxable_value?: number | null
+          rm_weight_kg?: number | null
           description: string
           id?: string
           line_total: number
@@ -349,6 +385,24 @@ export type Database = {
           unit_price: number
         }
         Update: {
+          rm_line_no?: number | null
+          rm_cut?: boolean | null
+          rm_cut_charge?: number | null
+          rm_dims?: Json | null
+          rm_discount?: number | null
+          rm_grade_id?: string | null
+          rm_gst_rate?: number | null
+          rm_hsn_code?: string | null
+          rm_length_mm?: number | null
+          rm_material_value?: number | null
+          rm_mtc?: boolean | null
+          rm_mtc_fee?: number | null
+          rm_piece_weight_kg?: number | null
+          rm_rate_per_kg?: number | null
+          rm_sell_by?: string | null
+          rm_shape_id?: string | null
+          rm_taxable_value?: number | null
+          rm_weight_kg?: number | null
           description?: string
           id?: string
           line_total?: number
@@ -376,6 +430,15 @@ export type Database = {
       }
       orders: {
         Row: {
+          rm_admin_note: string | null
+          rm_approved_at: string | null
+          rm_approved_by: string | null
+          rm_bulk_discount: number | null
+          rm_cut_charges: number | null
+          rm_material_value: number | null
+          rm_mtc_charges: number | null
+          rm_paid_at: string | null
+          rm_total_weight_kg: number | null
           billing_gstin: string | null
           buyer_id: string
           created_at: string
@@ -392,9 +455,18 @@ export type Database = {
           total_amount: number
           tracking_number: string | null
           updated_at: string
-          vendor_id: string
+          vendor_id: string | null
         }
         Insert: {
+          rm_admin_note?: string | null
+          rm_approved_at?: string | null
+          rm_approved_by?: string | null
+          rm_bulk_discount?: number | null
+          rm_cut_charges?: number | null
+          rm_material_value?: number | null
+          rm_mtc_charges?: number | null
+          rm_paid_at?: string | null
+          rm_total_weight_kg?: number | null
           billing_gstin?: string | null
           buyer_id: string
           created_at?: string
@@ -411,9 +483,18 @@ export type Database = {
           total_amount?: number
           tracking_number?: string | null
           updated_at?: string
-          vendor_id: string
+          vendor_id?: string | null
         }
         Update: {
+          rm_admin_note?: string | null
+          rm_approved_at?: string | null
+          rm_approved_by?: string | null
+          rm_bulk_discount?: number | null
+          rm_cut_charges?: number | null
+          rm_material_value?: number | null
+          rm_mtc_charges?: number | null
+          rm_paid_at?: string | null
+          rm_total_weight_kg?: number | null
           billing_gstin?: string | null
           buyer_id?: string
           created_at?: string
@@ -430,7 +511,7 @@ export type Database = {
           total_amount?: number
           tracking_number?: string | null
           updated_at?: string
-          vendor_id?: string
+          vendor_id?: string | null
         }
         Relationships: [
           {
@@ -804,6 +885,333 @@ export type Database = {
           },
         ]
       }
+      rm_cart_items: {
+        Row: {
+          buyer_id: string
+          created_at: string
+          dims: Json
+          grade_id: string
+          id: string
+          length_mm: number | null
+          mtc: boolean
+          notes: string | null
+          quantity: number
+          shape_id: string
+        }
+        Insert: {
+          buyer_id: string
+          created_at?: string
+          dims: Json
+          grade_id: string
+          id?: string
+          length_mm?: number | null
+          mtc?: boolean
+          notes?: string | null
+          quantity: number
+          shape_id: string
+        }
+        Update: {
+          buyer_id?: string
+          created_at?: string
+          dims?: Json
+          grade_id?: string
+          id?: string
+          length_mm?: number | null
+          mtc?: boolean
+          notes?: string | null
+          quantity?: number
+          shape_id?: string
+        }
+        Relationships: []
+      }
+      rm_grades: {
+        Row: {
+          active: boolean
+          applications: string | null
+          created_at: string
+          density: number | null
+          description: string
+          equivalents: string | null
+          id: string
+          material_id: string
+          mtc_available: boolean
+          name: string
+          shape_slugs: string[] | null
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          applications?: string | null
+          created_at?: string
+          density?: number | null
+          description?: string
+          equivalents?: string | null
+          id?: string
+          material_id: string
+          mtc_available?: boolean
+          name: string
+          shape_slugs?: string[] | null
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          applications?: string | null
+          created_at?: string
+          density?: number | null
+          description?: string
+          equivalents?: string | null
+          id?: string
+          material_id?: string
+          mtc_available?: boolean
+          name?: string
+          shape_slugs?: string[] | null
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      rm_materials: {
+        Row: {
+          active: boolean
+          created_at: string
+          density: number
+          description: string
+          gst_rate: number
+          hsn_codes: Json
+          id: string
+          name: string
+          short_name: string | null
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          density: number
+          description?: string
+          gst_rate?: number
+          hsn_codes?: Json
+          id?: string
+          name: string
+          short_name?: string | null
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          density?: number
+          description?: string
+          gst_rate?: number
+          hsn_codes?: Json
+          id?: string
+          name?: string
+          short_name?: string | null
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      rm_rate_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          grade_id: string
+          id: number
+          new_rate: number | null
+          old_rate: number | null
+          shape_id: string | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          grade_id: string
+          id?: number
+          new_rate?: number | null
+          old_rate?: number | null
+          shape_id?: string | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          grade_id?: string
+          id?: number
+          new_rate?: number | null
+          old_rate?: number | null
+          shape_id?: string | null
+        }
+        Relationships: []
+      }
+      rm_rates: {
+        Row: {
+          grade_id: string
+          id: string
+          rate_per_kg: number
+          shape_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          grade_id: string
+          id?: string
+          rate_per_kg: number
+          shape_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          grade_id?: string
+          id?: string
+          rate_per_kg?: number
+          shape_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      rm_settings: {
+        Row: {
+          bulk_tiers: Json
+          cut_charge_per_cut: number
+          cut_charge_per_kg: number
+          freight_gst_rate: number
+          id: number
+          min_order_value: number
+          mtc_fee: number
+          updated_at: string
+        }
+        Insert: {
+          bulk_tiers?: Json
+          cut_charge_per_cut?: number
+          cut_charge_per_kg?: number
+          freight_gst_rate?: number
+          id?: number
+          min_order_value?: number
+          mtc_fee?: number
+          updated_at?: string
+        }
+        Update: {
+          bulk_tiers?: Json
+          cut_charge_per_cut?: number
+          cut_charge_per_kg?: number
+          freight_gst_rate?: number
+          id?: number
+          min_order_value?: number
+          mtc_fee?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rm_shape_materials: {
+        Row: {
+          material_id: string
+          shape_id: string
+        }
+        Insert: {
+          material_id: string
+          shape_id: string
+        }
+        Update: {
+          material_id?: string
+          shape_id?: string
+        }
+        Relationships: []
+      }
+      rm_shapes: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          dims: Json
+          family: string
+          formula: string
+          hsn_key: string
+          id: string
+          name: string
+          rate_premium_pct: number
+          sell_by: string
+          slug: string
+          sort_order: number
+          std_lengths: number[]
+          std_sheet_sizes: Json
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          dims?: Json
+          family: string
+          formula: string
+          hsn_key: string
+          id?: string
+          name: string
+          rate_premium_pct?: number
+          sell_by?: string
+          slug: string
+          sort_order?: number
+          std_lengths?: number[]
+          std_sheet_sizes?: Json
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          dims?: Json
+          family?: string
+          formula?: string
+          hsn_key?: string
+          id?: string
+          name?: string
+          rate_premium_pct?: number
+          sell_by?: string
+          slug?: string
+          sort_order?: number
+          std_lengths?: number[]
+          std_sheet_sizes?: Json
+        }
+        Relationships: []
+      }
+      rm_vendor_supply: {
+        Row: {
+          active: boolean
+          created_at: string
+          cut_to_size: boolean
+          grade_id: string
+          id: string
+          mtc_available: boolean
+          shape_id: string
+          size_range: string | null
+          vendor_id: string
+          warehouse_pincode: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          cut_to_size?: boolean
+          grade_id: string
+          id?: string
+          mtc_available?: boolean
+          shape_id: string
+          size_range?: string | null
+          vendor_id: string
+          warehouse_pincode?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          cut_to_size?: boolean
+          grade_id?: string
+          id?: string
+          mtc_available?: boolean
+          shape_id?: string
+          size_range?: string | null
+          vendor_id?: string
+          warehouse_pincode?: string | null
+        }
+        Relationships: []
+      }
       staff_roles: {
         Row: {
           created_at: string
@@ -1034,6 +1442,96 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      rm_add_to_cart: {
+        Args: {
+          p_dims: Json
+          p_grade_id: string
+          p_length_mm: number | null
+          p_mtc: boolean
+          p_notes?: string | null
+          p_quantity: number
+          p_shape_id: string
+        }
+        Returns: string
+      }
+      rm_approve_order: {
+        Args: { p_freight: number; p_note?: string | null; p_order_id: string; p_vendor_id: string }
+        Returns: undefined
+      }
+      rm_bulk_pct: { Args: { p_weight_kg: number }; Returns: number }
+      rm_cancel_order: { Args: { p_order_id: string }; Returns: undefined }
+      rm_cart_quote: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cart_item_id: string
+          shape_id: string
+          grade_id: string
+          dims: Json
+          quantity: number
+          mtc: boolean
+          notes: string | null
+          description: string | null
+          sell_by: string | null
+          piece_weight_kg: number | null
+          weight_kg: number | null
+          rate_per_kg: number | null
+          material_value: number | null
+          cut: boolean | null
+          cut_charge: number | null
+          mtc_fee: number | null
+          hsn_code: string | null
+          gst_rate: number | null
+          length_mm: number | null
+          error: string | null
+        }[]
+      }
+      rm_eligible_vendors: {
+        Args: { p_order_id: string }
+        Returns: {
+          vendor_id: string
+          company_name: string
+          warehouse_pincodes: string | null
+          lines_covered: number
+          lines_total: number
+        }[]
+      }
+      rm_pay_order: {
+        Args: {
+          p_gateway_ref?: string | null
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_order_id: string
+        }
+        Returns: undefined
+      }
+      rm_place_order: {
+        Args: { p_address_id: string; p_billing_gstin?: string | null }
+        Returns: string
+      }
+      rm_price_line: {
+        Args: {
+          p_dims: Json
+          p_grade_id: string
+          p_length_mm: number | null
+          p_mtc: boolean
+          p_quantity: number
+          p_shape_id: string
+        }
+        Returns: {
+          description: string
+          sell_by: string
+          piece_weight_kg: number | null
+          weight_kg: number
+          rate_per_kg: number
+          material_value: number
+          cut: boolean
+          cut_charge: number
+          mtc_fee: number
+          hsn_code: string | null
+          gst_rate: number
+          length_mm: number | null
+        }[]
+      }
+      rm_reject_order: { Args: { p_note: string; p_order_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_vendor_owner: { Args: { v_id: string }; Returns: boolean }
       log_kyc_event: {

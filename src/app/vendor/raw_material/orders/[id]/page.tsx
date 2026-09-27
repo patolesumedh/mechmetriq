@@ -32,7 +32,7 @@ export default async function OrderDetailPage({
   }
 
   const [{ data: orderItems }, { data: buyer }] = await Promise.all([
-    supabase.from("order_items").select("*").eq("order_id", order.id),
+    supabase.from("order_items").select("*").eq("order_id", order.id).order("rm_line_no"),
     supabase.from("profiles").select("full_name,email,phone").eq("id", order.buyer_id).single(),
   ]);
 
@@ -77,6 +77,14 @@ export default async function OrderDetailPage({
                 <tr key={it.id}>
                   <td className="border-b border-grid px-5 py-3 text-[13px] font-semibold">
                     {it.listing_id ? (listingTitleById.get(it.listing_id) ?? it.description) : it.description}
+                    {it.rm_weight_kg !== null && (
+                      <div className="mt-0.5 text-[12px] font-normal text-muted">
+                        {Number(it.rm_weight_kg)} kg theoretical
+                        {it.rm_hsn_code ? ` · HSN ${it.rm_hsn_code}` : ""}
+                        {it.rm_cut ? " · cut to size" : ""}
+                        {it.rm_mtc ? " · MTC required" : ""}
+                      </div>
+                    )}
                   </td>
                   <td className="border-b border-grid px-5 py-3 text-[13px] text-ink-2">{it.quantity}</td>
                   <td className="border-b border-grid px-5 py-3 text-[13px] text-ink-2">

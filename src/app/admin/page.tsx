@@ -56,7 +56,7 @@ export default async function AdminOverviewPage() {
     .limit(5);
 
   const buyerIds = [...new Set((recentOrders ?? []).map((o) => o.buyer_id))];
-  const vendorIds = [...new Set((recentOrders ?? []).map((o) => o.vendor_id))];
+  const vendorIds = [...new Set((recentOrders ?? []).map((o) => o.vendor_id).filter((v): v is string => Boolean(v)))];
 
   let buyerProfiles: { id: string; full_name: string }[] = [];
   if (buyerIds.length) {
@@ -159,7 +159,7 @@ export default async function AdminOverviewPage() {
                     </Link>
                   </Td>
                   <Td>{buyerNameById.get(o.buyer_id) ?? "—"}</Td>
-                  <Td>{vendorNameById.get(o.vendor_id) ?? "—"}</Td>
+                  <Td>{(o.vendor_id ? vendorNameById.get(o.vendor_id) : "Unassigned") ?? "—"}</Td>
                   <Td strong>{formatINR(o.total_amount)}</Td>
                   <Td>
                     <Badge tone={orderStatusTone(o.status)}>{titleCase(o.status)}</Badge>

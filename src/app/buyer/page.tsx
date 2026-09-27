@@ -55,7 +55,9 @@ export default async function BuyerOverviewPage() {
   const { data: items } = await supabase.from("master_items").select("id, name").in("id", itemIds);
   const itemMap = new Map((items ?? []).map((i) => [i.id, i.name]));
 
-  const vendorIds = Array.from(new Set(recentOrders.map((o) => o.vendor_id)));
+  const vendorIds = Array.from(
+    new Set(recentOrders.map((o) => o.vendor_id).filter((v): v is string => Boolean(v)))
+  );
   const { data: vendors } = await supabase
     .from("vendor_profiles")
     .select("id, company_name")
@@ -119,7 +121,7 @@ export default async function BuyerOverviewPage() {
                 <div>
                   <div className="font-semibold text-ink">{order.order_number}</div>
                   <div className="text-[12px] text-muted">
-                    {vendorMap.get(order.vendor_id) ?? "Vendor"} · {formatDate(order.created_at)}
+                    {order.order_type === "raw_material" ? "MECHmetrIQ Raw Materials" : (vendorMap.get(order.vendor_id ?? "") ?? "Vendor")} · {formatDate(order.created_at)}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

@@ -6,12 +6,13 @@ import { loginAction, type LoginState } from "./actions";
 
 const initialState: LoginState = {};
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string | null }) {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-plane px-6">
       <form action={formAction} className="w-full max-w-[400px] rounded-2xl border border-grid bg-surface p-8">
+        {next && <input type="hidden" name="next" value={next} />}
         <Link href="/" className="mb-6 flex w-fit items-center gap-2 text-lg font-bold transition-opacity hover:opacity-90">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-linear-to-br from-brand to-brand-dark text-sm font-extrabold text-white">
             M

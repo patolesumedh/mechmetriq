@@ -34,13 +34,13 @@ const MATERIAL_STEPS = [
   },
   {
     n: "2",
-    title: "Add to cart & checkout",
-    body: "Pick quantity and delivery address, apply a coupon if you have one, and place your order in a few clicks.",
+    title: "Add to cart & get a proforma",
+    body: "Enter sizes and quantity, see weight and price per kg, and place your order — your proforma is generated instantly.",
   },
   {
     n: "3",
-    title: "Vendor ships with GST invoice",
-    body: "The Raw Material Supplier fulfils your order and dispatches with proper GST documentation.",
+    title: "We confirm, you pay, it ships",
+    body: "We assign a verified supplier and confirm freight; you pay after approval and the material ships with GST invoice and MTC if requested.",
   },
   {
     n: "4",
@@ -119,7 +119,7 @@ export default function HowItWorksPage() {
           ))}
         </div>
         <div className="mt-6">
-          <ButtonLink href="/#marketplace" variant="outline">
+          <ButtonLink href="/raw-materials" variant="outline">
             Browse Marketplace
           </ButtonLink>
         </div>
@@ -137,7 +137,7 @@ export default function HowItWorksPage() {
               </h2>
               <p className="max-w-[480px] text-[14.5px] leading-relaxed text-ink-2">
                 Machining/Fabrication vendors receive RFQs and submit quotes; Raw Material
-                Suppliers list stock straight to the marketplace. Each gets its own onboarding,
+                Suppliers declare what they stock and receive assigned orders. Each gets its own onboarding,
                 KYC and dashboard.
               </p>
             </div>

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { formatCurrency, formatDate, orderStatusTone, statusLabel } from "../_lib/ui";
+import { rmStatusLabel } from "@/lib/rawMaterials/format";
 
 export default async function OrdersPage() {
   const supabase = await createClient();
@@ -22,7 +23,9 @@ export default async function OrdersPage() {
     .order("created_at", { ascending: false });
   const allOrders = orders ?? [];
 
-  const vendorIds = Array.from(new Set(allOrders.map((o) => o.vendor_id)));
+  const vendorIds = Array.from(
+    new Set(allOrders.map((o) => o.vendor_id).filter((v): v is string => Boolean(v)))
+  );
   const { data: vendors } = await supabase
     .from("vendor_profiles")
     .select("id, company_name")
@@ -52,12 +55,19 @@ export default async function OrdersPage() {
                     </Badge>
                   </div>
                   <div className="text-[12px] text-muted">
-                    {vendorMap.get(order.vendor_id) ?? "Vendor"} · {formatDate(order.created_at)}
+                    {order.order_type === "raw_material"
+                      ? "MECHmetrIQ Raw Materials"
+                      : (vendorMap.get(order.vendor_id ?? "") ?? "Vendor")}{" "}
+                    · {formatDate(order.created_at)}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="font-semibold">{formatCurrency(order.total_amount)}</span>
-                  <Badge tone={orderStatusTone(order.status)}>{statusLabel(order.status)}</Badge>
+                  <Badge tone={orderStatusTone(order.status)}>
+                    {order.order_type === "raw_material"
+                      ? rmStatusLabel(order.status)
+                      : statusLabel(order.status)}
+                  </Badge>
                 </div>
               </Link>
             ))}
@@ -66,7 +76,7 @@ export default async function OrdersPage() {
       ) : (
         <Card className="flex flex-col items-center gap-3 px-5 py-14 text-center">
           <p className="text-[13.5px] text-ink-2">You don&rsquo;t have any orders yet.</p>
-          <ButtonLink href="/buyer/marketplace">Browse Marketplace</ButtonLink>
+          <ButtonLink href="/raw-materials">Browse Raw Materials</ButtonLink>
         </Card>
       )}
     </>
