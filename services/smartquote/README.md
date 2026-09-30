@@ -49,14 +49,13 @@ tool-path preview points) and `warnings`.
 
 ## Deploy
 
-It's a plain Docker image, so any container host works. Needs **1 GB RAM**
-minimum. Pick a region close to Mumbai (Singapore / Mumbai).
+It's a plain Docker image, so any container host works. Each request uses
+**~450 MB RAM** (measured on the samples), so give it **2 GB** for 2 parallel
+requests. On Render that's the Standard plan; Free/Starter (512 MB) crash. Pick a region close to Mumbai (Singapore / Mumbai).
 
 **Render (simplest):** New → Blueprint → pick the mechmetriq repo (it reads
 `render.yaml` at the repo root). Or New → Web Service → Docker with root
 directory `services/smartquote`. Set `SMARTQUOTE_API_KEY`.
-The free plan sleeps when idle, so the first analysis after a quiet spell
-waits ~1 minute; the Starter plan doesn't sleep.
 
 **Google Cloud Run / Railway / Fly.io:** build the `Dockerfile`, expose port
 `8000` (Cloud Run sets `PORT` itself), 1 GB memory, set `SMARTQUOTE_API_KEY`.
