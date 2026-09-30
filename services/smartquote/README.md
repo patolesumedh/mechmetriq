@@ -57,6 +57,13 @@ requests. On Render that's the Standard plan; Free/Starter (512 MB) crash. Pick 
 `render.yaml` at the repo root). Or New → Web Service → Docker with root
 directory `services/smartquote`. Set `SMARTQUOTE_API_KEY`.
 
+**Hugging Face Spaces (free, no card):** create a **public** Docker Space
+(blank template), upload `deploy/huggingface-README.md` as `README.md` plus
+`Dockerfile`, `requirements.txt` and `app/`, and add the Space secret
+`SMARTQUOTE_API_KEY`. URL: `https://<user>-<space>.hf.space`. The free tier
+has 16 GB RAM but sleeps after ~48 h without traffic; the first call after
+that fails while it wakes (~1–2 min) and can be re-run from admin.
+
 **Google Cloud Run / Railway / Fly.io:** build the `Dockerfile`, expose port
 `8000` (Cloud Run sets `PORT` itself), 1 GB memory, set `SMARTQUOTE_API_KEY`.
 
