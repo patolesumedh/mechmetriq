@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import type { Tables } from "@/lib/types/database";
 import { acceptQuoteAction } from "./actions";
+import { AnalysisList, isRunning, type AnalysisRow } from "@/components/smartQuote/AnalysisList";
+import { AutoRefresh } from "@/components/smartQuote/AutoRefresh";
 import {
   formatCurrency,
   formatDate,
@@ -38,6 +40,18 @@ export default async function QuotesPage() {
     .order("total_price", { ascending: true });
   const allQuotes = quotes ?? [];
 
+  const { data: analyses } = await supabase
+    .from("cad_analyses")
+    .select("id, rfq_id, file_name, status, error, summary, updated_at")
+    .in("rfq_id", rfqIds)
+    .order("created_at", { ascending: true });
+  const analysesByRfq = new Map<string, AnalysisRow[]>();
+  for (const a of analyses ?? []) {
+    const list = analysesByRfq.get(a.rfq_id) ?? [];
+    list.push(a);
+    analysesByRfq.set(a.rfq_id, list);
+  }
+
   const itemIds = Array.from(
     new Set(
       allRfqs.flatMap((r) => [r.process_id, r.material_id]).filter((v): v is string => Boolean(v))
@@ -65,6 +79,7 @@ export default async function QuotesPage() {
       <div className="-mx-7 -mt-7 mb-7">
         <Topbar title="My Quotes" />
       </div>
+      <AutoRefresh active={isRunning(analyses ?? [])} />
 
       {allRfqs.length > 0 ? (
         <div className="flex flex-col gap-4">
@@ -83,6 +98,10 @@ export default async function QuotesPage() {
                   </span>
                   <Badge tone={rfqStatusTone(rfq.status)}>{statusLabel(rfq.status)}</Badge>
                 </div>
+                <AnalysisList
+                  rows={analysesByRfq.get(rfq.id) ?? []}
+                  hrefFor={(id) => `/buyer/quotes/analysis/${id}`}
+                />
                 {rfqQuotes.length > 0 ? (
                   <div className="divide-y divide-grid">
                     {rfqQuotes.map((quote) => (

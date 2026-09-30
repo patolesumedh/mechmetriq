@@ -1,0 +1,13 @@
+# One-click deploy on Render (Blueprint). Other hosts: build services/smartquote/Dockerfile.
+services:
+  - type: web
+    name: mechmetriq-smartquote
+    runtime: docker
+    rootDir: services/smartquote
+    dockerfilePath: ./Dockerfile
+    plan: starter        # free plan sleeps after inactivity (~1 min cold start)
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: SMARTQUOTE_API_KEY
+        sync: false      # set in the dashboard; same value as in Vercel

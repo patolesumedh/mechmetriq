@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { QuoteForm } from "./QuoteForm";
 
+// The submit action reads STEP files in the background (next/server `after`),
+// which runs within this route's time limit.
+export const maxDuration = 300;
+
 export default async function QuotePage() {
   const supabase = await createClient();
 

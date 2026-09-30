@@ -5,8 +5,44 @@ import Link from "next/link";
 import { createRfqAction, type QuoteFormState } from "./actions";
 import type { Tables } from "@/lib/types/database";
 import { cn } from "@/lib/cn";
+import { createClient } from "@/lib/supabase/client";
+import { isStepFile } from "@/lib/smartQuote/shared";
 
 const initialState: QuoteFormState = {};
+
+/**
+ * Upload the chosen files straight from the browser into the buyer's own
+ * folder in the private rfq-attachments bucket, then hand the storage paths
+ * to the server action. (Posting the files through the action would hit the
+ * request-size limit for anything over ~1 MB.)
+ */
+async function uploadAndSubmit(prev: QuoteFormState, formData: FormData): Promise<QuoteFormState> {
+  const files = formData
+    .getAll("cad_files")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  formData.delete("cad_files");
+
+  if (files.length > 0) {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { error: "Your session has expired. Please sign in again." };
+
+    for (const file of files) {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${user.id}/${Date.now()}-${safeName}`;
+      const { error } = await supabase.storage.from("rfq-attachments").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false,
+      });
+      if (error) return { error: `Failed to upload "${file.name}": ${error.message}` };
+      formData.append("cad_paths", path);
+    }
+  }
+
+  return createRfqAction(prev, formData);
+}
 
 const inputClass =
   "w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand";
@@ -172,6 +208,9 @@ function FileDropzone({ name }: { name: string }) {
         <span className="text-[11.5px] text-muted">
           STEP, IGES, DWG, DXF, STL, PDF, or images — up to 25MB each
         </span>
+        <span className="text-[11.5px] font-medium text-brand-dark">
+          STEP files are read automatically — you&rsquo;ll see the part&rsquo;s features on My Quotes.
+        </span>
         <input
           ref={inputRef}
           type="file"
@@ -194,6 +233,11 @@ function FileDropzone({ name }: { name: string }) {
             >
               <span className="truncate">
                 {file.name} <span className="text-muted">({formatBytes(file.size)})</span>
+                {isStepFile(file.name) && (
+                  <span className="ml-2 rounded-full bg-brand-light px-2 py-0.5 text-[10.5px] font-bold text-brand-dark">
+                    Auto-analysed
+                  </span>
+                )}
               </span>
               <button
                 type="button"
@@ -296,7 +340,7 @@ export function QuoteForm({
   materials: Tables<"master_items">[];
   addresses: Tables<"addresses">[];
 }) {
-  const [state, formAction, pending] = useActionState(createRfqAction, initialState);
+  const [state, formAction, pending] = useActionState(uploadAndSubmit, initialState);
 
   return (
     <form

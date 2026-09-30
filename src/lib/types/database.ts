@@ -55,6 +55,75 @@ export type Database = {
           },
         ]
       }
+      cad_analyses: {
+        Row: {
+          analysis_version: string | null
+          attempts: number
+          buyer_id: string
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          file_name: string
+          id: string
+          processing_ms: number | null
+          result: Json | null
+          rfq_id: string
+          status: string
+          storage_path: string
+          summary: Json | null
+          updated_at: string
+        }
+        Insert: {
+          analysis_version?: string | null
+          attempts?: number
+          buyer_id: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          file_name: string
+          id?: string
+          processing_ms?: number | null
+          result?: Json | null
+          rfq_id: string
+          status?: string
+          storage_path: string
+          summary?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          analysis_version?: string | null
+          attempts?: number
+          buyer_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          file_name?: string
+          id?: string
+          processing_ms?: number | null
+          result?: Json | null
+          rfq_id?: string
+          status?: string
+          storage_path?: string
+          summary?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cad_analyses_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cad_analyses_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           code: string

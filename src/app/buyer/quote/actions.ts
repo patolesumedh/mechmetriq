@@ -1,7 +1,9 @@
 "use server";
 
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { queueCadAnalyses, runCadAnalyses } from "@/lib/smartQuote/server";
 
 export interface QuoteFormState {
   error?: string;
@@ -45,27 +47,16 @@ export async function createRfqAction(
     return { error: "Please enter a valid quantity." };
   }
 
-  const files = formData
-    .getAll("cad_files")
-    .filter((f): f is File => f instanceof File && f.size > 0);
+  // Files are uploaded from the browser straight to Storage (server actions
+  // and Vercel cap request bodies well below typical CAD file sizes), so the
+  // form sends storage paths. Only paths inside the buyer's own folder count.
+  const cadFileUrls = formData
+    .getAll("cad_paths")
+    .map((v) => v.toString())
+    .filter((p) => p.startsWith(`${user.id}/`) && !p.includes("..") && p.length < 400)
+    .slice(0, 20);
 
-  const cadFileUrls: string[] = [];
-  for (const file of files) {
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `${user.id}/${Date.now()}-${safeName}`;
-    const { error: uploadError } = await supabase.storage
-      .from("rfq-attachments")
-      .upload(path, file, {
-        contentType: file.type || undefined,
-        upsert: false,
-      });
-    if (uploadError) {
-      return { error: `Failed to upload "${file.name}": ${uploadError.message}` };
-    }
-    cadFileUrls.push(path);
-  }
-
-  const { error } = await supabase.from("rfqs").insert({
+  const { data: rfq, error } = await supabase.from("rfqs").insert({
     buyer_id: user.id,
     process_id: processId,
     material_id: materialId || null,
@@ -86,10 +77,17 @@ export async function createRfqAction(
     special_instructions: specialInstructions,
     cad_file_urls: cadFileUrls.length > 0 ? cadFileUrls : null,
     status: "pending",
-  });
+  }).select("id").single();
 
-  if (error) {
-    return { error: error.message };
+  if (error || !rfq) {
+    return { error: error?.message ?? "Couldn't save your request." };
+  }
+
+  // Smart Quote v1: read every STEP file after the response is sent, so the
+  // buyer isn't kept waiting. Results appear on My Quotes.
+  const analysisIds = await queueCadAnalyses(rfq.id, user.id, cadFileUrls);
+  if (analysisIds.length > 0) {
+    after(() => runCadAnalyses(analysisIds));
   }
 
   redirect("/buyer/quotes");
