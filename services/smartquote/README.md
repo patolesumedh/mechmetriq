@@ -49,20 +49,19 @@ tool-path preview points) and `warnings`.
 
 ## Deploy
 
-It's a plain Docker image, so any container host works. Each request uses
-**~450 MB RAM** (measured on the samples), so give it **2 GB** for 2 parallel
-requests. On Render that's the Standard plan; Free/Starter (512 MB) crash. Pick a region close to Mumbai (Singapore / Mumbai).
+It's a plain Docker image, so any container host works. Memory per worker is
+~470 MB resident, of which ~185 MB is private (the rest is shared OpenCascade
+library pages). One worker fits in 512 MB (Render Free, for testing); use
+2 GB and `WEB_CONCURRENCY=2` for real traffic (Render Standard). Pick a region close to Mumbai (Singapore / Mumbai).
 
 **Render (simplest):** New → Blueprint → pick the mechmetriq repo (it reads
 `render.yaml` at the repo root). Or New → Web Service → Docker with root
 directory `services/smartquote`. Set `SMARTQUOTE_API_KEY`.
 
-**Hugging Face Spaces (free, no card):** create a **public** Docker Space
-(blank template), upload `deploy/huggingface-README.md` as `README.md` plus
-`Dockerfile`, `requirements.txt` and `app/`, and add the Space secret
-`SMARTQUOTE_API_KEY`. URL: `https://<user>-<space>.hf.space`. The free tier
-has 16 GB RAM but sleeps after ~48 h without traffic; the first call after
-that fails while it wakes (~1–2 min) and can be re-run from admin.
+**Hugging Face Spaces:** Docker Spaces need a PRO plan. With one, create a
+**public** Docker Space, upload `deploy/huggingface-README.md` as `README.md`
+plus `Dockerfile`, `requirements.txt` and `app/`, and add the Space secret
+`SMARTQUOTE_API_KEY`. URL: `https://<user>-<space>.hf.space`.
 
 **Google Cloud Run / Railway / Fly.io:** build the `Dockerfile`, expose port
 `8000` (Cloud Run sets `PORT` itself), 1 GB memory, set `SMARTQUOTE_API_KEY`.

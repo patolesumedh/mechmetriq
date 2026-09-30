@@ -42,8 +42,8 @@ can't run on Vercel. It runs as its own small container.
 2. **Deploy the parser.** Render → New → Blueprint → pick this repo (reads
    `render.yaml`). Set `SMARTQUOTE_API_KEY` to the key. Wait for
    `https://<your-service>.onrender.com/health` to show `{"ok":true}`.
-   (Standard plan, 2 GB. The parser needs ~450 MB per file, so the 512 MB
-   Free/Starter plans run out of memory.)
+   `render.yaml` uses the **Free** plan (one worker, sleeps after 15 min idle,
+   first analysis then waits ~1–2 min). For real traffic switch to Standard.
 3. **Vercel → Settings → Environment Variables** (Production + Preview):
    - `SMARTQUOTE_API_URL` = `https://<your-service>.onrender.com`
    - `SMARTQUOTE_API_KEY` = the same key
