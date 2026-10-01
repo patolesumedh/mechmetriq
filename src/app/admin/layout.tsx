@@ -40,6 +40,7 @@ export default async function AdminLayout({
           { label: "Vendors", href: "/admin/vendors" },
           { label: "Orders", href: "/admin/orders" },
           { label: "Quotes & RFQs", href: "/admin/quotes" },
+          { label: "Smart Quote rates", href: "/admin/smart-quote" },
           { label: "Raw Material Marketplace", href: "/admin/raw-materials", count: rmPending || undefined },
           { label: "Category & Material Master", href: "/admin/catalog" },
           { label: "Disputes", href: "/admin/disputes" },

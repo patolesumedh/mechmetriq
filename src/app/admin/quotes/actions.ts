@@ -51,3 +51,38 @@ export async function rerunAnalysisAction(formData: FormData) {
   revalidatePath(`/admin/quotes/analysis/${id}`);
   redirect(`/admin/quotes/analysis/${id}`);
 }
+
+/** Admin confirms (or corrects) the price shown to the buyer. */
+export async function confirmPriceAction(formData: FormData) {
+  const supabase = await requireAdmin();
+  const rfqId = String(formData.get("rfq_id") ?? "");
+  const unit = Number(formData.get("unit_price"));
+  const lead = Math.floor(Number(formData.get("lead_days")));
+  const note = String(formData.get("note") ?? "").trim().slice(0, 300) || null;
+  if (!Number.isFinite(unit) || unit <= 0 || unit > 10_000_000 || !Number.isFinite(lead) || lead < 1 || lead > 365) {
+    redirect(`/admin/quotes/${rfqId}?error=invalid`);
+  }
+  const { data: rfq } = await supabase.from("rfqs").select("id, quantity").eq("id", rfqId).maybeSingle();
+  if (!rfq) redirect("/admin/quotes");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error } = await supabase
+    .from("rfqs")
+    .update({
+      price_status: "confirmed",
+      confirmed_unit_price: Math.round(unit * 100) / 100,
+      confirmed_total: Math.round(unit * rfq.quantity * 100) / 100,
+      confirmed_lead_days: lead,
+      confirmed_at: new Date().toISOString(),
+      confirmed_by: user?.id ?? null,
+      price_note: note,
+      status: "quoted",
+    })
+    .eq("id", rfqId);
+  if (error) redirect(`/admin/quotes/${rfqId}?error=save`);
+  revalidatePath("/admin/quotes");
+  revalidatePath(`/admin/quotes/${rfqId}`);
+  redirect(`/admin/quotes/${rfqId}?confirmed=1`);
+}

@@ -12,6 +12,7 @@ import os
 import cadquery as cq
 
 from . import poc_parsing as P
+from .thumbnail import render_thumbnail_png
 
 ANALYSIS_VERSION = "smartquote-v1"
 
@@ -241,4 +242,10 @@ def analyze_step(step_file, include_faces=False):
     if include_faces:
         result["faces"] = primitive_faces
 
-    return _clean(result)
+    cleaned = _clean(result)
+    try:
+        cleaned["thumbnail_png_base64"] = render_thumbnail_png(solids, coordinate_system["local_z"])
+    except Exception as exc:  # a preview must never fail the analysis
+        cleaned["thumbnail_png_base64"] = None
+        cleaned["warnings"].append(f"Preview image could not be rendered ({type(exc).__name__}).")
+    return cleaned

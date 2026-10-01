@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Table, Th, Td, EmptyRow } from "../_components/table";
 import { formatDate, rfqStatusTone, titleCase } from "../_lib/format";
 import Link from "next/link";
+import { formatInr } from "@/lib/smartQuote/pricing";
 import { analysisStatus, isRunning } from "@/components/smartQuote/AnalysisList";
 import { AutoRefresh } from "@/components/smartQuote/AutoRefresh";
 import { isStepFile } from "@/lib/smartQuote/shared";
@@ -23,7 +24,7 @@ export default async function AdminQuotesPage({
 
   const { data: rfqs } = await supabase
     .from("rfqs")
-    .select("id, buyer_id, process_id, material_id, quantity, status, created_at, cad_file_urls")
+    .select("id, buyer_id, process_id, material_id, quantity, status, created_at, cad_file_urls, price_status, estimated_total, confirmed_total")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -53,7 +54,7 @@ export default async function AdminQuotesPage({
     quotes = data ?? [];
   }
 
-  let analyses: { id: string; rfq_id: string; file_name: string; status: string; updated_at: string }[] = [];
+  let analyses: { id: string; rfq_id: string | null; file_name: string; status: string; updated_at: string }[] = [];
   if (rfqIds.length) {
     const { data } = await supabase
       .from("cad_analyses")
@@ -64,6 +65,7 @@ export default async function AdminQuotesPage({
   }
   const analysesByRfq = new Map<string, typeof analyses>();
   for (const a of analyses) {
+    if (!a.rfq_id) continue;
     analysesByRfq.set(a.rfq_id, [...(analysesByRfq.get(a.rfq_id) ?? []), a]);
   }
 
@@ -95,21 +97,43 @@ export default async function AdminQuotesPage({
                 <Th>Material</Th>
                 <Th>Qty</Th>
                 <Th>Status</Th>
+                <Th>Price</Th>
                 <Th>CAD analysis</Th>
                 <Th>Quotes received</Th>
                 <Th>Submitted</Th>
               </tr>
             </thead>
             <tbody>
-              {(rfqs ?? []).length === 0 && <EmptyRow colSpan={8}>No RFQs submitted yet.</EmptyRow>}
+              {(rfqs ?? []).length === 0 && <EmptyRow colSpan={9}>No RFQs submitted yet.</EmptyRow>}
               {(rfqs ?? []).map((r) => (
                 <tr key={r.id}>
-                  <Td strong>{buyerNameById.get(r.buyer_id) ?? "—"}</Td>
+                  <Td strong>
+                    <Link href={`/admin/quotes/${r.id}`} className="text-brand">
+                      {buyerNameById.get(r.buyer_id) ?? "—"}
+                    </Link>
+                  </Td>
                   <Td>{r.process_id ? masterNameById.get(r.process_id) ?? "—" : "—"}</Td>
                   <Td>{r.material_id ? masterNameById.get(r.material_id) ?? "—" : "—"}</Td>
                   <Td>{r.quantity}</Td>
                   <Td>
                     <Badge tone={rfqStatusTone(r.status)}>{titleCase(r.status)}</Badge>
+                  </Td>
+                  <Td>
+                    <Link href={`/admin/quotes/${r.id}`} className="flex flex-col">
+                      {r.price_status === "confirmed" ? (
+                        <>
+                          <span className="font-semibold text-ink">{formatInr(Number(r.confirmed_total ?? 0))}</span>
+                          <span className="text-[11.5px] text-[#0a6b0a]">Confirmed</span>
+                        </>
+                      ) : r.price_status === "estimated" ? (
+                        <>
+                          <span className="font-semibold text-ink">{formatInr(Number(r.estimated_total ?? 0))}</span>
+                          <span className="text-[11.5px] font-semibold text-[#a8461a]">Estimate · review</span>
+                        </>
+                      ) : (
+                        <span className="text-[12px] font-semibold text-[#a8461a]">Needs pricing</span>
+                      )}
+                    </Link>
                   </Td>
                   <Td>
                     <CadCell

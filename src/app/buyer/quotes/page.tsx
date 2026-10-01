@@ -8,6 +8,7 @@ import type { Tables } from "@/lib/types/database";
 import { acceptQuoteAction } from "./actions";
 import { AnalysisList, isRunning, type AnalysisRow } from "@/components/smartQuote/AnalysisList";
 import { AutoRefresh } from "@/components/smartQuote/AutoRefresh";
+import { PriceBlock } from "@/components/smartQuote/PriceBlock";
 import {
   formatCurrency,
   formatDate,
@@ -16,7 +17,12 @@ import {
   statusLabel,
 } from "../_lib/ui";
 
-export default async function QuotesPage() {
+export default async function QuotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ submitted?: string }>;
+}) {
+  const { submitted } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -47,6 +53,7 @@ export default async function QuotesPage() {
     .order("created_at", { ascending: true });
   const analysesByRfq = new Map<string, AnalysisRow[]>();
   for (const a of analyses ?? []) {
+    if (!a.rfq_id) continue;
     const list = analysesByRfq.get(a.rfq_id) ?? [];
     list.push(a);
     analysesByRfq.set(a.rfq_id, list);
@@ -59,6 +66,11 @@ export default async function QuotesPage() {
   );
   const { data: items } = await supabase.from("master_items").select("id, name").in("id", itemIds);
   const itemMap = new Map((items ?? []).map((i) => [i.id, i.name]));
+  const gradeIds = Array.from(new Set(allRfqs.map((r) => r.rm_grade_id).filter((v): v is string => !!v)));
+  const { data: gradeRows } = gradeIds.length
+    ? await supabase.from("rm_grades").select("id, name").in("id", gradeIds)
+    : { data: [] as { id: string; name: string }[] };
+  const gradeMap = new Map((gradeRows ?? []).map((g) => [g.id, g.name]));
 
   const vendorIds = Array.from(new Set(allQuotes.map((q) => q.vendor_id)));
   const { data: vendors } = await supabase
@@ -80,12 +92,22 @@ export default async function QuotesPage() {
         <Topbar title="My Quotes" />
       </div>
       <AutoRefresh active={isRunning(analyses ?? [])} />
+      {submitted && (
+        <div className="mb-4 rounded-lg bg-good-bg px-4 py-3 text-[13px] font-medium text-[#0a6b0a]">
+          Request sent for {submitted} part{submitted === "1" ? "" : "s"}. Our team will confirm the price shortly.
+        </div>
+      )}
 
       {allRfqs.length > 0 ? (
         <div className="flex flex-col gap-4">
           {allRfqs.map((rfq) => {
             const rfqQuotes = quotesByRfq.get(rfq.id) ?? [];
-            const title = [itemMap.get(rfq.process_id ?? ""), rfq.material_id ? itemMap.get(rfq.material_id) : null]
+            const fileName = (rfq.cad_file_urls ?? [])[0]?.split("/").pop()?.replace(/^\d{10,}-/, "");
+            const title = [
+              fileName,
+              itemMap.get(rfq.process_id ?? ""),
+              rfq.rm_grade_id ? gradeMap.get(rfq.rm_grade_id) : rfq.material_id ? itemMap.get(rfq.material_id) : null,
+            ]
               .filter(Boolean)
               .join(" · ") || "Custom part RFQ";
 
@@ -98,6 +120,7 @@ export default async function QuotesPage() {
                   </span>
                   <Badge tone={rfqStatusTone(rfq.status)}>{statusLabel(rfq.status)}</Badge>
                 </div>
+                <PriceBlock rfq={rfq} />
                 <AnalysisList
                   rows={analysesByRfq.get(rfq.id) ?? []}
                   hrefFor={(id) => `/buyer/quotes/analysis/${id}`}
@@ -139,9 +162,9 @@ export default async function QuotesPage() {
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <div className="px-5 py-6 text-[13px] text-ink-2">Awaiting vendor quotes.</div>
-                )}
+                ) : rfq.price_status === "none" ? (
+                  <div className="px-5 py-5 text-[13px] text-ink-2">Our team is preparing your price.</div>
+                ) : null}
               </Card>
             );
           })}

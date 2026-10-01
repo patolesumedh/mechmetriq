@@ -57,7 +57,7 @@ export default async function AdminAnalysisPage({ params }: { params: Promise<{ 
         <Card className="flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 text-[12.5px] text-ink-2">
           <Badge tone={status.tone}>{status.label}</Badge>
           <span>Buyer: <b className="text-ink">{buyer?.full_name ?? "—"}</b></span>
-          <span>RFQ {row.rfq_id.slice(0, 8).toUpperCase()}</span>
+          <span>{row.rfq_id ? `RFQ ${row.rfq_id.slice(0, 8).toUpperCase()}` : "Not yet submitted"}</span>
           <span>Uploaded {formatDate(row.created_at)}</span>
           <span>Attempts: {row.attempts}</span>
           {signed?.signedUrl && (

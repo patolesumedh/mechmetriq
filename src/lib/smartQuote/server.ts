@@ -70,7 +70,7 @@ export async function runCadAnalysis(analysisId: string) {
 
   const { data: row } = await admin
     .from("cad_analyses")
-    .select("id, storage_path, file_name, attempts")
+    .select("id, buyer_id, storage_path, file_name, attempts")
     .eq("id", analysisId)
     .maybeSingle();
   if (!row) return;
@@ -126,12 +126,25 @@ export async function runCadAnalysis(analysisId: string) {
     return;
   }
 
-  let result: CadAnalysisResult;
+  let result: CadAnalysisResult & { thumbnail_png_base64?: string | null };
   try {
-    result = (await res.json()) as CadAnalysisResult;
+    result = (await res.json()) as typeof result;
   } catch {
     await fail("The analysis service returned an unreadable response.");
     return;
+  }
+
+  // Part preview: store the PNG next to the buyer's files, not in the JSON.
+  let thumbnailPath: string | null = null;
+  const png = result.thumbnail_png_base64;
+  delete result.thumbnail_png_base64;
+  if (png) {
+    const path = `${row.buyer_id}/thumbs/${analysisId}.png`;
+    const { error: upErr } = await admin.storage
+      .from(BUCKET)
+      .upload(path, Buffer.from(png, "base64"), { contentType: "image/png", upsert: true });
+    if (upErr) console.error("[smartquote] thumbnail upload failed", upErr.message);
+    else thumbnailPath = path;
   }
 
   const { error: saveError } = await admin
@@ -143,6 +156,7 @@ export async function runCadAnalysis(analysisId: string) {
       summary: buildSummary(result) as unknown as Json,
       analysis_version: result.analysis_version ?? null,
       processing_ms: result.processing_ms ?? null,
+      thumbnail_path: thumbnailPath,
       completed_at: new Date().toISOString(),
     })
     .eq("id", analysisId);
@@ -158,4 +172,24 @@ export async function runCadAnalyses(ids: string[]) {
   for (const id of ids) {
     await runCadAnalysis(id);
   }
+}
+
+/**
+ * Analyse a STEP file the buyer has just uploaded, before any RFQ exists.
+ * Returns the analysis id; the work continues in the background.
+ */
+export async function createPartAnalysis(buyerId: string, storagePath: string) {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("cad_analyses")
+    .insert({
+      rfq_id: null,
+      buyer_id: buyerId,
+      storage_path: storagePath,
+      file_name: fileNameFromPath(storagePath),
+    })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(error?.message ?? "Couldn't start the analysis.");
+  return data.id;
 }

@@ -36,6 +36,38 @@ can't run on Vercel. It runs as its own small container.
 | `src/app/admin/quotes/*` | "CAD analysis" column; "Analyse N STEP files" for RFQs from before v1; report + Re-run at `/admin/quotes/analysis/[id]`. |
 | `src/lib/smartQuote/`, `src/components/smartQuote/`, `src/lib/supabase/admin.ts` | Service call, result types, report UI, server-only service-role client. |
 
+## Instant estimate on upload (v1.1)
+
+**Get Instant Quote** now works like an instant-quote marketplace:
+
+1. The buyer drops STEP files. Each one uploads straight to Storage and is sent
+   to the parser right away (`startPartAnalysisAction`); the page polls until
+   it's read (~10–40 s; up to ~2 min if Render was asleep).
+2. A part card appears: shaded thumbnail (rendered by the parser), size and
+   volume, turned or milled, detected features, configuration (material from
+   the raw-material grade list, finish, tolerance, more options), quantity.
+3. Three price cards (Least expensive / Standard / Fastest) update live as the
+   buyer changes anything. Other file types (IGES, DWG, PDF…) become
+   "priced by our team" cards.
+4. **Request quote** creates one RFQ per part. The server recomputes the
+   estimate (the browser's numbers are never trusted) and stores it with
+   `price_status = 'estimated'`.
+5. Admin → Quotes & RFQs → open the RFQ: full cost breakdown and a **Confirm
+   price** form. The buyer then sees "Price confirmed" on My Quotes.
+
+**Pricing** (`src/lib/smartQuote/pricing.ts`): material (stock weight ×
+rate-card ₹/kg × scrap) + machining (rough + finish passes + capped feature
+minutes, × tolerance/roughness, × machine ₹/hr) + finish/inserts/marking per
+part; setup + programming, inspection, certificates per order; then margin,
+tier multiplier and minimum order value. Every number lives in `sq_settings`
+and is editable at **Admin → Smart Quote rates**. The defaults are starting
+points — calibrate them against a few past jobs.
+
+**Security:** a trigger (`rfqs_guard_price_fields`) blocks buyers from setting
+or changing any price field, quantity or material once an estimate exists;
+only the server (service role) and admins can. Migrations `0011`, `0012` are
+applied to production.
+
 ## Deploy — in this order
 
 1. **Generate a shared key** (any 64-char random string), e.g. `openssl rand -hex 32`.
