@@ -1,0 +1,20 @@
+# One-click deploy on Render (Blueprint). Other hosts: build services/smartquote/Dockerfile.
+services:
+  - type: web
+    name: mechmetriq-smartquote
+    runtime: docker
+    rootDir: services/smartquote
+    dockerfilePath: ./Dockerfile
+    # Free: 512 MB / 0.1 CPU, sleeps after 15 min idle (first call then waits ~1-2 min).
+    # The parser needs ~185 MB private memory per worker, so run ONE worker here.
+    # For real traffic switch to plan: standard (2 GB) and WEB_CONCURRENCY=2.
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    envVars:
+      - key: SMARTQUOTE_API_KEY
+        sync: false      # set in the dashboard; same value as in Vercel
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: SMARTQUOTE_TIMEOUT_S
+        value: "200"     # slower CPU on the free plan

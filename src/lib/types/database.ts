@@ -55,6 +55,78 @@ export type Database = {
           },
         ]
       }
+      cad_analyses: {
+        Row: {
+          analysis_version: string | null
+          attempts: number
+          buyer_id: string
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          file_name: string
+          id: string
+          processing_ms: number | null
+          result: Json | null
+          rfq_id: string | null
+          status: string
+          storage_path: string
+          summary: Json | null
+          thumbnail_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          analysis_version?: string | null
+          attempts?: number
+          buyer_id: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          file_name: string
+          id?: string
+          processing_ms?: number | null
+          result?: Json | null
+          rfq_id?: string | null
+          status?: string
+          storage_path: string
+          summary?: Json | null
+          thumbnail_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          analysis_version?: string | null
+          attempts?: number
+          buyer_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          file_name?: string
+          id?: string
+          processing_ms?: number | null
+          result?: Json | null
+          rfq_id?: string | null
+          status?: string
+          storage_path?: string
+          summary?: Json | null
+          thumbnail_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cad_analyses_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cad_analyses_rfq_id_fkey"
+            columns: ["rfq_id"]
+            isOneToOne: false
+            referencedRelation: "rfqs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coupons: {
         Row: {
           code: string
@@ -780,12 +852,22 @@ export type Database = {
       }
       rfqs: {
         Row: {
+          analysis_id: string | null
           buyer_id: string
           cad_file_urls: string[] | null
           certificates: string[]
           colour_coating: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          confirmed_lead_days: number | null
+          confirmed_total: number | null
+          confirmed_unit_price: number | null
           created_at: string
           delivery_address_id: string | null
+          estimate: Json | null
+          estimated_lead_days: number | null
+          estimated_total: number | null
+          estimated_unit_price: number | null
           finish_options: string[]
           id: string
           inserts_qty: number | null
@@ -793,8 +875,12 @@ export type Database = {
           lead_time_pref: string | null
           material_id: string | null
           part_marking: string[]
+          price_note: string | null
+          price_status: string
+          price_tier: string | null
           process_id: string | null
           quantity: number
+          rm_grade_id: string | null
           special_instructions: string | null
           status: Database["public"]["Enums"]["rfq_status"]
           subprocess: string | null
@@ -805,12 +891,22 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          analysis_id?: string | null
           buyer_id: string
           cad_file_urls?: string[] | null
           certificates?: string[]
           colour_coating?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          confirmed_lead_days?: number | null
+          confirmed_total?: number | null
+          confirmed_unit_price?: number | null
           created_at?: string
           delivery_address_id?: string | null
+          estimate?: Json | null
+          estimated_lead_days?: number | null
+          estimated_total?: number | null
+          estimated_unit_price?: number | null
           finish_options?: string[]
           id?: string
           inserts_qty?: number | null
@@ -818,8 +914,12 @@ export type Database = {
           lead_time_pref?: string | null
           material_id?: string | null
           part_marking?: string[]
+          price_note?: string | null
+          price_status?: string
+          price_tier?: string | null
           process_id?: string | null
           quantity: number
+          rm_grade_id?: string | null
           special_instructions?: string | null
           status?: Database["public"]["Enums"]["rfq_status"]
           subprocess?: string | null
@@ -830,12 +930,22 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          analysis_id?: string | null
           buyer_id?: string
           cad_file_urls?: string[] | null
           certificates?: string[]
           colour_coating?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          confirmed_lead_days?: number | null
+          confirmed_total?: number | null
+          confirmed_unit_price?: number | null
           created_at?: string
           delivery_address_id?: string | null
+          estimate?: Json | null
+          estimated_lead_days?: number | null
+          estimated_total?: number | null
+          estimated_unit_price?: number | null
           finish_options?: string[]
           id?: string
           inserts_qty?: number | null
@@ -843,8 +953,12 @@ export type Database = {
           lead_time_pref?: string | null
           material_id?: string | null
           part_marking?: string[]
+          price_note?: string | null
+          price_status?: string
+          price_tier?: string | null
           process_id?: string | null
           quantity?: number
+          rm_grade_id?: string | null
           special_instructions?: string | null
           status?: Database["public"]["Enums"]["rfq_status"]
           subprocess?: string | null
@@ -856,8 +970,22 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "rfqs_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "cad_analyses"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "rfqs_buyer_id_fkey"
             columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_confirmed_by_fkey"
+            columns: ["confirmed_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -881,6 +1009,13 @@ export type Database = {
             columns: ["process_id"]
             isOneToOne: false
             referencedRelation: "master_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rfqs_rm_grade_id_fkey"
+            columns: ["rm_grade_id"]
+            isOneToOne: false
+            referencedRelation: "rm_grades"
             referencedColumns: ["id"]
           },
         ]
@@ -1211,6 +1346,35 @@ export type Database = {
           warehouse_pincode?: string | null
         }
         Relationships: []
+      }
+      sq_settings: {
+        Row: {
+          config: Json
+          id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          config: Json
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          config?: Json
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sq_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       staff_roles: {
         Row: {
