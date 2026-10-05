@@ -35,7 +35,7 @@ export default async function OrdersPage() {
   return (
     <>
       <div className="-mx-7 -mt-7 mb-7">
-        <Topbar title="My Orders" />
+        <Topbar title="Previous Orders" />
       </div>
 
       {allOrders.length > 0 ? (

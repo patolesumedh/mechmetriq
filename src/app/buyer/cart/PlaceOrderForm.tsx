@@ -5,10 +5,12 @@ import { placeRmOrderAction, type CartActionState } from "./actions";
 
 export function PlaceOrderForm({
   addresses,
+  defaultGstin,
   disabled,
   disabledReason,
 }: {
   addresses: { id: string; label: string; full_address: string; pincode: string; is_default: boolean }[];
+  defaultGstin?: string;
   disabled: boolean;
   disabledReason?: string;
 }) {
@@ -61,6 +63,7 @@ export function PlaceOrderForm({
           name="billing_gstin"
           maxLength={15}
           autoCapitalize="characters"
+          defaultValue={defaultGstin || ""}
           placeholder="27ABCDE1234F1Z5"
           className="w-full rounded-lg border border-grid px-3 py-2.5 text-[13.5px] uppercase outline-none focus:border-brand"
         />

@@ -28,7 +28,7 @@ export default async function BuyerAnalysisPage({ params }: { params: Promise<{ 
         <Topbar title={row.file_name} />
       </div>
       <Link href="/buyer/quotes" className="mb-4 inline-block text-[12.5px] font-semibold text-brand">
-        &larr; Back to My Quotes
+        &larr; Back to Quotes &amp; Cart
       </Link>
       <div className="max-w-[900px]">
         <CadAnalysisReport result={row.result as unknown as CadAnalysisResult} />

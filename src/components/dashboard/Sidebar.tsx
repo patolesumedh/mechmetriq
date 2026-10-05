@@ -11,6 +11,8 @@ export interface NavItem {
   count?: number;
   /** Shows a "Soon" tag for parked features. */
   soon?: boolean;
+  /** Extra path prefixes (besides href) that should also light up this item, e.g. a merged nav entry covering two routes. */
+  matchPrefixes?: string[];
 }
 
 export function Sidebar({
@@ -39,7 +41,9 @@ export function Sidebar({
       </div>
       <nav className="flex flex-col gap-px">
         {items.map((item) => {
-          const active = pathname === item.href;
+          const matchesHref = (href: string) => pathname === href || pathname.startsWith(href + "/");
+          const active =
+            matchesHref(item.href) || (item.matchPrefixes?.some(matchesHref) ?? false);
           return (
             <Link
               key={item.href}

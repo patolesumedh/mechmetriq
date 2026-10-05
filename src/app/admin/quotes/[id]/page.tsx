@@ -66,7 +66,7 @@ export default async function AdminRfqPage({
         </Link>
         {confirmed && (
           <div className="rounded-lg bg-good-bg px-4 py-3 text-[13px] font-medium text-[#0a6b0a]">
-            Price confirmed — the buyer now sees it on My Quotes.
+            Price confirmed — the buyer now sees it on Quotes &amp; Cart.
           </div>
         )}
         {error && (

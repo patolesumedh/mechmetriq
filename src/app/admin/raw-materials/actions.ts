@@ -108,7 +108,7 @@ export async function approveRmOrderAction(formData: FormData) {
     p_order_id: orderId,
     p_vendor_id: vendorId,
     p_freight: freight,
-    p_note: note || null,
+    p_note: note || undefined, // RPC default is null; generated type only allows omitting it
   });
   if (error) redirect(`/admin/orders/${orderId}?rm_error=${encodeURIComponent(error.message)}`);
   revalidatePath(`/admin/orders/${orderId}`);

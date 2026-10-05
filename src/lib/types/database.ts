@@ -1,6 +1,3 @@
-// Auto-generated from the live Supabase schema via `mcp__Supabase__generate_typescript_types`.
-// Regenerate with: npx supabase gen types typescript --project-id qrnxhmasqpwjaceiuvds > src/lib/types/database.ts
-
 export type Json =
   | string
   | number
@@ -235,7 +232,7 @@ export type Database = {
           actor_id?: string | null
           created_at?: string
           fields?: string[]
-          id?: number
+          id?: never
           vendor_id: string
         }
         Update: {
@@ -243,7 +240,7 @@ export type Database = {
           actor_id?: string | null
           created_at?: string
           fields?: string[]
-          id?: number
+          id?: never
           vendor_id?: string
         }
         Relationships: [
@@ -403,7 +400,12 @@ export type Database = {
       }
       order_items: {
         Row: {
-          rm_line_no: number | null
+          description: string
+          id: string
+          line_total: number
+          listing_id: string | null
+          order_id: string
+          quantity: number
           rm_cut: boolean | null
           rm_cut_charge: number | null
           rm_dims: Json | null
@@ -412,6 +414,7 @@ export type Database = {
           rm_gst_rate: number | null
           rm_hsn_code: string | null
           rm_length_mm: number | null
+          rm_line_no: number | null
           rm_material_value: number | null
           rm_mtc: boolean | null
           rm_mtc_fee: number | null
@@ -421,43 +424,15 @@ export type Database = {
           rm_shape_id: string | null
           rm_taxable_value: number | null
           rm_weight_kg: number | null
-          description: string
-          id: string
-          line_total: number
-          listing_id: string | null
-          order_id: string
-          quantity: number
           unit_price: number
         }
         Insert: {
-          rm_line_no?: number | null
-          rm_cut?: boolean | null
-          rm_cut_charge?: number | null
-          rm_dims?: Json | null
-          rm_discount?: number | null
-          rm_grade_id?: string | null
-          rm_gst_rate?: number | null
-          rm_hsn_code?: string | null
-          rm_length_mm?: number | null
-          rm_material_value?: number | null
-          rm_mtc?: boolean | null
-          rm_mtc_fee?: number | null
-          rm_piece_weight_kg?: number | null
-          rm_rate_per_kg?: number | null
-          rm_sell_by?: string | null
-          rm_shape_id?: string | null
-          rm_taxable_value?: number | null
-          rm_weight_kg?: number | null
           description: string
           id?: string
           line_total: number
           listing_id?: string | null
           order_id: string
           quantity: number
-          unit_price: number
-        }
-        Update: {
-          rm_line_no?: number | null
           rm_cut?: boolean | null
           rm_cut_charge?: number | null
           rm_dims?: Json | null
@@ -466,6 +441,7 @@ export type Database = {
           rm_gst_rate?: number | null
           rm_hsn_code?: string | null
           rm_length_mm?: number | null
+          rm_line_no?: number | null
           rm_material_value?: number | null
           rm_mtc?: boolean | null
           rm_mtc_fee?: number | null
@@ -475,12 +451,33 @@ export type Database = {
           rm_shape_id?: string | null
           rm_taxable_value?: number | null
           rm_weight_kg?: number | null
+          unit_price: number
+        }
+        Update: {
           description?: string
           id?: string
           line_total?: number
           listing_id?: string | null
           order_id?: string
           quantity?: number
+          rm_cut?: boolean | null
+          rm_cut_charge?: number | null
+          rm_dims?: Json | null
+          rm_discount?: number | null
+          rm_grade_id?: string | null
+          rm_gst_rate?: number | null
+          rm_hsn_code?: string | null
+          rm_length_mm?: number | null
+          rm_line_no?: number | null
+          rm_material_value?: number | null
+          rm_mtc?: boolean | null
+          rm_mtc_fee?: number | null
+          rm_piece_weight_kg?: number | null
+          rm_rate_per_kg?: number | null
+          rm_sell_by?: string | null
+          rm_shape_id?: string | null
+          rm_taxable_value?: number | null
+          rm_weight_kg?: number | null
           unit_price?: number
         }
         Relationships: [
@@ -498,19 +495,24 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "order_items_rm_grade_id_fkey"
+            columns: ["rm_grade_id"]
+            isOneToOne: false
+            referencedRelation: "rm_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_rm_shape_id_fkey"
+            columns: ["rm_shape_id"]
+            isOneToOne: false
+            referencedRelation: "rm_shapes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       orders: {
         Row: {
-          rm_admin_note: string | null
-          rm_approved_at: string | null
-          rm_approved_by: string | null
-          rm_bulk_discount: number | null
-          rm_cut_charges: number | null
-          rm_material_value: number | null
-          rm_mtc_charges: number | null
-          rm_paid_at: string | null
-          rm_total_weight_kg: number | null
           billing_gstin: string | null
           buyer_id: string
           created_at: string
@@ -520,6 +522,15 @@ export type Database = {
           invoice_url: string | null
           order_number: string
           order_type: Database["public"]["Enums"]["order_type"]
+          rm_admin_note: string | null
+          rm_approved_at: string | null
+          rm_approved_by: string | null
+          rm_bulk_discount: number | null
+          rm_cut_charges: number | null
+          rm_material_value: number | null
+          rm_mtc_charges: number | null
+          rm_paid_at: string | null
+          rm_total_weight_kg: number | null
           shipping_amount: number
           source_quote_id: string | null
           status: Database["public"]["Enums"]["order_status"]
@@ -530,15 +541,6 @@ export type Database = {
           vendor_id: string | null
         }
         Insert: {
-          rm_admin_note?: string | null
-          rm_approved_at?: string | null
-          rm_approved_by?: string | null
-          rm_bulk_discount?: number | null
-          rm_cut_charges?: number | null
-          rm_material_value?: number | null
-          rm_mtc_charges?: number | null
-          rm_paid_at?: string | null
-          rm_total_weight_kg?: number | null
           billing_gstin?: string | null
           buyer_id: string
           created_at?: string
@@ -548,6 +550,15 @@ export type Database = {
           invoice_url?: string | null
           order_number?: string
           order_type: Database["public"]["Enums"]["order_type"]
+          rm_admin_note?: string | null
+          rm_approved_at?: string | null
+          rm_approved_by?: string | null
+          rm_bulk_discount?: number | null
+          rm_cut_charges?: number | null
+          rm_material_value?: number | null
+          rm_mtc_charges?: number | null
+          rm_paid_at?: string | null
+          rm_total_weight_kg?: number | null
           shipping_amount?: number
           source_quote_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -558,15 +569,6 @@ export type Database = {
           vendor_id?: string | null
         }
         Update: {
-          rm_admin_note?: string | null
-          rm_approved_at?: string | null
-          rm_approved_by?: string | null
-          rm_bulk_discount?: number | null
-          rm_cut_charges?: number | null
-          rm_material_value?: number | null
-          rm_mtc_charges?: number | null
-          rm_paid_at?: string | null
-          rm_total_weight_kg?: number | null
           billing_gstin?: string | null
           buyer_id?: string
           created_at?: string
@@ -576,6 +578,15 @@ export type Database = {
           invoice_url?: string | null
           order_number?: string
           order_type?: Database["public"]["Enums"]["order_type"]
+          rm_admin_note?: string | null
+          rm_approved_at?: string | null
+          rm_approved_by?: string | null
+          rm_bulk_discount?: number | null
+          rm_cut_charges?: number | null
+          rm_material_value?: number | null
+          rm_mtc_charges?: number | null
+          rm_paid_at?: string | null
+          rm_total_weight_kg?: number | null
           shipping_amount?: number
           source_quote_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
@@ -598,6 +609,13 @@ export type Database = {
             columns: ["delivery_address_id"]
             isOneToOne: false
             referencedRelation: "addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_rm_approved_by_fkey"
+            columns: ["rm_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -694,33 +712,48 @@ export type Database = {
       }
       profiles: {
         Row: {
+          billing_address: string | null
+          billing_pincode: string | null
           created_at: string
           email: string
           email_verified: boolean
           full_name: string
+          gst_registered: boolean
+          gstin: string | null
           id: string
+          organization_name: string | null
           phone: string | null
           phone_verified: boolean
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
+          billing_address?: string | null
+          billing_pincode?: string | null
           created_at?: string
           email: string
           email_verified?: boolean
           full_name: string
+          gst_registered?: boolean
+          gstin?: string | null
           id: string
+          organization_name?: string | null
           phone?: string | null
           phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
+          billing_address?: string | null
+          billing_pincode?: string | null
           created_at?: string
           email?: string
           email_verified?: boolean
           full_name?: string
+          gst_registered?: boolean
+          gstin?: string | null
           id?: string
+          organization_name?: string | null
           phone?: string | null
           phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"]
@@ -1057,7 +1090,29 @@ export type Database = {
           quantity?: number
           shape_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rm_cart_items_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_cart_items_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "rm_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_cart_items_shape_id_fkey"
+            columns: ["shape_id"]
+            isOneToOne: false
+            referencedRelation: "rm_shapes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rm_grades: {
         Row: {
@@ -1105,7 +1160,15 @@ export type Database = {
           slug?: string
           sort_order?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rm_grades_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "rm_materials"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rm_materials: {
         Row: {
@@ -1163,7 +1226,7 @@ export type Database = {
           changed_at?: string
           changed_by?: string | null
           grade_id: string
-          id?: number
+          id?: never
           new_rate?: number | null
           old_rate?: number | null
           shape_id?: string | null
@@ -1172,12 +1235,34 @@ export type Database = {
           changed_at?: string
           changed_by?: string | null
           grade_id?: string
-          id?: number
+          id?: never
           new_rate?: number | null
           old_rate?: number | null
           shape_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rm_rate_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_rate_history_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "rm_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_rate_history_shape_id_fkey"
+            columns: ["shape_id"]
+            isOneToOne: false
+            referencedRelation: "rm_shapes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rm_rates: {
         Row: {
@@ -1204,7 +1289,29 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rm_rates_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "rm_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_rates_shape_id_fkey"
+            columns: ["shape_id"]
+            isOneToOne: false
+            referencedRelation: "rm_shapes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_rates_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rm_settings: {
         Row: {
@@ -1252,7 +1359,22 @@ export type Database = {
           material_id?: string
           shape_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rm_shape_materials_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "rm_materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_shape_materials_shape_id_fkey"
+            columns: ["shape_id"]
+            isOneToOne: false
+            referencedRelation: "rm_shapes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rm_shapes: {
         Row: {
@@ -1345,7 +1467,29 @@ export type Database = {
           vendor_id?: string
           warehouse_pincode?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "rm_vendor_supply_grade_id_fkey"
+            columns: ["grade_id"]
+            isOneToOne: false
+            referencedRelation: "rm_grades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_vendor_supply_shape_id_fkey"
+            columns: ["shape_id"]
+            isOneToOne: false
+            referencedRelation: "rm_shapes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rm_vendor_supply_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sq_settings: {
         Row: {
@@ -1523,22 +1667,28 @@ export type Database = {
       }
       vendor_profiles: {
         Row: {
+          bank_account_number: string | null
           business_type: string | null
+          cancelled_cheque_url: string | null
           capabilities: string[] | null
           categories_supplied: string[] | null
           category_permissions: string[] | null
+          certifications_url: string | null
           commission_override: number | null
           company_name: string
           created_at: string
           gstin: string | null
           id: string
+          ifsc_code: string | null
           internal_notes: string | null
           kyc_rejection_reason: string | null
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           materials_handled: string[] | null
           materials_machined: string[] | null
           min_order_policy: string | null
+          pan: string | null
           rating: number | null
+          registered_address: string | null
           registered_pincode: string | null
           typical_lead_time: string | null
           updated_at: string
@@ -1546,22 +1696,28 @@ export type Database = {
           warehouse_pincode: string | null
         }
         Insert: {
+          bank_account_number?: string | null
           business_type?: string | null
+          cancelled_cheque_url?: string | null
           capabilities?: string[] | null
           categories_supplied?: string[] | null
           category_permissions?: string[] | null
+          certifications_url?: string | null
           commission_override?: number | null
           company_name: string
           created_at?: string
           gstin?: string | null
           id: string
+          ifsc_code?: string | null
           internal_notes?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           materials_handled?: string[] | null
           materials_machined?: string[] | null
           min_order_policy?: string | null
+          pan?: string | null
           rating?: number | null
+          registered_address?: string | null
           registered_pincode?: string | null
           typical_lead_time?: string | null
           updated_at?: string
@@ -1569,22 +1725,28 @@ export type Database = {
           warehouse_pincode?: string | null
         }
         Update: {
+          bank_account_number?: string | null
           business_type?: string | null
+          cancelled_cheque_url?: string | null
           capabilities?: string[] | null
           categories_supplied?: string[] | null
           category_permissions?: string[] | null
+          certifications_url?: string | null
           commission_override?: number | null
           company_name?: string
           created_at?: string
           gstin?: string | null
           id?: string
+          ifsc_code?: string | null
           internal_notes?: string | null
           kyc_rejection_reason?: string | null
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           materials_handled?: string[] | null
           materials_machined?: string[] | null
           min_order_policy?: string | null
+          pan?: string | null
           rating?: number | null
+          registered_address?: string | null
           registered_pincode?: string | null
           typical_lead_time?: string | null
           updated_at?: string
@@ -1606,102 +1768,130 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      rm_add_to_cart: {
-        Args: {
-          p_dims: Json
-          p_grade_id: string
-          p_length_mm: number | null
-          p_mtc: boolean
-          p_notes?: string | null
-          p_quantity: number
-          p_shape_id: string
-        }
-        Returns: string
-      }
-      rm_approve_order: {
-        Args: { p_freight: number; p_note?: string | null; p_order_id: string; p_vendor_id: string }
-        Returns: undefined
-      }
-      rm_bulk_pct: { Args: { p_weight_kg: number }; Returns: number }
-      rm_cancel_order: { Args: { p_order_id: string }; Returns: undefined }
-      rm_cart_quote: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          cart_item_id: string
-          shape_id: string
-          grade_id: string
-          dims: Json
-          quantity: number
-          mtc: boolean
-          notes: string | null
-          description: string | null
-          sell_by: string | null
-          piece_weight_kg: number | null
-          weight_kg: number | null
-          rate_per_kg: number | null
-          material_value: number | null
-          cut: boolean | null
-          cut_charge: number | null
-          mtc_fee: number | null
-          hsn_code: string | null
-          gst_rate: number | null
-          length_mm: number | null
-          error: string | null
-        }[]
-      }
-      rm_eligible_vendors: {
-        Args: { p_order_id: string }
-        Returns: {
-          vendor_id: string
-          company_name: string
-          warehouse_pincodes: string | null
-          lines_covered: number
-          lines_total: number
-        }[]
-      }
-      rm_pay_order: {
-        Args: {
-          p_gateway_ref?: string | null
-          p_method: Database["public"]["Enums"]["payment_method"]
-          p_order_id: string
-        }
-        Returns: undefined
-      }
-      rm_place_order: {
-        Args: { p_address_id: string; p_billing_gstin?: string | null }
-        Returns: string
-      }
-      rm_price_line: {
-        Args: {
-          p_dims: Json
-          p_grade_id: string
-          p_length_mm: number | null
-          p_mtc: boolean
-          p_quantity: number
-          p_shape_id: string
-        }
-        Returns: {
-          description: string
-          sell_by: string
-          piece_weight_kg: number | null
-          weight_kg: number
-          rate_per_kg: number
-          material_value: number
-          cut: boolean
-          cut_charge: number
-          mtc_fee: number
-          hsn_code: string | null
-          gst_rate: number
-          length_mm: number | null
-        }[]
-      }
-      rm_reject_order: { Args: { p_note: string; p_order_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       is_vendor_owner: { Args: { v_id: string }; Returns: boolean }
       log_kyc_event: {
         Args: { p_action: string; p_fields?: string[]; p_vendor_id: string }
         Returns: undefined
       }
+      rfq_is_mine: { Args: { p_rfq_id: string }; Returns: boolean }
+      rm_add_to_cart: {
+        Args: {
+          p_dims: Json
+          p_grade_id: string
+          p_length_mm: number
+          p_mtc: boolean
+          p_notes?: string
+          p_quantity: number
+          p_shape_id: string
+        }
+        Returns: string
+      }
+      rm_approve_order: {
+        Args: {
+          p_freight: number
+          p_note?: string
+          p_order_id: string
+          p_vendor_id: string
+        }
+        Returns: undefined
+      }
+      rm_bulk_pct: { Args: { p_weight_kg: number }; Returns: number }
+      rm_cancel_order: { Args: { p_order_id: string }; Returns: undefined }
+      rm_cart_quote: {
+        Args: never
+        Returns: {
+          cart_item_id: string
+          cut: boolean
+          cut_charge: number
+          description: string
+          dims: Json
+          error: string
+          grade_id: string
+          gst_rate: number
+          hsn_code: string
+          length_mm: number
+          material_value: number
+          mtc: boolean
+          mtc_fee: number
+          notes: string
+          piece_weight_kg: number
+          quantity: number
+          rate_per_kg: number
+          sell_by: string
+          shape_id: string
+          weight_kg: number
+        }[]
+      }
+      rm_eligible_vendors: {
+        Args: { p_order_id: string }
+        Returns: {
+          company_name: string
+          lines_covered: number
+          lines_total: number
+          vendor_id: string
+          warehouse_pincodes: string
+        }[]
+      }
+      rm_ismc_kg_per_m: { Args: { p_size: number }; Returns: number }
+      rm_pay_order: {
+        Args: {
+          p_gateway_ref?: string
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_order_id: string
+        }
+        Returns: undefined
+      }
+      rm_piece_weight_kg: {
+        Args: {
+          p_density: number
+          p_dims: Json
+          p_formula: string
+          p_length_mm: number
+        }
+        Returns: number
+      }
+      rm_place_order: {
+        Args: { p_address_id: string; p_billing_gstin?: string }
+        Returns: string
+      }
+      rm_price_line: {
+        Args: {
+          p_dims: Json
+          p_grade_id: string
+          p_length_mm: number
+          p_mtc: boolean
+          p_quantity: number
+          p_shape_id: string
+        }
+        Returns: {
+          cut: boolean
+          cut_charge: number
+          description: string
+          gst_rate: number
+          hsn_code: string
+          length_mm: number
+          material_value: number
+          mtc_fee: number
+          piece_weight_kg: number
+          rate_per_kg: number
+          sell_by: string
+          weight_kg: number
+        }[]
+      }
+      rm_reject_order: {
+        Args: { p_note: string; p_order_id: string }
+        Returns: undefined
+      }
+      rm_validate_dims: {
+        Args: {
+          p_dims: Json
+          p_length_mm: number
+          p_shape: Database["public"]["Tables"]["rm_shapes"]["Row"]
+        }
+        Returns: undefined
+      }
+      vendor_has_quote_on: { Args: { p_rfq_id: string }; Returns: boolean }
     }
     Enums: {
       coupon_type: "percent" | "flat"

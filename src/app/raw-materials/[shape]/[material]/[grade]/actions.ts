@@ -41,10 +41,12 @@ export async function addToCartAction(prev: AddToCartState, formData: FormData):
     p_shape_id: shapeId,
     p_grade_id: gradeId,
     p_dims: dims,
-    p_length_mm: length,
+    // RPC accepts SQL NULL for shapes without a length dimension even though
+    // the generated type marks this param as required (it has no SQL default).
+    p_length_mm: length as number,
     p_quantity: quantity,
     p_mtc: mtc,
-    p_notes: notes || null,
+    p_notes: notes || undefined, // RPC default is null; generated type only allows omitting it
   });
   if (error) return { error: error.message };
 

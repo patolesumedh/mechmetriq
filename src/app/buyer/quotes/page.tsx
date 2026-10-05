@@ -4,6 +4,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
+import { QuotesCartTabs } from "@/components/buyer/QuotesCartTabs";
 import type { Tables } from "@/lib/types/database";
 import { acceptQuoteAction } from "./actions";
 import { AnalysisList, isRunning, type AnalysisRow } from "@/components/smartQuote/AnalysisList";
@@ -16,6 +17,12 @@ import {
   rfqStatusTone,
   statusLabel,
 } from "../_lib/ui";
+
+function addDaysIso(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+}
 
 export default async function QuotesPage({
   searchParams,
@@ -35,6 +42,11 @@ export default async function QuotesPage({
     .select("*")
     .eq("buyer_id", user.id)
     .order("created_at", { ascending: false });
+
+  const { count: cartCount } = await supabase
+    .from("rm_cart_items")
+    .select("id", { count: "exact", head: true })
+    .eq("buyer_id", user.id);
 
   const allRfqs = rfqs ?? [];
   const rfqIds = allRfqs.map((r) => r.id);
@@ -89,8 +101,13 @@ export default async function QuotesPage({
   return (
     <>
       <div className="-mx-7 -mt-7 mb-7">
-        <Topbar title="My Quotes" />
+        <Topbar title="Quotes & Cart" />
       </div>
+      <QuotesCartTabs
+        active="quotes"
+        quotesCount={allRfqs.length || undefined}
+        cartCount={cartCount || undefined}
+      />
       <AutoRefresh active={isRunning(analyses ?? [])} />
       {submitted && (
         <div className="mb-4 rounded-lg bg-good-bg px-4 py-3 text-[13px] font-medium text-[#0a6b0a]">
@@ -117,6 +134,11 @@ export default async function QuotesPage({
                 <div className="flex items-center justify-between border-b border-grid px-5 py-3.5 text-[13px] text-ink-2">
                   <span>
                     Qty {rfq.quantity} · Submitted {formatDate(rfq.created_at)}
+                    <br />
+                    <span className="text-[12px]">
+                      Quote valid for 7 days for placing the order. Quote will expire on{" "}
+                      {formatDate(addDaysIso(rfq.created_at, 7))}.
+                    </span>
                   </span>
                   <Badge tone={rfqStatusTone(rfq.status)}>{statusLabel(rfq.status)}</Badge>
                 </div>
