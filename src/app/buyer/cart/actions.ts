@@ -40,7 +40,7 @@ export async function placeRmOrderAction(_prev: CartActionState, formData: FormD
 
   const { data: orderId, error } = await supabase.rpc("rm_place_order", {
     p_address_id: addressId,
-    p_billing_gstin: gstin || null,
+    p_billing_gstin: gstin || undefined, // RPC default is null; generated type only allows omitting it
   });
   if (error || !orderId) return { error: error?.message ?? "Could not place the order. Please try again." };
 

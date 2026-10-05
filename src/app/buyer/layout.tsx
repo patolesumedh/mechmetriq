@@ -40,10 +40,14 @@ export default async function BuyerLayout({
         items={[
           { label: "Overview", href: "/buyer" },
           { label: "Get Instant Quote", href: "/buyer/quote" },
-          { label: "My Quotes", href: "/buyer/quotes" },
+          {
+            label: "Quotes & Cart",
+            href: "/buyer/quotes",
+            matchPrefixes: ["/buyer/cart"],
+            count: cartCount || undefined,
+          },
           { label: "My Orders", href: "/buyer/orders" },
           { label: "Raw Materials", href: "/raw-materials" },
-          { label: "Cart", href: "/buyer/cart", count: cartCount || undefined },
           { label: "Addresses", href: "/buyer/addresses" },
           { label: "Profile", href: "/buyer/profile" },
         ]}

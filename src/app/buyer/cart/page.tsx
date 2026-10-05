@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { QuotesCartTabs } from "@/components/buyer/QuotesCartTabs";
 import { toSettings } from "@/lib/rawMaterials/catalog";
 import { inr, kg, num } from "@/lib/rawMaterials/format";
 import { bulkPct, round } from "@/lib/rawMaterials/weight";
@@ -54,7 +55,7 @@ export default async function CartPage() {
     <>
       <div className="-mx-7 -mt-7 mb-7">
         <Topbar
-          title="Cart"
+          title="Quotes & Cart"
           pill={items.length ? { label: `${items.length} line${items.length === 1 ? "" : "s"}` } : undefined}
           right={
             <Link href="/raw-materials" className="text-[13px] font-semibold text-brand">
@@ -63,6 +64,7 @@ export default async function CartPage() {
           }
         />
       </div>
+      <QuotesCartTabs active="cart" cartCount={items.length || undefined} />
 
       {error && (
         <Card className="mb-5 border-[#f3c4c4] bg-crit-bg px-5 py-3 text-[13px] text-[#a12525]">
