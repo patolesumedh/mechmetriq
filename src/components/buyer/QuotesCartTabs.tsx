@@ -10,13 +10,15 @@ import { cn } from "@/lib/cn";
  */
 export function QuotesCartTabs({
   active,
+  quotesCount,
   cartCount,
 }: {
   active: "quotes" | "cart";
+  quotesCount?: number;
   cartCount?: number;
 }) {
   const tabs = [
-    { key: "quotes" as const, label: "Custom Part Quotes", href: "/buyer/quotes" },
+    { key: "quotes" as const, label: "Custom Part Quotes", href: "/buyer/quotes", count: quotesCount },
     { key: "cart" as const, label: "Raw Material Cart", href: "/buyer/cart", count: cartCount },
   ];
 

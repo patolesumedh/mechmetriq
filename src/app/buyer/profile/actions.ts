@@ -25,6 +25,9 @@ export async function updateProfileAction(
   const phone = clean(formData.get("phone"));
   const billingAddress = clean(formData.get("billing_address"));
   const billingPincode = clean(formData.get("billing_pincode"));
+  const shippingSameAsBilling = formData.get("shipping_same_as_billing") === "on";
+  const shippingAddress = shippingSameAsBilling ? billingAddress : clean(formData.get("shipping_address"));
+  const shippingPincode = shippingSameAsBilling ? billingPincode : clean(formData.get("shipping_pincode"));
   const gstRegistered = formData.get("gst_registered") === "on";
   const organizationName = clean(formData.get("organization_name"));
   const gstin = cleanUpper(formData.get("gstin"));
@@ -40,6 +43,12 @@ export async function updateProfileAction(
   }
   if (!billingPincode || !PINCODE_RE.test(billingPincode)) {
     return { error: "Enter a valid 6-digit billing pincode." };
+  }
+  if (!shippingAddress) {
+    return { error: "Shipping address is required." };
+  }
+  if (!shippingPincode || !PINCODE_RE.test(shippingPincode)) {
+    return { error: "Enter a valid 6-digit shipping pincode." };
   }
   if (gstRegistered) {
     if (!organizationName) {
@@ -69,7 +78,40 @@ export async function updateProfileAction(
     return { error: error.message };
   }
 
+  // Profile now owns a single "shipping" address — upsert it into the
+  // existing addresses table (used elsewhere for delivery pickers) as the
+  // buyer's default address, rather than duplicating the address store.
+  const { data: existingDefault } = await supabase
+    .from("addresses")
+    .select("id")
+    .eq("profile_id", user.id)
+    .order("is_default", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingDefault) {
+    await supabase
+      .from("addresses")
+      .update({
+        label: "Primary",
+        full_address: shippingAddress,
+        pincode: shippingPincode,
+        is_default: true,
+      })
+      .eq("id", existingDefault.id);
+  } else {
+    await supabase.from("addresses").insert({
+      profile_id: user.id,
+      label: "Primary",
+      full_address: shippingAddress,
+      pincode: shippingPincode,
+      is_default: true,
+    });
+  }
+
   revalidatePath("/buyer/profile");
   revalidatePath("/buyer");
+  revalidatePath("/buyer/cart");
+  revalidatePath("/buyer/quote");
   return { success: true };
 }

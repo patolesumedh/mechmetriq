@@ -28,10 +28,17 @@ export default async function BuyerLayout({
     redirect("/login");
   }
 
-  const { count: cartCount } = await supabase
-    .from("rm_cart_items")
-    .select("id", { count: "exact", head: true })
-    .eq("buyer_id", user.id);
+  const [{ count: cartCount }, { count: quotesCount }] = await Promise.all([
+    supabase
+      .from("rm_cart_items")
+      .select("id", { count: "exact", head: true })
+      .eq("buyer_id", user.id),
+    supabase
+      .from("rfqs")
+      .select("id", { count: "exact", head: true })
+      .eq("buyer_id", user.id),
+  ]);
+  const quotesCartCount = (cartCount || 0) + (quotesCount || 0);
 
   return (
     <div className="flex min-h-screen">
@@ -44,11 +51,10 @@ export default async function BuyerLayout({
             label: "Quotes & Cart",
             href: "/buyer/quotes",
             matchPrefixes: ["/buyer/cart"],
-            count: cartCount || undefined,
+            count: quotesCartCount || undefined,
           },
-          { label: "My Orders", href: "/buyer/orders" },
+          { label: "Previous Orders", href: "/buyer/orders" },
           { label: "Raw Materials", href: "/raw-materials" },
-          { label: "Addresses", href: "/buyer/addresses" },
           { label: "Profile", href: "/buyer/profile" },
         ]}
         footer={{

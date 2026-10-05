@@ -15,6 +15,14 @@ export default async function ProfilePage() {
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
   if (!profile) redirect("/login");
 
+  const { data: defaultAddress } = await supabase
+    .from("addresses")
+    .select("full_address, pincode")
+    .eq("profile_id", user.id)
+    .order("is_default", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   return (
     <>
       <div className="-mx-7 -mt-7 mb-7">
@@ -22,7 +30,7 @@ export default async function ProfilePage() {
       </div>
 
       <Card className="max-w-[520px] p-6">
-        <ProfileForm profile={profile} />
+        <ProfileForm profile={profile} defaultAddress={defaultAddress} />
       </Card>
     </>
   );

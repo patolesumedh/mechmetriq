@@ -18,6 +18,12 @@ import {
   statusLabel,
 } from "../_lib/ui";
 
+function addDaysIso(dateStr: string, days: number): string {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+}
+
 export default async function QuotesPage({
   searchParams,
 }: {
@@ -97,7 +103,11 @@ export default async function QuotesPage({
       <div className="-mx-7 -mt-7 mb-7">
         <Topbar title="Quotes & Cart" />
       </div>
-      <QuotesCartTabs active="quotes" cartCount={cartCount || undefined} />
+      <QuotesCartTabs
+        active="quotes"
+        quotesCount={allRfqs.length || undefined}
+        cartCount={cartCount || undefined}
+      />
       <AutoRefresh active={isRunning(analyses ?? [])} />
       {submitted && (
         <div className="mb-4 rounded-lg bg-good-bg px-4 py-3 text-[13px] font-medium text-[#0a6b0a]">
@@ -124,6 +134,11 @@ export default async function QuotesPage({
                 <div className="flex items-center justify-between border-b border-grid px-5 py-3.5 text-[13px] text-ink-2">
                   <span>
                     Qty {rfq.quantity} · Submitted {formatDate(rfq.created_at)}
+                    <br />
+                    <span className="text-[12px]">
+                      Quote valid for 7 days for placing the order. Quote will expire on{" "}
+                      {formatDate(addDaysIso(rfq.created_at, 7))}.
+                    </span>
                   </span>
                   <Badge tone={rfqStatusTone(rfq.status)}>{statusLabel(rfq.status)}</Badge>
                 </div>

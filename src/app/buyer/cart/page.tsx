@@ -17,15 +17,18 @@ export default async function CartPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/buyer/cart");
 
-  const [{ data: lines, error }, { data: settingsRow }, { data: addresses }] = await Promise.all([
-    supabase.rpc("rm_cart_quote"),
-    supabase.from("rm_settings").select("*").eq("id", 1).maybeSingle(),
-    supabase
-      .from("addresses")
-      .select("id, label, full_address, pincode, is_default")
-      .eq("profile_id", user.id)
-      .order("is_default", { ascending: false }),
-  ]);
+  const [{ data: lines, error }, { data: settingsRow }, { data: addresses }, { data: profile }, { count: quotesCount }] =
+    await Promise.all([
+      supabase.rpc("rm_cart_quote"),
+      supabase.from("rm_settings").select("*").eq("id", 1).maybeSingle(),
+      supabase
+        .from("addresses")
+        .select("id, label, full_address, pincode, is_default")
+        .eq("profile_id", user.id)
+        .order("is_default", { ascending: false }),
+      supabase.from("profiles").select("gstin").eq("id", user.id).single(),
+      supabase.from("rfqs").select("id", { count: "exact", head: true }).eq("buyer_id", user.id),
+    ]);
   const settings = toSettings(settingsRow);
   const items = lines ?? [];
   const good = items.filter((l) => !l.error);
@@ -64,7 +67,11 @@ export default async function CartPage() {
           }
         />
       </div>
-      <QuotesCartTabs active="cart" cartCount={items.length || undefined} />
+      <QuotesCartTabs
+        active="cart"
+        quotesCount={quotesCount || undefined}
+        cartCount={items.length || undefined}
+      />
 
       {error && (
         <Card className="mb-5 border-[#f3c4c4] bg-crit-bg px-5 py-3 text-[13px] text-[#a12525]">
@@ -191,6 +198,7 @@ export default async function CartPage() {
             )}
             <PlaceOrderForm
               addresses={addresses ?? []}
+              defaultGstin={profile?.gstin ?? ""}
               disabled={broken > 0 || belowMin || good.length === 0}
               disabledReason={
                 broken > 0
