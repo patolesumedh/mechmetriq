@@ -10,6 +10,7 @@ import { acceptQuoteAction } from "./actions";
 import { AnalysisList, isRunning, type AnalysisRow } from "@/components/smartQuote/AnalysisList";
 import { AutoRefresh } from "@/components/smartQuote/AutoRefresh";
 import { PriceBlock } from "@/components/smartQuote/PriceBlock";
+import { quoteValidity } from "@/lib/smartQuote/validity";
 import {
   formatCurrency,
   formatDate,
@@ -84,6 +85,11 @@ export default async function QuotesPage({
     : { data: [] as { id: string; name: string }[] };
   const gradeMap = new Map((gradeRows ?? []).map((g) => [g.id, g.name]));
 
+  const { data: placedOrders } = rfqIds.length
+    ? await supabase.from("orders").select("id, order_number, source_rfq_id").in("source_rfq_id", rfqIds)
+    : { data: [] as { id: string; order_number: string; source_rfq_id: string | null }[] };
+  const orderByRfq = new Map((placedOrders ?? []).map((o) => [o.source_rfq_id, o]));
+
   const vendorIds = Array.from(new Set(allQuotes.map((q) => q.vendor_id)));
   const { data: vendors } = await supabase
     .from("vendor_profiles")
@@ -136,13 +142,21 @@ export default async function QuotesPage({
                     Qty {rfq.quantity} · Submitted {formatDate(rfq.created_at)}
                     <br />
                     <span className="text-[12px]">
-                      Quote valid for 7 days for placing the order. Quote will expire on{" "}
-                      {formatDate(addDaysIso(rfq.created_at, 7))}.
+                      {rfq.status === "accepted"
+                        ? "Quote accepted and paid."
+                        : rfq.price_status === "confirmed" && rfq.confirmed_at
+                          ? `Price valid for 7 days from confirmation — until ${formatDate(addDaysIso(rfq.confirmed_at, 7))}.`
+                          : "Once our team confirms the price, it stays valid for 7 days."}
                     </span>
                   </span>
                   <Badge tone={rfqStatusTone(rfq.status)}>{statusLabel(rfq.status)}</Badge>
                 </div>
                 <PriceBlock rfq={rfq} />
+                <OrderAction
+                  rfq={rfq}
+                  order={orderByRfq.get(rfq.id) ?? null}
+                  {...quoteValidity(rfq.confirmed_at)}
+                />
                 <AnalysisList
                   rows={analysesByRfq.get(rfq.id) ?? []}
                   hrefFor={(id) => `/buyer/quotes/analysis/${id}`}
@@ -198,5 +212,51 @@ export default async function QuotesPage({
         </Card>
       )}
     </>
+  );
+}
+
+function OrderAction({
+  rfq,
+  order,
+  validUntil,
+  expired,
+}: {
+  rfq: Tables<"rfqs">;
+  order: { id: string; order_number: string } | null;
+  validUntil: string | null;
+  expired: boolean;
+}) {
+  if (order) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-grid px-5 py-3 text-[13px]">
+        <span className="text-ink-2">
+          Order <b className="text-ink">{order.order_number}</b> placed and paid.
+        </span>
+        <ButtonLink href={`/buyer/orders/${order.id}`} variant="outline">
+          View order
+        </ButtonLink>
+      </div>
+    );
+  }
+  if (rfq.price_status !== "confirmed" || rfq.status !== "quoted" || rfq.confirmed_total == null) return null;
+  if (expired) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-grid bg-crit-bg/50 px-5 py-3 text-[13px]">
+        <span className="text-[#a12525]">This price expired on {formatDate(validUntil)}. Request a new quote to order.</span>
+        <ButtonLink href="/buyer/quote" variant="outline">
+          Get a new quote
+        </ButtonLink>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-grid px-5 py-3 text-[13px]">
+      <span className="text-ink-2">
+        Total with 18% GST{" "}
+        <b className="text-ink">{formatCurrency(Math.round(Number(rfq.confirmed_total) * 118) / 100)}</b>
+        {validUntil ? ` · order by ${formatDate(validUntil)}` : ""}
+      </span>
+      <ButtonLink href={`/buyer/quotes/${rfq.id}/checkout`}>Accept &amp; pay</ButtonLink>
+    </div>
   );
 }

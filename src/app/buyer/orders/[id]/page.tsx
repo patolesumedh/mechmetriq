@@ -11,16 +11,17 @@ import {
   statusLabel,
 } from "../../_lib/ui";
 import { RmOrderDetail } from "./RmOrderDetail";
+import { PAY_METHOD_LABEL, isTestPaymentRef } from "@/lib/payments/testGateway";
 
 export default async function OrderDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ placed?: string }>;
+  searchParams: Promise<{ placed?: string; paid?: string }>;
 }) {
   const { id } = await params;
-  const { placed } = await searchParams;
+  const { placed, paid } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -69,9 +70,22 @@ export default async function OrderDetailPage({
         <Topbar title={`Order ${order.order_number}`} />
       </div>
 
+      {paid === "1" && (
+        <div className="mb-5 flex items-start gap-3 rounded-[10px] border border-[#bfe6bf] bg-good-bg px-4 py-3.5">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-good text-[14px] font-bold text-white">
+            ✓
+          </span>
+          <div className="text-[13px] text-[#0a5a0a]">
+            <div className="text-[14px] font-bold">Payment received — your order is confirmed</div>
+            We&rsquo;ve started scheduling production. You&rsquo;ll see updates here as your part moves through
+            machining, inspection and dispatch.
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 flex items-center justify-between">
         <div className="text-[13.5px] text-ink-2">
-          {vendor?.company_name ?? "Vendor"} · Placed {formatDate(order.created_at)}
+          {vendor?.company_name ?? "Fulfilled by MECHmetriQ"} · Placed {formatDate(order.created_at)}
         </div>
         <Badge tone={orderStatusTone(order.status)}>{statusLabel(order.status)}</Badge>
       </div>
@@ -139,9 +153,19 @@ export default async function OrderDetailPage({
                 key={p.id}
                 className="flex items-center justify-between px-5 py-3.5 text-[13.5px]"
               >
-                <div>
-                  <div className="font-semibold capitalize text-ink">{p.method}</div>
-                  <div className="text-[12px] text-muted">{formatDate(p.created_at)}</div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 font-semibold text-ink">
+                    {PAY_METHOD_LABEL[p.method]}
+                    {isTestPaymentRef(p.gateway_ref) && (
+                      <span className="rounded bg-[#fff1c2] px-1.5 py-[1px] text-[9.5px] font-extrabold tracking-wider text-[#6b4d00]">
+                        TEST
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[12px] text-muted">
+                    {formatDate(p.created_at)}
+                    {p.gateway_ref && <span className="ml-1.5 font-mono">· {p.gateway_ref}</span>}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">{formatCurrency(p.amount)}</span>
