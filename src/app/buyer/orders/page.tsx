@@ -57,7 +57,7 @@ export default async function OrdersPage() {
                   <div className="text-[12px] text-muted">
                     {order.order_type === "raw_material"
                       ? "MECHmetrIQ Raw Materials"
-                      : (vendorMap.get(order.vendor_id ?? "") ?? "Vendor")}{" "}
+                      : (vendorMap.get(order.vendor_id ?? "") ?? "MECHmetriQ Custom Parts")}{" "}
                     · {formatDate(order.created_at)}
                   </div>
                 </div>

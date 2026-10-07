@@ -28,7 +28,7 @@ export function PriceBlock({ rfq }: { rfq: PriceFields }) {
         </div>
         <div className="text-right">
           <div className="text-[19px] font-extrabold text-ink">{formatInr(Number(rfq.confirmed_total))}</div>
-          <div className="text-[11.5px] text-muted">+ GST · our team will contact you to place the order</div>
+          <div className="text-[11.5px] text-muted">+ GST · ready to order</div>
         </div>
       </div>
     );

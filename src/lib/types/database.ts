@@ -533,6 +533,7 @@ export type Database = {
           rm_total_weight_kg: number | null
           shipping_amount: number
           source_quote_id: string | null
+          source_rfq_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           subtotal: number
           total_amount: number
@@ -561,6 +562,7 @@ export type Database = {
           rm_total_weight_kg?: number | null
           shipping_amount?: number
           source_quote_id?: string | null
+          source_rfq_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total_amount?: number
@@ -589,6 +591,7 @@ export type Database = {
           rm_total_weight_kg?: number | null
           shipping_amount?: number
           source_quote_id?: string | null
+          source_rfq_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           subtotal?: number
           total_amount?: number
@@ -1890,6 +1893,16 @@ export type Database = {
           p_shape: Database["public"]["Tables"]["rm_shapes"]["Row"]
         }
         Returns: undefined
+      }
+      sq_pay_quote: {
+        Args: {
+          p_billing_gstin?: string
+          p_delivery_address_id: string
+          p_gateway_ref: string
+          p_method: Database["public"]["Enums"]["payment_method"]
+          p_rfq_id: string
+        }
+        Returns: string
       }
       vendor_has_quote_on: { Args: { p_rfq_id: string }; Returns: boolean }
     }
