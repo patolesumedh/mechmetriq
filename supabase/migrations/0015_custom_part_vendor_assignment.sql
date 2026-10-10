@@ -257,8 +257,9 @@ as $$
        and vendor_id = (select auth.uid())
   );
 $$;
-revoke all on function public.vendor_assigned_rfq(uuid) from public, anon;
-grant execute on function public.vendor_assigned_rfq(uuid) to authenticated;
+-- Used inside an RLS policy, so every role that can query rfqs needs
+-- execute (it returns false for anon: auth.uid() is null).
+grant execute on function public.vendor_assigned_rfq(uuid) to anon, authenticated;
 
 drop policy if exists rfqs_select on public.rfqs;
 create policy rfqs_select on public.rfqs for select
