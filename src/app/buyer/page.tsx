@@ -14,7 +14,7 @@ import {
 } from "./_lib/ui";
 
 const OPEN_RFQ_STATUSES = new Set(["pending", "quoted"]);
-const INACTIVE_ORDER_STATUSES = new Set(["delivered", "cancelled", "refunded"]);
+const INACTIVE_ORDER_STATUSES = new Set(["delivered", "completed", "cancelled", "refunded"]);
 
 export default async function BuyerOverviewPage() {
   const supabase = await createClient();

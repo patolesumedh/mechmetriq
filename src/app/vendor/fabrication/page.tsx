@@ -64,7 +64,7 @@ export default async function FabricationOverviewPage() {
       .from("orders")
       .select("*")
       .eq("vendor_id", vendorProfile.id)
-      .not("status", "in", "(delivered,cancelled,refunded)"),
+      .not("status", "in", "(delivered,completed,cancelled,refunded)"),
     supabase.from("payouts").select("amount, payout_date").eq("vendor_id", vendorProfile.id),
     supabase
       .from("orders")

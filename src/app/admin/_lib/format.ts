@@ -88,6 +88,8 @@ export function orderStatusTone(
       return "shipped";
     case "delivered":
       return "delivered";
+    case "completed":
+      return "completed";
     case "cancelled":
     case "refunded":
       return "lost";

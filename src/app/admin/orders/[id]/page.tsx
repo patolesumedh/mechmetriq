@@ -17,6 +17,7 @@ import { RmLinesTable, RmTotals } from "@/components/rawMaterials/RmOrderParts";
 import { rmStatusLabel } from "@/lib/rawMaterials/format";
 import { RmApprovalCard } from "./RmApprovalCard";
 import { AssignVendorCard } from "./AssignVendorCard";
+import { CompleteOrderCard } from "./CompleteOrderCard";
 
 export default async function AdminOrderDetailPage({
   params,
@@ -72,6 +73,8 @@ export default async function AdminOrderDetailPage({
 
   const isCustom = order.order_type === "custom_part";
   const canAssign = isCustom && order.status === "accepted_paid";
+  const canComplete =
+    isCustom && ["in_production", "qc_ready", "shipped", "delivered"].includes(order.status);
   const [{ data: assignment }, { data: fabVendors }, { data: rfq }] = isCustom
     ? await Promise.all([
         supabase
@@ -223,6 +226,21 @@ export default async function AdminOrderDetailPage({
               error={cpError}
               done={cpDone}
             />
+          )}
+          {canComplete && (
+            <CompleteOrderCard
+              orderId={order.id}
+              dispatched={order.status === "shipped" || order.status === "delivered"}
+            />
+          )}
+          {isCustom && order.status === "completed" && (
+            <Card className="border-[#bfe3bf] bg-good-bg px-5 py-3.5 text-[13px] text-[#0a6b0a]">
+              <div className="font-bold">Completed {formatDateTime(order.completed_at)}</div>
+              <div>
+                {order.completed_by_role === "admin" ? "Closed by an admin" : "Buyer confirmed receipt"}
+                {order.completion_note ? ` — “${order.completion_note}”` : ""}
+              </div>
+            </Card>
           )}
           {isCustom && !canAssign && cpDone && (
             <Card className="border-[#bfe3bf] bg-good-bg px-5 py-3 text-[13px] text-[#0a6b0a]">Vendor {cpDone}.</Card>

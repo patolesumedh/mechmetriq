@@ -18,6 +18,7 @@ const ORDER_STATUSES: OrderStatus[] = [
   "qc_ready",
   "shipped",
   "delivered",
+  "completed",
   "cancelled",
   "refunded",
   "disputed",

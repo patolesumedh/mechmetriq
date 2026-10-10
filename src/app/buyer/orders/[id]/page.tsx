@@ -11,6 +11,8 @@ import {
   statusLabel,
 } from "../../_lib/ui";
 import { RmOrderDetail } from "./RmOrderDetail";
+import { ReceiveOrderCard } from "./ReceiveOrderCard";
+import { CustomOrderProgress } from "@/components/orders/CustomOrderProgress";
 import { PAY_METHOD_LABEL, isTestPaymentRef } from "@/lib/payments/testGateway";
 
 export default async function OrderDetailPage({
@@ -89,6 +91,33 @@ export default async function OrderDetailPage({
         </div>
         <Badge tone={orderStatusTone(order.status)}>{statusLabel(order.status)}</Badge>
       </div>
+
+      {order.status !== "cancelled" && order.status !== "refunded" && order.status !== "disputed" && (
+        <Card className="mb-6 px-5 py-5">
+          <CustomOrderProgress status={order.status} />
+        </Card>
+      )}
+
+      {(order.status === "shipped" || order.status === "delivered") && (
+        <ReceiveOrderCard orderId={order.id} trackingNumber={order.tracking_number} />
+      )}
+
+      {order.status === "completed" && (
+        <div className="mb-6 flex items-start gap-3 rounded-[10px] border border-[#bfe6bf] bg-good-bg px-4 py-3.5">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-good text-[14px] font-bold text-white">
+            ✓
+          </span>
+          <div className="text-[13px] text-[#0a5a0a]">
+            <div className="text-[14px] font-bold">Order complete</div>
+            {order.completed_by_role === "admin"
+              ? `Closed by MECHmetriQ on ${formatDate(order.completed_at)}.`
+              : `You confirmed receipt on ${formatDate(order.completed_at)}.`}
+            {order.completion_note && order.completed_by_role !== "admin" && (
+              <div className="mt-1 text-ink-2">Your feedback: &ldquo;{order.completion_note}&rdquo;</div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mb-6 grid grid-cols-[1.6fr_1fr] gap-5">
         <Card>

@@ -7,6 +7,7 @@ const tones = {
   production: "bg-[#eee9fb] text-accent-violet",
   shipped: "bg-accent-orange-bg text-[#a8461a]",
   delivered: "bg-good-bg text-[#0a6b0a]",
+  completed: "bg-[#0a6b0a] text-white",
   disputed: "bg-crit-bg text-[#a12525]",
   new: "bg-accent-orange-bg text-[#a8461a]",
   won: "bg-good-bg text-[#0a6b0a]",

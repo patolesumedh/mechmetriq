@@ -545,6 +545,10 @@ export type Database = {
         Row: {
           billing_gstin: string | null
           buyer_id: string
+          completed_at: string | null
+          completed_by: string | null
+          completed_by_role: string | null
+          completion_note: string | null
           created_at: string
           delivery_address_id: string | null
           gst_amount: number
@@ -574,6 +578,10 @@ export type Database = {
         Insert: {
           billing_gstin?: string | null
           buyer_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_role?: string | null
+          completion_note?: string | null
           created_at?: string
           delivery_address_id?: string | null
           gst_amount?: number
@@ -603,6 +611,10 @@ export type Database = {
         Update: {
           billing_gstin?: string | null
           buyer_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_role?: string | null
+          completion_note?: string | null
           created_at?: string
           delivery_address_id?: string | null
           gst_amount?: number
@@ -1810,6 +1822,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      cp_complete_order: {
+        Args: { p_note?: string; p_order_id: string }
+        Returns: undefined
+      }
       cp_eligible_vendors: {
         Args: { p_order_id: string }
         Returns: {
@@ -1977,6 +1993,7 @@ export type Database = {
         | "qc_ready"
         | "shipped"
         | "delivered"
+        | "completed"
         | "cancelled"
         | "refunded"
         | "disputed"
@@ -2137,6 +2154,7 @@ export const Constants = {
         "qc_ready",
         "shipped",
         "delivered",
+        "completed",
         "cancelled",
         "refunded",
         "disputed",

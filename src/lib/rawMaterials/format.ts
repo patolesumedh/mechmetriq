@@ -47,6 +47,8 @@ export function rmStatusLabel(status: string): string {
       return "Dispatched";
     case "delivered":
       return "Delivered";
+    case "completed":
+      return "Completed";
     case "cancelled":
       return "Cancelled";
     case "refunded":

@@ -17,6 +17,8 @@ export function orderStatusTone(status: Enums<"order_status">): BadgeTone {
       return "shipped";
     case "delivered":
       return "delivered";
+    case "completed":
+      return "completed";
     case "disputed":
       return "disputed";
     case "cancelled":
