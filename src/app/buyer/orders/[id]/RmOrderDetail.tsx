@@ -3,7 +3,8 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { RmLinesTable, RmTotals } from "@/components/rawMaterials/RmOrderParts";
 import { inr, rmStatusLabel } from "@/lib/rawMaterials/format";
-import type { Tables } from "@/lib/types/database";
+import type { Enums, Tables } from "@/lib/types/database";
+import { PAY_METHOD_LABEL, isTestPaymentRef } from "@/lib/payments/testGateway";
 import { formatDate } from "../../_lib/ui";
 import { RmCancelForm, RmPayForm } from "./RmOrderActions";
 
@@ -39,11 +40,17 @@ export function RmOrderDetail({
   items,
   address,
   justPlaced,
+  justPaid,
+  payment,
+  contact,
 }: {
   order: Tables<"orders">;
   items: Tables<"order_items">[];
   address: { label: string; full_address: string; pincode: string } | null;
   justPlaced: boolean;
+  justPaid: boolean;
+  payment: { method: Enums<"payment_method">; gateway_ref: string | null; created_at: string } | null;
+  contact: { email: string; phone: string | null };
 }) {
   const current = stepIndex(order.status);
   const cancelled = order.status === "cancelled";
@@ -67,6 +74,17 @@ export function RmOrderDetail({
           <b>Order placed.</b> Your proforma is ready. We&rsquo;ll assign a supplier and confirm freight — you&rsquo;ll
           pay once it&rsquo;s approved.
         </Card>
+      )}
+      {justPaid && order.status === "accepted_paid" && (
+        <div className="mb-5 flex items-start gap-3 rounded-[10px] border border-[#bfe6bf] bg-good-bg px-4 py-3.5">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-good text-[14px] font-bold text-white">
+            ✓
+          </span>
+          <div className="text-[13px] text-[#0a5a0a]">
+            <div className="text-[14px] font-bold">Payment received — your order is confirmed</div>
+            Your supplier will now prepare and dispatch the material. You&rsquo;ll see tracking here once it ships.
+          </div>
+        </div>
       )}
       {cancelled && (
         <Card className="mb-5 border-[#f3c4c4] bg-crit-bg px-5 py-3.5 text-[13px] text-[#a12525]">
@@ -143,12 +161,32 @@ export function RmOrderDetail({
           )}
           {order.status === "quoted" && (
             <>
-              <RmPayForm orderId={order.id} amountLabel={inr(order.total_amount, true)} />
+              <RmPayForm
+                orderId={order.id}
+                orderNumber={order.order_number}
+                amount={Number(order.total_amount)}
+                amountLabel={inr(order.total_amount, true)}
+                lineCount={items.length}
+                contact={contact}
+              />
               <RmCancelForm orderId={order.id} />
             </>
           )}
           {order.rm_paid_at && (
-            <p className="text-[12.5px] text-good">Paid on {formatDate(order.rm_paid_at)}.</p>
+            <div className="rounded-lg border border-grid px-3.5 py-2.5 text-[12.5px]">
+              <div className="flex items-center gap-1.5 font-semibold text-good">
+                Paid on {formatDate(order.rm_paid_at)}
+                {payment && <span className="text-ink-2">· {PAY_METHOD_LABEL[payment.method]}</span>}
+                {isTestPaymentRef(payment?.gateway_ref) && (
+                  <span className="rounded bg-[#fff1c2] px-1.5 py-[1px] text-[9.5px] font-extrabold tracking-wider text-[#6b4d00]">
+                    TEST
+                  </span>
+                )}
+              </div>
+              {payment?.gateway_ref && (
+                <div className="mt-0.5 font-mono text-[11.5px] text-muted">{payment.gateway_ref}</div>
+              )}
+            </div>
           )}
         </Card>
       </div>

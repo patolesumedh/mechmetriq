@@ -35,7 +35,7 @@ export default async function OrderDetailPage({
   if (!order || order.buyer_id !== user.id) notFound();
 
   if (order.order_type === "raw_material") {
-    const [{ data: rmItems }, { data: rmAddress }] = await Promise.all([
+    const [{ data: rmItems }, { data: rmAddress }, { data: rmPayment }, { data: profile }] = await Promise.all([
       supabase.from("order_items").select("*").eq("order_id", order.id).order("rm_line_no"),
       order.delivery_address_id
         ? supabase
@@ -44,9 +44,26 @@ export default async function OrderDetailPage({
             .eq("id", order.delivery_address_id)
             .single()
         : Promise.resolve({ data: null }),
+      supabase
+        .from("payments")
+        .select("method, gateway_ref, created_at")
+        .eq("order_id", order.id)
+        .eq("status", "success")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase.from("profiles").select("email, phone").eq("id", user.id).single(),
     ]);
     return (
-      <RmOrderDetail order={order} items={rmItems ?? []} address={rmAddress} justPlaced={placed === "1"} />
+      <RmOrderDetail
+        order={order}
+        items={rmItems ?? []}
+        address={rmAddress}
+        justPlaced={placed === "1"}
+        justPaid={paid === "1"}
+        payment={rmPayment}
+        contact={{ email: profile?.email ?? user.email ?? "", phone: profile?.phone ?? null }}
+      />
     );
   }
 
