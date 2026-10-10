@@ -74,6 +74,15 @@ export default async function FabricationOverviewPage() {
       .limit(5),
   ]);
 
+  const recentIds = (recentOrders ?? []).map((o) => o.id);
+  const { data: recentAssignments } = recentIds.length
+    ? await supabase
+        .from("order_vendor_assignments")
+        .select("order_id, vendor_payout")
+        .in("order_id", recentIds)
+    : { data: [] as { order_id: string; vendor_payout: number }[] };
+  const payoutByOrder = new Map((recentAssignments ?? []).map((a) => [a.order_id, a.vendor_payout]));
+
   const quotedRfqIds = new Set((myQuoteRfqIds ?? []).map((q) => q.rfq_id));
   const capabilities = vendorProfile.capabilities ?? [];
 
@@ -237,7 +246,7 @@ export default async function FabricationOverviewPage() {
                       <Badge tone={orderStatusTone(o.status)}>{orderStatusLabel(o.status)}</Badge>
                     </td>
                     <td className="border-b border-grid px-5 py-3 text-[13px] text-ink-2">
-                      {formatINR(o.total_amount)}
+                      {formatINR(payoutByOrder.get(o.id) ?? o.total_amount)}
                     </td>
                     <td className="border-b border-grid px-5 py-3 text-[13px] text-ink-2">
                       {formatDate(o.created_at)}
