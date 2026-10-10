@@ -511,6 +511,36 @@ export type Database = {
           },
         ]
       }
+      order_vendor_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          commission_pct: number | null
+          note: string | null
+          order_id: string
+          vendor_id: string
+          vendor_payout: number
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          commission_pct?: number | null
+          note?: string | null
+          order_id: string
+          vendor_id: string
+          vendor_payout: number
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          commission_pct?: number | null
+          note?: string | null
+          order_id?: string
+          vendor_id?: string
+          vendor_payout?: number
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           billing_gstin: string | null
@@ -1771,6 +1801,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cp_assign_vendor: {
+        Args: {
+          p_note?: string
+          p_order_id: string
+          p_payout: number
+          p_vendor_id: string
+        }
+        Returns: undefined
+      }
+      cp_eligible_vendors: {
+        Args: { p_order_id: string }
+        Returns: {
+          commission_override: number | null
+          company_name: string
+          material_match: boolean
+          process_match: boolean
+          rating: number | null
+          typical_lead_time: string | null
+          vendor_id: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       is_vendor_owner: { Args: { v_id: string }; Returns: boolean }
       log_kyc_event: {

@@ -41,6 +41,14 @@ export default async function JobsOrdersPage() {
     .order("created_at", { ascending: false });
 
   const rows = (orders ?? []) as unknown as OrderRow[];
+  const ids = rows.map((o) => o.id);
+  const { data: assignments } = ids.length
+    ? await supabase
+        .from("order_vendor_assignments")
+        .select("order_id, vendor_payout")
+        .in("order_id", ids)
+    : { data: [] as { order_id: string; vendor_payout: number }[] };
+  const payoutByOrder = new Map((assignments ?? []).map((a) => [a.order_id, a.vendor_payout]));
 
   return (
     <div>
@@ -66,7 +74,7 @@ export default async function JobsOrdersPage() {
                     Type
                   </th>
                   <th className="border-b border-grid px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
-                    Total
+                    Amount
                   </th>
                   <th className="border-b border-grid px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
                     Status
@@ -90,7 +98,14 @@ export default async function JobsOrdersPage() {
                       {o.order_type === "custom_part" ? "Custom Part" : "Raw Material"}
                     </td>
                     <td className="border-b border-grid px-5 py-3.5 text-[13px] text-ink-2">
-                      {formatINR(o.total_amount)}
+                      {payoutByOrder.has(o.id) ? (
+                        <>
+                          {formatINR(payoutByOrder.get(o.id))}
+                          <span className="ml-1 text-[11.5px] text-muted">payout</span>
+                        </>
+                      ) : (
+                        formatINR(o.total_amount)
+                      )}
                     </td>
                     <td className="border-b border-grid px-5 py-3.5">
                       <Badge tone={orderStatusTone(o.status)}>{orderStatusLabel(o.status)}</Badge>

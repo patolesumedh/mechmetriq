@@ -29,6 +29,7 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
+  const needsVendor = status === "needs_vendor";
   const statusFilter = ORDER_STATUSES.includes(status as OrderStatus)
     ? (status as OrderStatus)
     : undefined;
@@ -42,6 +43,9 @@ export default async function AdminOrdersPage({
 
   if (statusFilter) {
     query = query.eq("status", statusFilter);
+  }
+  if (needsVendor) {
+    query = query.eq("order_type", "custom_part").eq("status", "accepted_paid").is("vendor_id", null);
   }
 
   const { data: orders } = await query;
@@ -75,9 +79,10 @@ export default async function AdminOrdersPage({
         <FilterTabs
           basePath="/admin/orders"
           paramName="status"
-          active={statusFilter}
+          active={needsVendor ? "needs_vendor" : statusFilter}
           tabs={[
             { label: "All", value: undefined },
+            { label: "Needs vendor", value: "needs_vendor" },
             ...ORDER_STATUSES.map((s) => ({ label: titleCase(s), value: s })),
           ]}
         />
@@ -109,7 +114,15 @@ export default async function AdminOrdersPage({
                     </Badge>
                   </Td>
                   <Td>{buyerNameById.get(o.buyer_id) ?? "—"}</Td>
-                  <Td>{(o.vendor_id ? vendorNameById.get(o.vendor_id) : "Unassigned") ?? "—"}</Td>
+                  <Td>
+                    {o.vendor_id ? (
+                      vendorNameById.get(o.vendor_id) ?? "—"
+                    ) : o.order_type === "custom_part" && o.status === "accepted_paid" ? (
+                      <Badge tone="new">Needs vendor</Badge>
+                    ) : (
+                      "Unassigned"
+                    )}
+                  </Td>
                   <Td strong>{formatINR(o.total_amount)}</Td>
                   <Td>
                     <Badge tone={orderStatusTone(o.status)}>{titleCase(o.status)}</Badge>
@@ -117,7 +130,9 @@ export default async function AdminOrdersPage({
                   <Td>{formatDate(o.created_at)}</Td>
                   <Td>
                     <Link href={`/admin/orders/${o.id}`} className="font-semibold text-brand">
-                      View &rarr;
+                      {!o.vendor_id && o.order_type === "custom_part" && o.status === "accepted_paid"
+                        ? "Assign →"
+                        : "View →"}
                     </Link>
                   </Td>
                 </tr>

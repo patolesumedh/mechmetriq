@@ -16,16 +16,17 @@ import {
 import { RmLinesTable, RmTotals } from "@/components/rawMaterials/RmOrderParts";
 import { rmStatusLabel } from "@/lib/rawMaterials/format";
 import { RmApprovalCard } from "./RmApprovalCard";
+import { AssignVendorCard } from "./AssignVendorCard";
 
 export default async function AdminOrderDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ rm_error?: string; rm_done?: string }>;
+  searchParams: Promise<{ rm_error?: string; rm_done?: string; cp_error?: string; cp_done?: string }>;
 }) {
   const { id } = await params;
-  const { rm_error: rmError, rm_done: rmDone } = await searchParams;
+  const { rm_error: rmError, rm_done: rmDone, cp_error: cpError, cp_done: cpDone } = await searchParams;
   const supabase = await createClient();
 
   const { data: order } = await supabase.from("orders").select("*").eq("id", id).single();
@@ -68,6 +69,30 @@ export default async function AdminOrderDetailPage({
           .order("company_name"),
       ])
     : [{ data: null }, { data: null }];
+
+  const isCustom = order.order_type === "custom_part";
+  const canAssign = isCustom && order.status === "accepted_paid";
+  const [{ data: assignment }, { data: fabVendors }, { data: rfq }] = isCustom
+    ? await Promise.all([
+        supabase
+          .from("order_vendor_assignments")
+          .select("vendor_id, vendor_payout, commission_pct, note, assigned_at")
+          .eq("order_id", id)
+          .maybeSingle(),
+        canAssign
+          ? supabase.rpc("cp_eligible_vendors", { p_order_id: id })
+          : Promise.resolve({ data: null }),
+        order.source_rfq_id
+          ? supabase
+              .from("rfqs")
+              .select("id, process:master_items!rfqs_process_id_fkey(name)")
+              .eq("id", order.source_rfq_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null }),
+      ])
+    : [{ data: null }, { data: null }, { data: null }];
+  const processLabel =
+    (rfq as unknown as { process: { name: string } | null } | null)?.process?.name ?? null;
 
   return (
     <div>
@@ -180,6 +205,28 @@ export default async function AdminOrderDetailPage({
         </div>
 
         <div className="space-y-4.5">
+          {canAssign && (
+            <AssignVendorCard
+              orderId={order.id}
+              subtotal={Number(order.subtotal)}
+              vendors={fabVendors ?? []}
+              current={
+                assignment
+                  ? {
+                      vendor_id: assignment.vendor_id,
+                      vendor_payout: Number(assignment.vendor_payout),
+                      note: assignment.note,
+                    }
+                  : null
+              }
+              processLabel={processLabel}
+              error={cpError}
+              done={cpDone}
+            />
+          )}
+          {isCustom && !canAssign && cpDone && (
+            <Card className="border-[#bfe3bf] bg-good-bg px-5 py-3 text-[13px] text-[#0a6b0a]">Vendor {cpDone}.</Card>
+          )}
           {needsApproval && (
             <RmApprovalCard
               orderId={order.id}
@@ -231,6 +278,20 @@ export default async function AdminOrderDetailPage({
             <div className="space-y-2 p-5 text-[13px]">
               <Field label="Company">{vendor?.company_name ?? "—"}</Field>
               <Field label="GSTIN">{vendor?.gstin ?? "—"}</Field>
+              {assignment && (
+                <>
+                  <Field label="Vendor payout">
+                    {formatINR(assignment.vendor_payout)}
+                    {assignment.commission_pct != null && (
+                      <span className="ml-1.5 text-[12px] font-normal text-muted">
+                        ({assignment.commission_pct}% platform margin)
+                      </span>
+                    )}
+                  </Field>
+                  <Field label="Assigned">{formatDateTime(assignment.assigned_at)}</Field>
+                  {assignment.note && <Field label="Note to vendor">{assignment.note}</Field>}
+                </>
+              )}
               {order.vendor_id ? (
                 <Link
                   href={`/admin/vendors/${order.vendor_id}`}
@@ -239,7 +300,9 @@ export default async function AdminOrderDetailPage({
                   View vendor profile &rarr;
                 </Link>
               ) : (
-                <p className="text-[12.5px] text-muted">Assigned on approval.</p>
+                <p className="text-[12.5px] text-muted">
+                  {isCustom ? "Not assigned yet — use “Route to machining vendor” above." : "Assigned on approval."}
+                </p>
               )}
             </div>
           </Card>

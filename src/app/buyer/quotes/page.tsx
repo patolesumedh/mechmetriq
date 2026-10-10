@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { QuotesCartTabs } from "@/components/buyer/QuotesCartTabs";
 import type { Tables } from "@/lib/types/database";
-import { acceptQuoteAction } from "./actions";
 import { AnalysisList, isRunning, type AnalysisRow } from "@/components/smartQuote/AnalysisList";
 import { AutoRefresh } from "@/components/smartQuote/AutoRefresh";
 import { PriceBlock } from "@/components/smartQuote/PriceBlock";
@@ -182,18 +181,6 @@ export default async function QuotesPage({
                           <Badge tone={quoteStatusTone(quote.status)}>
                             {statusLabel(quote.status)}
                           </Badge>
-                          {quote.status === "submitted" && rfq.status !== "accepted" && (
-                            <form action={acceptQuoteAction}>
-                              <input type="hidden" name="quote_id" value={quote.id} />
-                              <input type="hidden" name="rfq_id" value={rfq.id} />
-                              <button
-                                type="submit"
-                                className="rounded-lg bg-brand px-3.5 py-2 text-[12.5px] font-bold text-white"
-                              >
-                                Accept Quote
-                              </button>
-                            </form>
-                          )}
                         </div>
                       </div>
                     ))}
