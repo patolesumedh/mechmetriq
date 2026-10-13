@@ -4,6 +4,7 @@ import { Topbar } from "@/components/dashboard/Topbar";
 import { OnboardingForm } from "./OnboardingForm";
 import { PrivacyCard } from "@/components/kyc/PrivacyCard";
 import { loadKycRow, toKycView } from "@/lib/kyc/server";
+import { loadDetailsRow } from "@/lib/kyc/details";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -14,7 +15,7 @@ export default async function OnboardingPage() {
 
   if (!user) redirect("/login");
 
-  const [{ data: vendorProfile }, { data: processOptions }, { data: materialOptions }, kycRow] =
+  const [{ data: vendorProfile }, { data: processOptions }, { data: materialOptions }, kycRow, details] =
     await Promise.all([
       supabase.from("vendor_profiles").select("*").eq("id", user.id).single(),
       supabase
@@ -31,6 +32,7 @@ export default async function OnboardingPage() {
         .is("parent_id", null)
         .order("name"),
       loadKycRow(supabase, user.id),
+      loadDetailsRow(supabase, user.id),
     ]);
   const kyc = toKycView(kycRow);
 
@@ -46,6 +48,7 @@ export default async function OnboardingPage() {
         <OnboardingForm
           vendorProfile={vendorProfile}
           kyc={kyc}
+          details={details}
           processOptions={processOptions ?? []}
           materialOptions={materialOptions ?? []}
         />

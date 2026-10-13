@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatDate, kycTone, titleCase } from "../../_lib/format";
 import { loadKycForAdmin } from "@/lib/kyc/server";
+import { loadDetailsRow } from "@/lib/kyc/details";
+import { DOC_KINDS } from "@/lib/kyc/rules";
 import {
   approveVendorAction,
   rejectVendorAction,
@@ -39,7 +41,12 @@ export default async function AdminVendorDetailPage({
 
   // Decrypts PAN / bank details and creates 5-minute document links.
   // Every call is written to kyc_audit_log.
-  const kyc = await loadKycForAdmin(supabase, id);
+  const [kyc, details] = await Promise.all([
+    loadKycForAdmin(supabase, id),
+    loadDetailsRow(supabase, id),
+  ]);
+  const d = details;
+  const k = kyc?.row;
 
   const isFabrication = vendor.vendor_type === "fabrication";
   const skillTags = isFabrication ? vendor.capabilities : vendor.materials_handled;
@@ -87,7 +94,19 @@ export default async function AdminVendorDetailPage({
                 <Field label="Phone" value={profile?.phone ?? "—"} />
                 <Field label="GSTIN" value={vendor.gstin ?? "—"} />
                 <Field label="PAN" value={kyc?.pan ?? "—"} />
-                <Field label="Registered address" value={kyc?.row.registered_address ?? "—"} />
+                <Field
+                  label="Registered address"
+                  value={
+                    [k?.registered_address, k?.address_line2, k?.city, k?.state]
+                      .filter(Boolean)
+                      .join(", ") || "—"
+                  }
+                />
+                <Field label="Trade / brand name" value={d?.trade_name ?? "—"} />
+                <Field label="Year of establishment" value={d?.year_established?.toString() ?? "—"} />
+                <Field label="Business email" value={d?.business_email ?? "—"} />
+                <Field label="Website" value={d?.website ?? "—"} />
+                <Field label="Udyam / MSME no." value={k?.udyam_number ?? "—"} />
                 <Field label="Registered pincode" value={vendor.registered_pincode ?? "—"} />
                 <Field label="Warehouse pincode" value={vendor.warehouse_pincode ?? "—"} />
                 <Field label="Typical lead time" value={vendor.typical_lead_time ?? "—"} />
@@ -191,9 +210,77 @@ export default async function AdminVendorDetailPage({
                     value={formatDate(kyc.row.deletion_requested_at)}
                   />
                 )}
+                {DOC_KINDS.filter((dk) => kyc?.documentUrls[dk.key]?.length).map((dk) => (
+                  <div key={dk.key} className="col-span-2">
+                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                      {dk.label}
+                    </div>
+                    <ul className="space-y-1">
+                      {kyc!.documentUrls[dk.key].map((f, i) => (
+                        <li key={i}>
+                          {f.url ? (
+                            <a href={f.url} target="_blank" rel="noreferrer noopener" className="font-semibold text-brand">
+                              {f.name} &rarr;
+                            </a>
+                          ) : (
+                            f.name
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
                 <p className="col-span-2 text-[11.5px] text-muted">
                   Document links expire after 5 minutes. Views of this page are logged.
                 </p>
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="Primary Contact" />
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-[13px]">
+                <Field label="Name" value={k?.contact_name ?? "—"} />
+                <Field label="Designation" value={k?.contact_designation ?? "—"} />
+                <Field label="Mobile" value={k?.contact_mobile ?? "—"} />
+                <Field label="Email" value={k?.contact_email ?? "—"} />
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title="Facility & Operations" />
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-[13px]">
+                <Field label="Locations" value={d?.facility_locations ?? "—"} />
+                <Field label="Facilities" value={d?.facility_count?.toString() ?? "—"} />
+                <Field
+                  label="Area"
+                  value={d?.facility_area_sqft != null ? `${d.facility_area_sqft.toLocaleString("en-IN")} sq ft` : "—"}
+                />
+                <Field label="Employees" value={d?.employee_count?.toLocaleString("en-IN") ?? "—"} />
+                <Field label="Working days / hours" value={d?.working_hours ?? "—"} />
+                <Field label="Capacity" value={d?.production_capacity ?? "—"} />
+                <Field label="Serviceable geography" value={d?.serviceable_geography ?? "—"} />
+              </div>
+            </Card>
+
+            <Card>
+              <CardHeader title={isFabrication ? "Manufacturing Capability" : "Supply Details"} />
+              <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-[13px]">
+                {isFabrication ? (
+                  <>
+                    <Field label="Machines" value={d?.machines ?? "—"} />
+                    <Field label="Max job size" value={d?.max_job_size ?? "—"} />
+                    <Field label="Best tolerance" value={d?.tolerance_capability ?? "—"} />
+                    <Field label="Industries" value={d?.industries?.join(", ") || "—"} />
+                    <Field label="Inspection" value={d?.inspection_capability?.join(", ") || "—"} />
+                  </>
+                ) : (
+                  <>
+                    <Field label="Brands / mills" value={d?.brands ?? "—"} />
+                    <Field label="Supply capacity" value={d?.supply_capacity ?? "—"} />
+                    <Field label="Stock / warehouse" value={d?.stock_locations ?? "—"} />
+                    <Field label="Delivery locations" value={d?.delivery_locations ?? "—"} />
+                  </>
+                )}
               </div>
             </Card>
           </div>
@@ -306,7 +393,7 @@ function Field({ label, value }: { label: string; value: string }) {
       <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
         {label}
       </div>
-      <div className="font-medium text-ink">{value}</div>
+      <div className="whitespace-pre-line break-words font-medium text-ink">{value}</div>
     </div>
   );
 }

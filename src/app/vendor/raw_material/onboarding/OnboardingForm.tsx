@@ -5,6 +5,15 @@ import { updateKycAction, type OnboardingState } from "./actions";
 import type { Tables } from "@/lib/types/database";
 import type { KycView } from "@/lib/kyc/server";
 import { AddressField, BankFields, ConsentBlock, PanField } from "@/components/kyc/KycFields";
+import {
+  AddressExtraFields,
+  BusinessProfileExtra,
+  DocumentsSection,
+  OperationsSection,
+  PrimaryContactSection,
+  SupplierCapabilityFields,
+} from "@/components/kyc/ProfileFields";
+import type { DetailsRow } from "@/lib/kyc/details";
 
 const SECRET_INPUTS = ["pan", "bank_account_number", "bank_account_number_confirm", "ifsc_code"];
 
@@ -17,10 +26,12 @@ const labelClass = "mb-1.5 block text-[12.5px] font-semibold text-ink-2";
 export function OnboardingForm({
   vendor,
   kyc,
+  details,
   materials,
 }: {
   vendor: Tables<"vendor_profiles">;
   kyc: KycView;
+  details: DetailsRow | null;
   materials: { id: string; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(updateKycAction, initialState);
@@ -80,9 +91,12 @@ export function OnboardingForm({
           />
           {errText("company_name")}
         </div>
+        <BusinessProfileExtra details={details} kyc={kyc} errors={fe} />
         <div className="mb-3.5 grid grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>Business type</label>
+            <label className={labelClass}>
+              Business type <span className="text-crit">*</span>
+            </label>
             <input
               name="business_type"
               defaultValue={vendor.business_type ?? ""}
@@ -125,7 +139,11 @@ export function OnboardingForm({
           </div>
         </div>
         <AddressField kyc={kyc} errors={fe} />
+        <AddressExtraFields kyc={kyc} errors={fe} />
       </div>
+
+      <PrimaryContactSection kyc={kyc} errors={fe} />
+      <OperationsSection details={details} errors={fe} kind="raw_material" />
 
       <div className="mb-4.5 rounded-[10px] border border-grid bg-surface p-6">
         <h3 className="mb-1 text-[14.5px] font-semibold">Materials Supplied</h3>
@@ -152,6 +170,7 @@ export function OnboardingForm({
             </label>
           ))}
         </div>
+        <SupplierCapabilityFields details={details} errors={fe} />
         <div>
           <label className={labelClass}>Min. order quantity policy</label>
           <input
@@ -170,6 +189,8 @@ export function OnboardingForm({
         </p>
         <BankFields kyc={kyc} vendorId={vendor.id} errors={fe} />
       </div>
+
+      <DocumentsSection kyc={kyc} vendorId={vendor.id} kind="raw_material" errors={fe} />
 
       <ConsentBlock kyc={kyc} errors={fe} />
 
