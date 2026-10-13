@@ -13,6 +13,15 @@ import {
   cleanUpper,
   mask,
   type FieldErrors,
+  EMAIL_RE,
+  INDIAN_STATES,
+  MOBILE_RE,
+  UDYAM_RE,
+  cleanMobile,
+  docKindsFor,
+  parseDocMap,
+  type DocMap,
+  type VendorKind,
 } from "./rules";
 
 type Client = SupabaseClient<Database>;
@@ -30,6 +39,15 @@ export interface KycView {
   consentCurrent: boolean;
   consentAt: string | null;
   deletionRequestedAt: string | null;
+  udyamNumber: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  contactName: string | null;
+  contactDesignation: string | null;
+  contactMobile: string | null;
+  contactEmail: string | null;
+  documents: DocMap;
 }
 
 export async function loadKycRow(supabase: Client, vendorId: string): Promise<KycRow | null> {
@@ -53,6 +71,15 @@ export function toKycView(row: KycRow | null): KycView {
     consentCurrent: row?.consent_version === CONSENT_VERSION && !!row?.consent_at,
     consentAt: row?.consent_at ?? null,
     deletionRequestedAt: row?.deletion_requested_at ?? null,
+    udyamNumber: row?.udyam_number ?? null,
+    addressLine2: row?.address_line2 ?? null,
+    city: row?.city ?? null,
+    state: row?.state ?? null,
+    contactName: row?.contact_name ?? null,
+    contactDesignation: row?.contact_designation ?? null,
+    contactMobile: row?.contact_mobile ?? null,
+    contactEmail: row?.contact_email ?? null,
+    documents: parseDocMap(row?.documents),
   };
 }
 
@@ -79,9 +106,39 @@ function isOwnPath(path: string, vendorId: string) {
 export function prepareKyc(
   formData: FormData,
   vendorId: string,
-  existing: KycRow | null
+  existing: KycRow | null,
+  vendorKind: VendorKind
 ): { errors: FieldErrors } | { prepared: PreparedKyc } {
   const errors: FieldErrors = {};
+
+  // Business profile / contact (private: vendor + admin only)
+  const udyam = cleanUpper(formData.get("udyam_number"));
+  const address2 = clean(formData.get("address_line2"));
+  const city = clean(formData.get("city"));
+  const state = clean(formData.get("state"));
+  const contactName = clean(formData.get("contact_name"));
+  const contactDesignation = clean(formData.get("contact_designation"));
+  const contactMobile = cleanMobile(formData.get("contact_mobile"));
+  const contactEmail = clean(formData.get("contact_email")).toLowerCase();
+
+  if (udyam && !UDYAM_RE.test(udyam)) errors.udyam_number = "Udyam number should look like UDYAM-MH-26-0012345.";
+  if (address2.length > 300) errors.address_line2 = "Address is too long.";
+  if (city.length > 80) errors.city = "City name is too long.";
+  if (state && !INDIAN_STATES.includes(state)) errors.state = "Pick a state from the list.";
+  if (contactName.length > 120) errors.contact_name = "Name is too long.";
+  if (contactDesignation.length > 80) errors.contact_designation = "Designation is too long.";
+  if (contactMobile && !MOBILE_RE.test(contactMobile)) errors.contact_mobile = "Enter a 10-digit Indian mobile number.";
+  if (contactEmail && (!EMAIL_RE.test(contactEmail) || contactEmail.length > 200)) errors.contact_email = "Enter a valid email address.";
+
+  // Additional documents, one field per kind: doc_<kind>
+  const kinds = docKindsFor(vendorKind);
+  const documents: DocMap = {};
+  for (const k of kinds) {
+    const paths = formData.getAll(`doc_${k.key}`).map(clean).filter(Boolean);
+    if (paths.length > k.max) errors[`doc_${k.key}`] = `Upload at most ${k.max} file${k.max > 1 ? "s" : ""}.`;
+    else if (paths.some((x) => !isOwnPath(x, vendorId))) errors[`doc_${k.key}`] = "Invalid file.";
+    if (paths.length) documents[k.key] = paths;
+  }
 
   const pan = cleanUpper(formData.get("pan"));
   const address = clean(formData.get("registered_address"));
@@ -147,12 +204,34 @@ export function prepareKyc(
   if (chequePath !== (existing?.cancelled_cheque_path ?? null)) changed.push("cancelled_cheque");
   const oldCerts = existing?.certification_paths ?? [];
   if (certPaths.join("|") !== oldCerts.join("|")) changed.push("certifications");
+  const simple: [string, string, string | null | undefined][] = [
+    ["udyam_number", udyam, existing?.udyam_number],
+    ["address_line2", address2, existing?.address_line2],
+    ["city", city, existing?.city],
+    ["state", state, existing?.state],
+    ["contact_name", contactName, existing?.contact_name],
+    ["contact_designation", contactDesignation, existing?.contact_designation],
+    ["contact_mobile", contactMobile, existing?.contact_mobile],
+    ["contact_email", contactEmail, existing?.contact_email],
+  ];
+  for (const [name, now, before] of simple) if (now !== (before ?? "")) changed.push(name);
+  const oldDocs = parseDocMap(existing?.documents);
+  // Keep files of kinds this form doesn't show (e.g. another vendor type's).
+  for (const [k, paths] of Object.entries(oldDocs)) {
+    if (!kinds.some((x) => x.key === k)) documents[k] = paths;
+  }
+  const oldDocPaths = Object.values(oldDocs).flat();
+  const newDocPaths = Object.values(documents).flat();
+  for (const k of kinds) {
+    if ((oldDocs[k.key] ?? []).join("|") !== (documents[k.key] ?? []).join("|")) changed.push(`doc_${k.key}`);
+  }
 
   const removedPaths = [
     ...(existing?.cancelled_cheque_path && existing.cancelled_cheque_path !== chequePath
       ? [existing.cancelled_cheque_path]
       : []),
     ...oldCerts.filter((p) => !certPaths.includes(p)),
+    ...oldDocPaths.filter((p) => !newDocPaths.includes(p)),
   ];
 
   const row: PreparedKyc["row"] = {
@@ -170,11 +249,29 @@ export function prepareKyc(
     consent_at: consentCurrent ? existing!.consent_at : new Date().toISOString(),
     consent_version: CONSENT_VERSION,
     deletion_requested_at: existing?.deletion_requested_at ?? null,
+    udyam_number: udyam || null,
+    address_line2: address2 || null,
+    city: city || null,
+    state: state || null,
+    contact_name: contactName || null,
+    contact_designation: contactDesignation || null,
+    contact_mobile: contactMobile || null,
+    contact_email: contactEmail || null,
+    documents,
   };
 
   const missing: string[] = [];
   if (!row.pan_enc) missing.push("PAN");
   if (!row.registered_address) missing.push("registered address");
+  if (!row.city) missing.push("city");
+  if (!row.state) missing.push("state");
+  if (!row.contact_name) missing.push("primary contact name");
+  if (!row.contact_designation) missing.push("primary contact designation");
+  if (!row.contact_mobile) missing.push("primary contact mobile");
+  if (!row.contact_email) missing.push("primary contact email");
+  for (const k of kinds) {
+    if (k.required && !documents[k.key]?.length) missing.push(k.label.toLowerCase());
+  }
   if (!row.account_holder_name) missing.push("account holder name");
   if (!row.bank_account_enc) missing.push("bank account number");
   if (!row.ifsc_enc) missing.push("IFSC code");
@@ -259,9 +356,12 @@ export async function loadKycForAdmin(supabase: Client, vendorId: string) {
     decryptError = true;
   }
 
-  const paths = [row.cancelled_cheque_path, ...row.certification_paths].filter(
-    (p): p is string => !!p
-  );
+  const docMap = parseDocMap(row.documents);
+  const paths = [
+    row.cancelled_cheque_path,
+    ...row.certification_paths,
+    ...Object.values(docMap).flat(),
+  ].filter((p): p is string => !!p);
   const links = new Map<string, string>();
   if (paths.length) {
     const { data } = await supabase.storage
@@ -286,11 +386,17 @@ export async function loadKycForAdmin(supabase: Client, vendorId: string) {
       name: fileLabel(p),
       url: links.get(p) ?? null,
     })),
+    documentUrls: Object.fromEntries(
+      Object.entries(docMap).map(([kind, list]) => [
+        kind,
+        list.map((p) => ({ name: fileLabel(p), url: links.get(p) ?? null })),
+      ])
+    ) as Record<string, { name: string; url: string | null }[]>,
   };
 }
 
 /** Object paths look like {vendorId}/{timestamp}-{kind}-{originalName}. */
 export function fileLabel(path: string): string {
   const base = path.split("/").pop() ?? path;
-  return base.replace(/^\d+-(cheque|cert)-/, "");
+  return base.replace(/^\d+-[a-z_]+-/, "");
 }

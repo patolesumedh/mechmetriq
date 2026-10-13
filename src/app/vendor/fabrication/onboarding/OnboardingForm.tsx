@@ -7,6 +7,15 @@ import { Button } from "@/components/ui/Button";
 import type { Tables } from "@/lib/types/database";
 import type { KycView } from "@/lib/kyc/server";
 import { AddressField, BankFields, ConsentBlock, PanField } from "@/components/kyc/KycFields";
+import {
+  AddressExtraFields,
+  BusinessProfileExtra,
+  DocumentsSection,
+  FabricationCapabilityFields,
+  OperationsSection,
+  PrimaryContactSection,
+} from "@/components/kyc/ProfileFields";
+import type { DetailsRow } from "@/lib/kyc/details";
 
 const SECRET_INPUTS = ["pan", "bank_account_number", "bank_account_number_confirm", "ifsc_code"];
 
@@ -28,11 +37,13 @@ const initialState: OnboardingState = {};
 export function OnboardingForm({
   vendorProfile,
   kyc,
+  details,
   processOptions,
   materialOptions,
 }: {
   vendorProfile: Tables<"vendor_profiles">;
   kyc: KycView;
+  details: DetailsRow | null;
   processOptions: Tables<"master_items">[];
   materialOptions: Tables<"master_items">[];
 }) {
@@ -98,9 +109,12 @@ export function OnboardingForm({
           />
           {fe?.company_name && <p className="mt-1 text-[12px] text-crit">{fe.company_name}</p>}
         </div>
+        <BusinessProfileExtra details={details} kyc={kyc} errors={fe} />
         <div className="mb-3.5 grid grid-cols-2 gap-3">
           <div>
-            <label className={labelClass}>Business type</label>
+            <label className={labelClass}>
+              Business type <span className="text-crit">*</span>
+            </label>
             <select
               name="business_type"
               defaultValue={vendorProfile.business_type ?? ""}
@@ -130,7 +144,9 @@ export function OnboardingForm({
         <div className="mb-3.5 grid grid-cols-2 gap-3">
           <PanField kyc={kyc} errors={fe} />
           <div>
-            <label className={labelClass}>Registered pincode</label>
+            <label className={labelClass}>
+              Registered pincode <span className="text-crit">*</span>
+            </label>
             <input
               name="registered_pincode"
               defaultValue={vendorProfile.registered_pincode ?? ""}
@@ -145,7 +161,11 @@ export function OnboardingForm({
           </div>
         </div>
         <AddressField kyc={kyc} errors={fe} />
+        <AddressExtraFields kyc={kyc} errors={fe} />
       </Card>
+
+      <PrimaryContactSection kyc={kyc} errors={fe} />
+      <OperationsSection details={details} errors={fe} kind="fabrication" />
 
       <Card className="mb-4.5 p-6">
         <h3 className="mb-1 text-[14.5px] font-semibold">Manufacturing Capabilities</h3>
@@ -216,6 +236,8 @@ export function OnboardingForm({
           </div>
         </div>
 
+        <FabricationCapabilityFields details={details} errors={fe} />
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Typical lead time</label>
@@ -245,6 +267,8 @@ export function OnboardingForm({
         </p>
         <BankFields kyc={kyc} vendorId={vendorProfile.id} errors={fe} />
       </Card>
+
+      <DocumentsSection kyc={kyc} vendorId={vendorProfile.id} kind="fabrication" errors={fe} />
 
       <ConsentBlock kyc={kyc} errors={fe} />
 

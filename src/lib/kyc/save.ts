@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, TablesUpdate } from "@/lib/types/database";
-import type { FieldErrors, KycFormState } from "./rules";
+import { parseDocMap, type FieldErrors, type KycFormState, type VendorKind } from "./rules";
+import { commitDetails, loadDetailsRow, prepareDetails } from "./details";
 import { KycConfigError } from "./crypto";
 import { commitKyc, gstinMatchesPan, loadKycRow, logKycEvent, prepareKyc } from "./server";
 
@@ -22,14 +23,19 @@ export async function saveVendorKyc({
   formData,
   profileUpdate,
   profileErrors,
+  profileMissing = [],
   gstin,
+  vendorKind,
 }: {
   supabase: Client;
   vendorId: string;
   formData: FormData;
   profileUpdate: TablesUpdate<"vendor_profiles">;
   profileErrors: FieldErrors;
+  /** Required profile fields (on vendor_profiles) that are still empty. */
+  profileMissing?: string[];
   gstin: string | null;
+  vendorKind: VendorKind;
 }): Promise<KycFormState> {
   const { data: current } = await supabase
     .from("vendor_profiles")
@@ -38,11 +44,15 @@ export async function saveVendorKyc({
     .single();
   if (!current) return { error: "Vendor profile not found." };
 
-  const existing = await loadKycRow(supabase, vendorId);
+  const [existing, existingDetails] = await Promise.all([
+    loadKycRow(supabase, vendorId),
+    loadDetailsRow(supabase, vendorId),
+  ]);
+  const details = prepareDetails(formData, vendorId, existingDetails, vendorKind);
 
   let result: ReturnType<typeof prepareKyc>;
   try {
-    result = prepareKyc(formData, vendorId, existing);
+    result = prepareKyc(formData, vendorId, existing, vendorKind);
   } catch (e) {
     if (e instanceof KycConfigError) console.error(e.message);
     return {
@@ -51,21 +61,30 @@ export async function saveVendorKyc({
     };
   }
 
-  const errors: FieldErrors = { ...profileErrors, ...("errors" in result ? result.errors : {}) };
+  const errors: FieldErrors = {
+    ...profileErrors,
+    ...("errors" in details ? details.errors : {}),
+    ...("errors" in result ? result.errors : {}),
+  };
   if ("prepared" in result && gstin && !gstinMatchesPan(gstin, result.prepared.effectivePan)) {
     errors.gstin = "This GSTIN doesn't match the PAN (characters 3–12 of a GSTIN are the PAN).";
   }
-  if (Object.keys(errors).length || !("prepared" in result)) {
+  if (Object.keys(errors).length || !("prepared" in result) || "errors" in details) {
     return { error: "Please fix the highlighted fields.", fieldErrors: errors };
   }
   const { prepared } = result;
 
-  if (!(await commitKyc(supabase, prepared))) {
+  const missing = [...profileMissing, ...details.missing, ...prepared.missingForSubmission];
+  if (gstin && !parseDocMap(prepared.row.documents).gst_certificate?.length) {
+    missing.push("GST registration certificate");
+  }
+
+  if (!(await commitDetails(supabase, details.row)) || !(await commitKyc(supabase, prepared))) {
     return { error: "We couldn't save your details. Please try again." };
   }
 
   const canSubmit = current.kyc_status === "draft" || current.kyc_status === "rejected";
-  const complete = prepared.missingForSubmission.length === 0;
+  const complete = missing.length === 0;
   const submitting = canSubmit && complete;
 
   const { error } = await supabase
@@ -87,7 +106,7 @@ export async function saveVendorKyc({
   }
   if (canSubmit) {
     return {
-      success: `Saved as draft. To submit for approval, add: ${prepared.missingForSubmission.join(", ")}.`,
+      success: `Saved as draft. To submit for approval, add: ${missing.join(", ")}.`,
       savedAt: Date.now(),
     };
   }

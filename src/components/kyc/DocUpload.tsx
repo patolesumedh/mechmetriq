@@ -8,7 +8,7 @@ type Doc = { path: string; name: string; previewUrl?: string; isImage: boolean }
 
 function labelFor(path: string) {
   const base = path.split("/").pop() ?? path;
-  return base.replace(/^\d+-(cheque|cert)-/, "");
+  return base.replace(/^\d+-[a-z_]+-/, "");
 }
 
 function safeName(name: string) {
@@ -32,7 +32,7 @@ export function DocUpload({
 }: {
   vendorId: string;
   name: string;
-  kind: "cheque" | "cert";
+  kind: string;
   initialPaths: string[];
   multiple?: boolean;
   max?: number;

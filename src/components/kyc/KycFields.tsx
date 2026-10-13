@@ -58,7 +58,9 @@ export function PanField({
 export function AddressField({ kyc, errors }: { kyc: KycView; errors?: FieldErrors }) {
   return (
     <div>
-      <label className={kycLabelClass}>Registered address</label>
+      <label className={kycLabelClass}>
+        Registered address (line 1) <span className="text-crit">*</span>
+      </label>
       <input
         name="registered_address"
         defaultValue={kyc.registeredAddress ?? ""}

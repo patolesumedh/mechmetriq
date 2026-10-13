@@ -37,7 +37,9 @@ export async function updateKycAction(
     vendorId: user.id,
     formData,
     gstin: gstin || null,
+    vendorKind: "raw_material",
     profileErrors: errors,
+    profileMissing: businessType ? [] : ["business type"],
     profileUpdate: {
       company_name: companyName,
       business_type: businessType.slice(0, 60) || null,

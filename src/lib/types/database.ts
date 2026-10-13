@@ -1645,6 +1645,92 @@ export type Database = {
           },
         ]
       }
+      vendor_details: {
+        Row: {
+          brands: string | null
+          business_email: string | null
+          created_at: string
+          delivery_locations: string | null
+          employee_count: number | null
+          facility_area_sqft: number | null
+          facility_count: number | null
+          facility_locations: string | null
+          industries: string[]
+          inspection_capability: string[]
+          machines: string | null
+          max_job_size: string | null
+          production_capacity: string | null
+          serviceable_geography: string | null
+          stock_locations: string | null
+          supply_capacity: string | null
+          tolerance_capability: string | null
+          trade_name: string | null
+          updated_at: string
+          vendor_id: string
+          website: string | null
+          working_hours: string | null
+          year_established: number | null
+        }
+        Insert: {
+          brands?: string | null
+          business_email?: string | null
+          created_at?: string
+          delivery_locations?: string | null
+          employee_count?: number | null
+          facility_area_sqft?: number | null
+          facility_count?: number | null
+          facility_locations?: string | null
+          industries?: string[]
+          inspection_capability?: string[]
+          machines?: string | null
+          max_job_size?: string | null
+          production_capacity?: string | null
+          serviceable_geography?: string | null
+          stock_locations?: string | null
+          supply_capacity?: string | null
+          tolerance_capability?: string | null
+          trade_name?: string | null
+          updated_at?: string
+          vendor_id: string
+          website?: string | null
+          working_hours?: string | null
+          year_established?: number | null
+        }
+        Update: {
+          brands?: string | null
+          business_email?: string | null
+          created_at?: string
+          delivery_locations?: string | null
+          employee_count?: number | null
+          facility_area_sqft?: number | null
+          facility_count?: number | null
+          facility_locations?: string | null
+          industries?: string[]
+          inspection_capability?: string[]
+          machines?: string | null
+          max_job_size?: string | null
+          production_capacity?: string | null
+          serviceable_geography?: string | null
+          stock_locations?: string | null
+          supply_capacity?: string | null
+          tolerance_capability?: string | null
+          trade_name?: string | null
+          updated_at?: string
+          vendor_id?: string
+          website?: string | null
+          working_hours?: string | null
+          year_established?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_details_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: true
+            referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_kyc: {
         Row: {
           account_holder_name: string | null
@@ -1663,6 +1749,15 @@ export type Database = {
           registered_address: string | null
           updated_at: string
           vendor_id: string
+          udyam_number: string | null
+          address_line2: string | null
+          city: string | null
+          state: string | null
+          contact_name: string | null
+          contact_designation: string | null
+          contact_mobile: string | null
+          contact_email: string | null
+          documents: Json
         }
         Insert: {
           account_holder_name?: string | null
@@ -1681,6 +1776,15 @@ export type Database = {
           registered_address?: string | null
           updated_at?: string
           vendor_id: string
+          udyam_number?: string | null
+          address_line2?: string | null
+          city?: string | null
+          state?: string | null
+          contact_name?: string | null
+          contact_designation?: string | null
+          contact_mobile?: string | null
+          contact_email?: string | null
+          documents?: Json
         }
         Update: {
           account_holder_name?: string | null
@@ -1699,6 +1803,15 @@ export type Database = {
           registered_address?: string | null
           updated_at?: string
           vendor_id?: string
+          udyam_number?: string | null
+          address_line2?: string | null
+          city?: string | null
+          state?: string | null
+          contact_name?: string | null
+          contact_designation?: string | null
+          contact_mobile?: string | null
+          contact_email?: string | null
+          documents?: Json
         }
         Relationships: [
           {
