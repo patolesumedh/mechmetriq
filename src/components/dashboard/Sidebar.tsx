@@ -28,6 +28,17 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
 
+  // Highlight only the most specific matching item. Without this, a section
+  // root like "/vendor/fabrication" (Overview) also matched every page under
+  // it, so two items were highlighted at once.
+  const matchLength = (item: NavItem) => {
+    const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
+    const hrefs = [item.href, ...(item.matchPrefixes ?? [])].filter(matches);
+    return hrefs.length ? Math.max(...hrefs.map((h) => h.length)) : -1;
+  };
+  const best = Math.max(-1, ...items.map(matchLength));
+  const activeHref = best >= 0 ? items.find((i) => matchLength(i) === best)?.href : undefined;
+
   return (
     <aside className="flex w-[236px] flex-none flex-col border-r border-grid bg-surface p-3.5 print:hidden">
       <Link href="/" className="mb-1 flex items-center gap-2 px-2 pb-4 pt-1.5 text-[17px] font-bold tracking-tight">
@@ -41,9 +52,7 @@ export function Sidebar({
       </div>
       <nav className="flex flex-col gap-px">
         {items.map((item) => {
-          const matchesHref = (href: string) => pathname === href || pathname.startsWith(href + "/");
-          const active =
-            matchesHref(item.href) || (item.matchPrefixes?.some(matchesHref) ?? false);
+          const active = item.href === activeHref;
           return (
             <Link
               key={item.href}
