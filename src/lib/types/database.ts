@@ -757,6 +757,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: Database["public"]["Enums"]["account_status"]
           billing_address: string | null
           billing_pincode: string | null
           created_at: string
@@ -770,9 +771,13 @@ export type Database = {
           phone: string | null
           phone_verified: boolean
           role: Database["public"]["Enums"]["user_role"]
+          suspended_reason: string | null
+          terms_accepted_at: string | null
           updated_at: string
+          verification_required: boolean
         }
         Insert: {
+          account_status?: Database["public"]["Enums"]["account_status"]
           billing_address?: string | null
           billing_pincode?: string | null
           created_at?: string
@@ -786,9 +791,13 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"]
+          suspended_reason?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
+          verification_required?: boolean
         }
         Update: {
+          account_status?: Database["public"]["Enums"]["account_status"]
           billing_address?: string | null
           billing_pincode?: string | null
           created_at?: string
@@ -802,7 +811,10 @@ export type Database = {
           phone?: string | null
           phone_verified?: boolean
           role?: Database["public"]["Enums"]["user_role"]
+          suspended_reason?: string | null
+          terms_accepted_at?: string | null
           updated_at?: string
+          verification_required?: boolean
         }
         Relationships: []
       }
@@ -1926,6 +1938,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_account_status: {
+        Args: {
+          p_reason?: string
+          p_status: Database["public"]["Enums"]["account_status"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      my_sessions: {
+        Args: never
+        Returns: {
+          aal: string
+          created_at: string
+          id: string
+          ip: string | null
+          is_current: boolean
+          last_active_at: string
+          user_agent: string | null
+        }[]
+      }
+      revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
       cp_assign_vendor: {
         Args: {
           p_note?: string
@@ -2087,6 +2120,7 @@ export type Database = {
       vendor_has_quote_on: { Args: { p_rfq_id: string }; Returns: boolean }
     }
     Enums: {
+      account_status: "active" | "suspended"
       coupon_type: "percent" | "flat"
       dispute_status: "open" | "reviewing" | "resolved"
       kyc_status: "draft" | "pending" | "approved" | "rejected" | "on_hold"
@@ -2247,6 +2281,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: ["active", "suspended"],
       coupon_type: ["percent", "flat"],
       dispute_status: ["open", "reviewing", "resolved"],
       kyc_status: ["draft", "pending", "approved", "rejected", "on_hold"],

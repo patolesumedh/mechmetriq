@@ -6,7 +6,7 @@ import { loginAction, type LoginState } from "./actions";
 
 const initialState: LoginState = {};
 
-export function LoginForm({ next }: { next?: string | null }) {
+export function LoginForm({ next, notice }: { next?: string | null; notice?: string | null }) {
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   return (
@@ -22,17 +22,36 @@ export function LoginForm({ next }: { next?: string | null }) {
         <h1 className="mb-1 text-xl font-bold">Log in</h1>
         <p className="mb-5 text-[13px] text-ink-2">Access your buyer, vendor, or admin dashboard.</p>
 
-        {state.error && (
+        {state.error ? (
           <div className="mb-4 rounded-lg bg-crit-bg px-3.5 py-3 text-[13px] font-medium text-[#a12525]">
             {state.error}
+            {state.unverifiedEmail && (
+              <>
+                {" "}
+                <Link href="/verify/email" className="font-bold underline">
+                  Resend link
+                </Link>
+              </>
+            )}
           </div>
+        ) : (
+          notice && (
+            <div className="mb-4 rounded-lg bg-brand-light px-3.5 py-3 text-[13px] font-medium text-brand-dark">
+              {notice}
+            </div>
+          )
         )}
 
         <div className="mb-3.5">
-          <label className="mb-1.5 block text-[12.5px] font-semibold text-ink-2">Email or mobile</label>
+          <label htmlFor="login-identifier" className="mb-1.5 block text-[12.5px] font-semibold text-ink-2">
+            Email or mobile
+          </label>
           <input
+            id="login-identifier"
             name="email"
-            type="email"
+            type="text"
+            autoComplete="username"
+            defaultValue={state.identifier}
             required
             className="w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand"
           />
@@ -42,6 +61,7 @@ export function LoginForm({ next }: { next?: string | null }) {
           <input
             name="password"
             type="password"
+            autoComplete="current-password"
             required
             className="w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand"
           />

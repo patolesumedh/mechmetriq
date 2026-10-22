@@ -85,6 +85,16 @@ export function Sidebar({
           <b className="block truncate text-[13px]">{footer.name}</b>
           <span className="block truncate text-[11.5px] text-muted">{footer.subtitle}</span>
         </div>
+        <Link
+          href="/account/security"
+          title="Account security"
+          aria-label="Account security"
+          className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-muted transition-colors hover:bg-plane hover:text-ink"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          </svg>
+        </Link>
         <form action={logoutAction}>
           <button
             type="submit"

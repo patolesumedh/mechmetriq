@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAccountFor } from "@/lib/auth/guard";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { initials } from "./_lib/ui";
 
@@ -8,15 +8,7 @@ export default async function BuyerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const { supabase, user } = await requireAccountFor("buyer");
 
   const { data: profile } = await supabase
     .from("profiles")

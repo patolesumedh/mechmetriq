@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAccountFor } from "@/lib/auth/guard";
 import type { Json } from "@/lib/types/database";
 
 type Cfg = Record<string, unknown>;
@@ -29,13 +29,8 @@ function applyForm(node: unknown, path: string, form: FormData, errors: string[]
 }
 
 export async function saveSmartQuoteRatesAction(formData: FormData) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") redirect("/login");
+  // Admin role + MFA-verified session.
+  const { supabase, user } = await requireAccountFor("admin");
 
   const { data: row } = await supabase.from("sq_settings").select("config").eq("id", 1).single();
   if (!row) redirect("/admin/smart-quote?error=missing");
