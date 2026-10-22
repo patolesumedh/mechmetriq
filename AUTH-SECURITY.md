@@ -26,10 +26,20 @@ The migration is **not** additive (the signup trigger now requires
 3. Supabase → Authentication → **URL Configuration** → Redirect URLs: add
    `https://<your-domain>/auth/callback` and
    `https://*-<team>.vercel.app/auth/callback` for previews.
-4. Supabase → Authentication → **Multi-Factor**: TOTP enabled (default).
-5. Optional: set `NEXT_PUBLIC_SITE_URL` in Vercel to the production origin.
-6. Apply the migration, then merge/deploy the app.
-7. Each admin logs in once and scans the QR code at `/mfa/setup`.
+   Also set **Site URL** to the production origin
+   (`https://mechmetriq.vercel.app`). Supabase sends users there whenever a
+   redirect URL isn't allow-listed — if it's `http://localhost:3000`, email
+   links break for real users.
+4. Supabase → Authentication → **Emails** → Templates: make links verify on
+   our server so they work on any device (the default PKCE links only work in
+   the browser that signed up):
+   - Confirm signup: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email`
+   - Reset password: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
+   - Change email address: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email_change`
+5. Supabase → Authentication → **Multi-Factor**: TOTP enabled (default).
+6. Optional: set `NEXT_PUBLIC_SITE_URL` in Vercel to the production origin.
+7. Apply the migration, then merge/deploy the app.
+8. Each admin logs in once and scans the QR code at `/mfa/setup`.
 
 Accounts created before the migration are not forced through mobile
 verification (`profiles.verification_required = false`); every new one is.
