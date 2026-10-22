@@ -134,7 +134,6 @@ export function RegisterForm() {
               type="tel"
               required
               placeholder="10-digit mobile"
-              hint="We'll send a code to verify it"
               defaultValue={values.phone}
             />
           </div>

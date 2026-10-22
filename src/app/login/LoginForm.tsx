@@ -25,14 +25,6 @@ export function LoginForm({ next, notice }: { next?: string | null; notice?: str
         {state.error ? (
           <div className="mb-4 rounded-lg bg-crit-bg px-3.5 py-3 text-[13px] font-medium text-[#a12525]">
             {state.error}
-            {state.unverifiedEmail && (
-              <>
-                {" "}
-                <Link href="/verify/email" className="font-bold underline">
-                  Resend link
-                </Link>
-              </>
-            )}
           </div>
         ) : (
           notice && (
@@ -44,13 +36,13 @@ export function LoginForm({ next, notice }: { next?: string | null; notice?: str
 
         <div className="mb-3.5">
           <label htmlFor="login-identifier" className="mb-1.5 block text-[12.5px] font-semibold text-ink-2">
-            Email or mobile
+            Email
           </label>
           <input
             id="login-identifier"
             name="email"
-            type="text"
-            autoComplete="username"
+            type="email"
+            autoComplete="email"
             defaultValue={state.identifier}
             required
             className="w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand"

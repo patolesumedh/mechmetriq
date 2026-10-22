@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 import { AuthCard, AuthNotice } from "@/components/auth/AuthCard";
 import { IDLE_TIMEOUT_MS } from "@/lib/auth/sessionPolicy";
-import { revokeSessionAction, signOutOthersAction } from "./actions";
+import { disableMfaAction, revokeSessionAction, signOutOthersAction } from "./actions";
 
 export const metadata = { title: "Account security · MECHmetrIQ" };
 
@@ -51,12 +51,15 @@ export default async function AccountSecurityPage({
     supabase.auth.mfa.listFactors(),
   ]);
   const totp = factors?.totp ?? [];
+  const isAdmin = home === "/admin";
   const others = (sessions ?? []).filter((s) => !s.is_current).length;
 
   return (
     <AuthCard title="Account security" subtitle={user.email} width={620}>
       {msg === "revoked" && <AuthNotice>That session has been signed out.</AuthNotice>}
       {msg === "others" && <AuthNotice>All your other sessions have been signed out.</AuthNotice>}
+      {msg === "mfa_on" && <AuthNotice>Two-factor login is on. Your next login will ask for a code.</AuthNotice>}
+      {msg === "mfa_off" && <AuthNotice>Two-factor login is off.</AuthNotice>}
 
       <section className="mb-6">
         <h2 className="mb-1 text-[14px] font-bold">Password</h2>
@@ -68,11 +71,24 @@ export default async function AccountSecurityPage({
 
       <section className="mb-6">
         <h2 className="mb-1 text-[14px] font-bold">Two-factor login</h2>
-        <p className="text-[12.5px] text-ink-2">
+        <p className="mb-2 text-[12.5px] text-ink-2">
           {totp.length > 0
-            ? `On — authenticator app added ${when(totp[0].created_at)}.`
-            : "Off. Required for admin accounts."}
+            ? `On — every login asks for a code from your authenticator app (added ${when(totp[0].created_at)}).`
+            : "Off. Turn it on so that every login also needs a code from an authenticator app on your phone."}
         </p>
+        {totp.length === 0 ? (
+          <Link href="/mfa/setup" className="text-[13px] font-semibold text-brand">
+            Turn on two-factor login &rarr;
+          </Link>
+        ) : isAdmin ? (
+          <p className="text-[12px] text-muted">Required for admin accounts, so it can&rsquo;t be turned off.</p>
+        ) : (
+          <form action={disableMfaAction}>
+            <button type="submit" className="text-[12.5px] font-semibold text-[#a12525]">
+              Turn off two-factor login
+            </button>
+          </form>
+        )}
       </section>
 
       <section className="mb-6">
