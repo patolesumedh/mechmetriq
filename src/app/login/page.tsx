@@ -29,7 +29,9 @@ export default async function LoginPage({
     reason === "idle"
       ? "You were signed out after a period of inactivity. Please log in again."
       : error === "link"
-        ? "That link is invalid or has expired. Log in, or request a new link."
+        ? // Usually a sign-up link opened on another device or browser: Supabase
+          // has already confirmed the email, only the automatic sign-in failed.
+          "If you just clicked a verification link, your email is confirmed — log in to continue."
         : null;
 
   return <LoginForm next={nextPath} notice={notice} />;
