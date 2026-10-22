@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAccountFor } from "@/lib/auth/guard";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Card } from "@/components/ui/Card";
 import { initialsFrom } from "./_lib/helpers";
@@ -17,12 +17,8 @@ export default async function RawMaterialVendorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  // Until KYC is approved, only the KYC / onboarding pages are reachable.
+  const { supabase, user } = await requireAccountFor("raw_material");
 
   const { data: profile } = await supabase
     .from("profiles")

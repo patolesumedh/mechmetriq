@@ -3,20 +3,13 @@
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdminSession } from "@/lib/auth/guard";
 import { queueCadAnalyses, runCadAnalyses, runCadAnalysis } from "@/lib/smartQuote/server";
 
-async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
-  if (profile?.role !== "admin") redirect("/login");
-  return supabase;
-}
+// Admin role + MFA-verified session: these actions use the service-role
+// client, which bypasses RLS.
+const requireAdmin = requireAdminSession;
 
 /** Analyse the STEP files of an RFQ that don't have an analysis yet (e.g. RFQs from before v1). */
 export async function analyseRfqFilesAction(formData: FormData) {

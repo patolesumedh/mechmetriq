@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { PASSWORD_HINT } from "@/lib/auth/validation";
 import { registerAction, type RegisterState } from "./actions";
 
 const initialState: RegisterState = {};
@@ -12,6 +13,7 @@ export function RegisterForm() {
   const [vendorType, setVendorType] = useState<"fabrication" | "raw_material">("fabrication");
 
   const isVendor = accountType === "vendor";
+  const values = state.values ?? {};
 
   return (
     <div className="grid min-h-screen grid-cols-[1fr_1.1fr]">
@@ -113,7 +115,7 @@ export function RegisterForm() {
             </>
           )}
 
-          <Field label="Full name" name="fullName" required placeholder="e.g. Sana Mirza" />
+          <Field label="Full name" name="fullName" required placeholder="e.g. Sana Mirza" defaultValue={values.fullName} />
           {isVendor && (
             <Field
               label="Company name"
@@ -121,16 +123,26 @@ export function RegisterForm() {
               required
               placeholder="e.g. Precision Fab Works"
               hint="Required for vendor accounts"
+              defaultValue={values.companyName}
             />
           )}
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Email" name="email" type="email" required placeholder="you@company.com" />
-            <Field label="Mobile number" name="phone" required placeholder="10-digit mobile" />
+            <Field label="Email" name="email" type="email" required placeholder="you@company.com" defaultValue={values.email} />
+            <Field
+              label="Mobile number"
+              name="phone"
+              type="tel"
+              required
+              placeholder="10-digit mobile"
+              hint="We'll send a code to verify it"
+              defaultValue={values.phone}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Password" name="password" type="password" required placeholder="Min. 8 characters" />
             <Field label="Confirm password" name="confirmPassword" type="password" required placeholder="Re-enter password" />
           </div>
+          <div className="-mt-1.5 mb-3.5 text-[11.5px] text-muted">{PASSWORD_HINT}</div>
           {isVendor && (
             <Field
               label="GST number"
@@ -138,11 +150,13 @@ export function RegisterForm() {
               required
               placeholder="15-character GSTIN"
               hint="Required for vendor accounts"
+              defaultValue={values.gstin}
             />
           )}
 
+          {/* Not pre-ticked: consent has to be an active choice (F1.3). */}
           <label className="my-4.5 flex items-start gap-2 text-[12.5px] text-ink-2">
-            <input type="checkbox" name="agreeTerms" defaultChecked className="mt-0.5" />
+            <input type="checkbox" name="agreeTerms" required className="mt-0.5" />
             <span>I agree to the Terms of Service and Privacy Policy.</span>
           </label>
 
@@ -172,6 +186,7 @@ function Field({
   required,
   placeholder,
   hint,
+  defaultValue,
 }: {
   label: string;
   name: string;
@@ -179,6 +194,7 @@ function Field({
   required?: boolean;
   placeholder?: string;
   hint?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className="mb-3.5">
@@ -190,6 +206,7 @@ function Field({
         type={type}
         required={required}
         placeholder={placeholder}
+        defaultValue={defaultValue}
         className="w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand"
       />
       {hint && <div className="mt-1 text-[11.5px] text-muted">{hint}</div>}

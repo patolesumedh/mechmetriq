@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAccountFor } from "@/lib/auth/guard";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { initialsFor } from "./_lib/format";
 
@@ -8,13 +8,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
+  // Admin role + MFA-verified session (F1.4); otherwise off to /mfa/*.
+  const { supabase, user } = await requireAccountFor("admin");
 
   const { data: profile } = await supabase
     .from("profiles")

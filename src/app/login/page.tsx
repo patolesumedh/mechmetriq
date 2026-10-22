@@ -11,9 +11,9 @@ import { LoginForm } from "./LoginForm";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; reason?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, reason, error } = await searchParams;
   const nextPath = safeNextPath(next);
   const supabase = await createClient();
   const {
@@ -25,5 +25,12 @@ export default async function LoginPage({
     redirect(nextPath && dashboard === "/buyer" ? nextPath : dashboard);
   }
 
-  return <LoginForm next={nextPath} />;
+  const notice =
+    reason === "idle"
+      ? "You were signed out after a period of inactivity. Please log in again."
+      : error === "link"
+        ? "That link is invalid or has expired. Log in, or request a new link."
+        : null;
+
+  return <LoginForm next={nextPath} notice={notice} />;
 }

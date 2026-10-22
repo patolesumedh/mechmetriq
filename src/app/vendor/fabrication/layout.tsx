@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { requireAccountFor } from "@/lib/auth/guard";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Card } from "@/components/ui/Card";
 
@@ -16,13 +16,8 @@ export default async function FabricationVendorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
+  // Until KYC is approved, only the KYC / onboarding pages are reachable.
+  const { supabase, user } = await requireAccountFor("fabrication");
 
   const { data: profile } = await supabase
     .from("profiles")
