@@ -32,7 +32,8 @@ The migration is **not** additive (the signup trigger now requires
    links break for real users.
 4. Supabase → Authentication → **Emails** → Templates: make links verify on
    our server so they work on any device (the default PKCE links only work in
-   the browser that signed up):
+   the browser that signed up). Supabase only allows template edits once a
+   custom SMTP server is set up (Emails → SMTP Settings):
    - Confirm signup: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email`
    - Reset password: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
    - Change email address: `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email_change`
