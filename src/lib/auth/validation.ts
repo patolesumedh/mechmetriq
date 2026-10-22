@@ -13,11 +13,6 @@ export function normalizeMobile(input: string | null | undefined): string | null
   return null;
 }
 
-/** E.164 form Supabase Auth expects for SMS, e.g. "+919876543210". */
-export function toE164(mobile: string): string {
-  return `+91${mobile}`;
-}
-
 const GSTIN_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 /** Format + mod-36 checksum of the 15th character. */

@@ -9,8 +9,8 @@ import type { Database } from "@/lib/types/database";
  *
  *   suspended account / vendor on hold      → /account/suspended
  *   new account, email not verified        → /verify/email
- *   new account, mobile not verified       → /verify/phone
- *   admin without an MFA-verified session  → /mfa/setup or /mfa/verify
+ *   authenticator app on, code not entered → /mfa/verify (any role)
+ *   admin without an authenticator app     → /mfa/setup (required for admins)
  *   vendor in draft / rejected KYC         → /vendor/<type>/onboarding
  *   vendor with KYC under review           → /account/under-review
  *   everyone else                          → their dashboard
@@ -21,22 +21,22 @@ export async function getDashboardPath(
 ): Promise<string> {
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, account_status, email_verified, phone_verified, verification_required")
+    .select("role, account_status, email_verified, verification_required")
     .eq("id", userId)
     .single();
 
   if (!profile) return "/buyer";
   if (profile.account_status === "suspended") return "/account/suspended";
 
-  if (profile.verification_required) {
-    if (!profile.email_verified) return "/verify/email";
-    if (!profile.phone_verified) return "/verify/phone";
-  }
+  // Mobile (SMS) verification is switched off for now; only email is checked.
+  if (profile.verification_required && !profile.email_verified) return "/verify/email";
+
+  // Anyone who has turned on an authenticator app must enter its code.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") return "/mfa/verify";
 
   if (profile.role === "admin") {
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal?.currentLevel === "aal2") return "/admin";
-    return aal?.nextLevel === "aal2" ? "/mfa/verify" : "/mfa/setup";
+    return aal?.currentLevel === "aal2" ? "/admin" : "/mfa/setup";
   }
 
   if (profile.role === "vendor") {

@@ -6,11 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { AuthError, AuthField, AuthSubmit } from "@/components/auth/AuthCard";
 
 /**
- * Enrols an authenticator app (TOTP) as the admin's second factor. Clears
+ * Enrols an authenticator app (TOTP) as the user's second factor. Clears
  * any half-finished enrolment first, shows the QR code + secret, then
  * verifies the first code, which upgrades this session to aal2.
  */
-export function EnrollTotp() {
+export function EnrollTotp({ doneHref }: { doneHref: string }) {
   const router = useRouter();
   const [factor, setFactor] = useState<{ id: string; qr: string; secret: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export function EnrollTotp() {
       setPending(false);
       return;
     }
-    router.replace("/admin");
+    router.replace(doneHref);
     router.refresh();
   }
 

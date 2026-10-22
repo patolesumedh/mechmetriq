@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthError, AuthField, AuthSubmit } from "@/components/auth/AuthCard";
 
-/** Second step of an admin login: a code from the enrolled authenticator app. */
+/** Second step of a login with two-factor on: a code from the authenticator app. */
 export function VerifyTotp() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,8 @@ export function VerifyTotp() {
       setPending(false);
       return;
     }
-    router.replace("/admin");
+    // /login sends a signed-in user on to the screen for their status.
+    router.replace("/login");
     router.refresh();
   }
 
