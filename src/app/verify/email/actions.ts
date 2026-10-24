@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createEmailLinkClient } from "@/lib/supabase/emailLinks";
 import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 import { siteUrl } from "@/lib/auth/siteUrl";
 import { isValidEmail } from "@/lib/auth/validation";
@@ -31,7 +32,8 @@ export async function verifyEmailAction(
   const supabase = await createClient();
 
   if (intent === "resend") {
-    const { error } = await supabase.auth.resend({
+    // Implicit-flow link, so it works in any browser (see emailLinks.ts).
+    const { error } = await createEmailLinkClient().auth.resend({
       type: "signup",
       email,
       options: { emailRedirectTo: `${await siteUrl()}/auth/callback` },

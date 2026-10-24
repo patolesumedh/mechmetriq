@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createEmailLinkClient } from "@/lib/supabase/emailLinks";
 import { siteUrl } from "@/lib/auth/siteUrl";
 import { isValidEmail } from "@/lib/auth/validation";
 
@@ -18,7 +18,8 @@ export async function forgotPasswordAction(
     return { error: "Enter the email address you signed up with." };
   }
 
-  const supabase = await createClient();
+  // Implicit-flow link, so it works in any browser (see emailLinks.ts).
+  const supabase = createEmailLinkClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${await siteUrl()}/auth/callback?next=/reset-password`,
   });

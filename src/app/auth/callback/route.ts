@@ -6,8 +6,9 @@ import { safeNextPath } from "@/lib/rawMaterials/format";
 
 /**
  * Landing point for links in Supabase auth emails (sign-up confirmation,
- * password reset, email change). Handles both the default PKCE `?code=` links
- * and `?token_hash=&type=` links from customised email templates, then sends
+ * password reset, email change). Handles PKCE `?code=` links, `?token_hash=`
+ * links from customised email templates, and implicit-flow links (forwarded
+ * to /auth/confirm), then sends
  * the user on: to `?next=` when given (e.g. /reset-password), otherwise to
  * the screen for their status.
  */
@@ -17,6 +18,13 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   const next = safeNextPath(searchParams.get("next"));
+
+  // Implicit-flow links (see src/lib/supabase/emailLinks.ts) carry the
+  // session in the URL #fragment, which never reaches the server. Hand over
+  // to the client page; browsers keep the fragment across this redirect.
+  if (!code && !tokenHash) {
+    return NextResponse.redirect(new URL(`/auth/confirm${request.nextUrl.search}`, request.url));
+  }
 
   const supabase = await createClient();
   let ok = false;
