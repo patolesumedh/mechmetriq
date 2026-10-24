@@ -1938,6 +1938,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_user_invite: {
+        Args: { p_email: string; p_role: Database["public"]["Enums"]["user_role"] }
+        Returns: string
+      }
+      admin_update_user: {
+        Args: {
+          p_full_name: string
+          p_phone: string
+          p_role: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       admin_set_account_status: {
         Args: {
           p_reason?: string
