@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createEmailLinkClient } from "@/lib/supabase/emailLinks";
 import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 import { siteUrl } from "@/lib/auth/siteUrl";
 import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from "@/lib/auth/pwned";
@@ -62,9 +63,9 @@ export async function registerAction(
   }
   if (await isPasswordLeaked(password)) return fail(LEAKED_PASSWORD_MESSAGE);
 
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.auth.signUp({
+  // Implicit-flow client so the confirmation link works in any browser
+  // (see emailLinks.ts); it stores no session itself.
+  const { data, error } = await createEmailLinkClient().auth.signUp({
     email,
     password,
     options: {
@@ -107,5 +108,8 @@ export async function registerAction(
     redirect("/verify/email");
   }
 
+  // Email confirmation is off: sign the new user in on this browser.
+  const supabase = await createClient();
+  await supabase.auth.setSession(data.session);
   redirect(await getDashboardPath(supabase, data.session.user.id));
 }
