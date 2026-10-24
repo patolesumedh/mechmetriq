@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { Card } from "@/components/ui/Card";
@@ -13,10 +14,11 @@ type Role = Database["public"]["Enums"]["user_role"];
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; msg?: string }>;
+  searchParams: Promise<{ role?: string; msg?: string; detail?: string }>;
 }) {
-  const { role, msg } = await searchParams;
-  const roleFilter = role as Role | undefined;
+  const { role, msg, detail } = await searchParams;
+  const suspendedOnly = role === "suspended";
+  const roleFilter = suspendedOnly ? undefined : (role as Role | undefined);
 
   const supabase = await createClient();
   const {
@@ -31,12 +33,26 @@ export default async function AdminUsersPage({
   if (roleFilter === "buyer" || roleFilter === "vendor" || roleFilter === "admin") {
     query = query.eq("role", roleFilter);
   }
+  if (suspendedOnly) {
+    query = query.eq("account_status", "suspended");
+  }
 
   const { data: users } = await query;
 
   return (
     <div>
-      <Topbar title="Users" pill={{ label: `${users?.length ?? 0} total` }} />
+      <Topbar
+        title="Users"
+        pill={{ label: `${users?.length ?? 0} ${suspendedOnly ? "suspended" : "total"}` }}
+        right={
+          <Link
+            href="/admin/users/new"
+            className="rounded-lg bg-brand px-3.5 py-2 text-[12.5px] font-bold text-white"
+          >
+            + Add user
+          </Link>
+        }
+      />
 
       <div className="mt-6">
         {msg && (
@@ -48,18 +64,19 @@ export default async function AdminUsersPage({
           >
             {msg === "suspended" && "User suspended and signed out everywhere."}
             {msg === "active" && "User reactivated."}
-            {msg === "error" && "Couldn't change that account's status."}
+            {msg === "error" && (detail ?? "Couldn't change that account's status.")}
           </div>
         )}
         <FilterTabs
           basePath="/admin/users"
           paramName="role"
-          active={roleFilter}
+          active={suspendedOnly ? "suspended" : roleFilter}
           tabs={[
             { label: "All", value: undefined },
             { label: "Buyers", value: "buyer" },
             { label: "Vendors", value: "vendor" },
             { label: "Admins", value: "admin" },
+            { label: "Suspended", value: "suspended" },
           ]}
         />
 
@@ -73,15 +90,20 @@ export default async function AdminUsersPage({
                 <Th>Role</Th>
                 <Th>Joined</Th>
                 <Th>Status</Th>
+                <Th></Th>
               </tr>
             </thead>
             <tbody>
               {(users ?? []).length === 0 && (
-                <EmptyRow colSpan={6}>No users match this filter.</EmptyRow>
+                <EmptyRow colSpan={7}>No users match this filter.</EmptyRow>
               )}
               {(users ?? []).map((u) => (
                 <tr key={u.id}>
-                  <Td strong>{u.full_name}</Td>
+                  <Td strong>
+                    <Link href={`/admin/users/${u.id}`} className="hover:text-brand">
+                      {u.full_name}
+                    </Link>
+                  </Td>
                   <Td>{u.email}</Td>
                   <Td>
                     {u.phone ?? "—"}
@@ -123,6 +145,11 @@ export default async function AdminUsersPage({
                         </button>
                       </form>
                     )}
+                  </Td>
+                  <Td>
+                    <Link href={`/admin/users/${u.id}`} className="font-semibold text-brand">
+                      Edit &rarr;
+                    </Link>
                   </Td>
                 </tr>
               ))}
