@@ -115,7 +115,7 @@ export function RegisterForm() {
             </>
           )}
 
-          <Field label="Full name" name="fullName" required placeholder="e.g. Sana Mirza" defaultValue={values.fullName} />
+          <Field label="Full name" name="fullName" required placeholder="e.g. Vivaansh Rathod" defaultValue={values.fullName} />
           {isVendor && (
             <Field
               label="Company name"
