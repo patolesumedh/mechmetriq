@@ -13,5 +13,13 @@ export default async function ResetPasswordPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/forgot-password?error=link");
 
+  // With two-factor login on, Supabase only lets a session that has also
+  // passed the authenticator check (aal2) change the password. A reset link
+  // alone gives aal1, so ask for the app code first, then come back here.
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+    redirect("/mfa/verify?next=/reset-password");
+  }
+
   return <ResetPasswordForm email={user.email ?? ""} />;
 }
