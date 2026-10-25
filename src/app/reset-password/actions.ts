@@ -33,6 +33,10 @@ export async function resetPasswordAction(
     if (error.code === "same_password") {
       return { error: "Choose a password you haven't used for this account." };
     }
+    if (error.code === "insufficient_aal") {
+      // Two-factor login is on: enter the authenticator code, then retry.
+      redirect("/mfa/verify?next=/reset-password");
+    }
     if (error.code === "reauthentication_needed") {
       return { error: "For security, log out and use “Forgot password?” to set a new password." };
     }

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AuthError, AuthField, AuthSubmit } from "@/components/auth/AuthCard";
 
 /** Second step of a login with two-factor on: a code from the authenticator app. */
-export function VerifyTotp() {
+export function VerifyTotp({ next }: { next?: string | null }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -31,8 +31,9 @@ export function VerifyTotp() {
       setPending(false);
       return;
     }
+    // Back to where the code was asked for (e.g. /reset-password); otherwise
     // /login sends a signed-in user on to the screen for their status.
-    router.replace("/login");
+    router.replace(next ?? "/login");
     router.refresh();
   }
 

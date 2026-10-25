@@ -1,17 +1,31 @@
 import { AuthCard } from "@/components/auth/AuthCard";
 import { logoutAction } from "@/lib/actions/auth";
 import { PRIVACY_CONTACT_EMAIL } from "@/lib/kyc/rules";
+import { safeNextPath } from "@/lib/rawMaterials/format";
 import { requireLanding } from "../_lib";
 import { VerifyTotp } from "./VerifyTotp";
 
 export const metadata = { title: "Two-factor login · MECHmetrIQ" };
 
-export default async function MfaVerifyPage() {
+export default async function MfaVerifyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   await requireLanding("/mfa/verify");
+  const next = safeNextPath((await searchParams).next);
+  const resetting = next === "/reset-password";
 
   return (
-    <AuthCard title="Enter your login code" subtitle="Open your authenticator app and enter the 6-digit code for MECHmetrIQ.">
-      <VerifyTotp />
+    <AuthCard
+      title={resetting ? "Confirm it's you" : "Enter your login code"}
+      subtitle={
+        resetting
+          ? "Your account has two-factor login on, so changing the password also needs the 6-digit code from your authenticator app."
+          : "Open your authenticator app and enter the 6-digit code for MECHmetrIQ."
+      }
+    >
+      <VerifyTotp next={next} />
       <p className="mt-4 text-[12px] leading-relaxed text-muted">
         Lost your phone? Email{" "}
         <a href={`mailto:${PRIVACY_CONTACT_EMAIL}`} className="font-semibold text-brand">
