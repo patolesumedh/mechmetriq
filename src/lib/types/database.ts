@@ -1743,6 +1743,133 @@ export type Database = {
           },
         ]
       }
+      vendor_duplicate_flags: {
+        Row: {
+          detected_at: string
+          field: string
+          id: number
+          matched_vendor_id: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          vendor_id: string
+        }
+        Insert: {
+          detected_at?: string
+          field: string
+          id?: number
+          matched_vendor_id: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          vendor_id: string
+        }
+        Update: {
+          detected_at?: string
+          field?: string
+          id?: number
+          matched_vendor_id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_duplicate_flags_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_duplicate_flags_matched_vendor_id_fkey"
+            columns: ["matched_vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_duplicate_flags_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_user_id: string | null
+          company_name: string
+          contact_name: string
+          created_at: string
+          created_by: string | null
+          email: string
+          expires_at: string
+          gstin: string | null
+          id: string
+          last_sent_at: string
+          phone: string | null
+          revoked_at: string | null
+          send_count: number
+          token_hash: string
+          vendor_type: Database["public"]["Enums"]["vendor_type"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          company_name: string
+          contact_name: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          expires_at: string
+          gstin?: string | null
+          id?: string
+          last_sent_at?: string
+          phone?: string | null
+          revoked_at?: string | null
+          send_count?: number
+          token_hash: string
+          vendor_type: Database["public"]["Enums"]["vendor_type"]
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_user_id?: string | null
+          company_name?: string
+          contact_name?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          expires_at?: string
+          gstin?: string | null
+          id?: string
+          last_sent_at?: string
+          phone?: string | null
+          revoked_at?: string | null
+          send_count?: number
+          token_hash?: string
+          vendor_type?: Database["public"]["Enums"]["vendor_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_invites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_invites_accepted_user_id_fkey"
+            columns: ["accepted_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendor_kyc: {
         Row: {
           account_holder_name: string | null
@@ -1770,6 +1897,8 @@ export type Database = {
           contact_mobile: string | null
           contact_email: string | null
           documents: Json
+          pan_hash: string | null
+          gstin_pan_hash: string | null
         }
         Insert: {
           account_holder_name?: string | null
@@ -1797,6 +1926,8 @@ export type Database = {
           contact_mobile?: string | null
           contact_email?: string | null
           documents?: Json
+          pan_hash?: string | null
+          gstin_pan_hash?: string | null
         }
         Update: {
           account_holder_name?: string | null
@@ -1824,6 +1955,8 @@ export type Database = {
           contact_mobile?: string | null
           contact_email?: string | null
           documents?: Json
+          pan_hash?: string | null
+          gstin_pan_hash?: string | null
         }
         Relationships: [
           {
@@ -1831,6 +1964,57 @@ export type Database = {
             columns: ["vendor_id"]
             isOneToOne: true
             referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_kyc_reviews: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["kyc_status"] | null
+          id: number
+          reason: string | null
+          remarks: Json
+          to_status: Database["public"]["Enums"]["kyc_status"] | null
+          vendor_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["kyc_status"] | null
+          id?: number
+          reason?: string | null
+          remarks?: Json
+          to_status?: Database["public"]["Enums"]["kyc_status"] | null
+          vendor_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["kyc_status"] | null
+          id?: number
+          reason?: string | null
+          remarks?: Json
+          to_status?: Database["public"]["Enums"]["kyc_status"] | null
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_kyc_reviews_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_kyc_reviews_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1864,6 +2048,13 @@ export type Database = {
           updated_at: string
           vendor_type: Database["public"]["Enums"]["vendor_type"]
           warehouse_pincode: string | null
+          application_id: string | null
+          submitted_at: string | null
+          declarations_accepted_at: string | null
+          declarations_version: string | null
+          kyc_status_reason: string | null
+          kyc_reviewed_at: string | null
+          kyc_reviewed_by: string | null
         }
         Insert: {
           bank_account_number?: string | null
@@ -1893,6 +2084,13 @@ export type Database = {
           updated_at?: string
           vendor_type: Database["public"]["Enums"]["vendor_type"]
           warehouse_pincode?: string | null
+          application_id?: string | null
+          submitted_at?: string | null
+          declarations_accepted_at?: string | null
+          declarations_version?: string | null
+          kyc_status_reason?: string | null
+          kyc_reviewed_at?: string | null
+          kyc_reviewed_by?: string | null
         }
         Update: {
           bank_account_number?: string | null
@@ -1922,6 +2120,13 @@ export type Database = {
           updated_at?: string
           vendor_type?: Database["public"]["Enums"]["vendor_type"]
           warehouse_pincode?: string | null
+          application_id?: string | null
+          submitted_at?: string | null
+          declarations_accepted_at?: string | null
+          declarations_version?: string | null
+          kyc_status_reason?: string | null
+          kyc_reviewed_at?: string | null
+          kyc_reviewed_by?: string | null
         }
         Relationships: [
           {
@@ -1938,6 +2143,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_set_kyc_status: {
+        Args: { p_action: string; p_reason?: string; p_remarks?: Json; p_vendor_id: string }
+        Returns: undefined
+      }
+      admin_set_vendor_type: {
+        Args: { p_type: Database["public"]["Enums"]["vendor_type"]; p_vendor_id: string }
+        Returns: undefined
+      }
+      is_operational_vendor: { Args: never; Returns: boolean }
+      vendor_invite_lookup: {
+        Args: { p_token: string }
+        Returns: {
+          company_name: string
+          contact_name: string
+          email: string
+          expires_at: string
+          gstin: string
+          phone: string
+          status: string
+          vendor_type: Database["public"]["Enums"]["vendor_type"]
+        }[]
+      }
+      vendor_invite_mark_accepted: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: undefined
+      }
+      vendor_submit_kyc: { Args: { p_declarations_version: string }; Returns: string }
       admin_create_user_invite: {
         Args: { p_email: string; p_role: Database["public"]["Enums"]["user_role"] }
         Returns: string
@@ -2136,7 +2368,15 @@ export type Database = {
       account_status: "active" | "suspended"
       coupon_type: "percent" | "flat"
       dispute_status: "open" | "reviewing" | "resolved"
-      kyc_status: "draft" | "pending" | "approved" | "rejected" | "on_hold"
+      kyc_status:
+        | "draft"
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "on_hold"
+        | "under_review"
+        | "correction_required"
+        | "suspended"
       listing_status:
         | "draft"
         | "pending_review"
@@ -2166,7 +2406,7 @@ export type Database = {
       staff_role: "super_admin" | "ops" | "finance" | "support" | "content"
       ticket_status: "open" | "in_progress" | "resolved"
       user_role: "buyer" | "vendor" | "admin"
-      vendor_type: "fabrication" | "raw_material"
+      vendor_type: "fabrication" | "raw_material" | "both"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2297,7 +2537,16 @@ export const Constants = {
       account_status: ["active", "suspended"],
       coupon_type: ["percent", "flat"],
       dispute_status: ["open", "reviewing", "resolved"],
-      kyc_status: ["draft", "pending", "approved", "rejected", "on_hold"],
+      kyc_status: [
+        "draft",
+        "pending",
+        "approved",
+        "rejected",
+        "on_hold",
+        "under_review",
+        "correction_required",
+        "suspended",
+      ],
       listing_status: [
         "draft",
         "pending_review",
@@ -2329,7 +2578,7 @@ export const Constants = {
       staff_role: ["super_admin", "ops", "finance", "support", "content"],
       ticket_status: ["open", "in_progress", "resolved"],
       user_role: ["buyer", "vendor", "admin"],
-      vendor_type: ["fabrication", "raw_material"],
+      vendor_type: ["fabrication", "raw_material", "both"],
     },
   },
 } as const

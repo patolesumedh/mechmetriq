@@ -7,12 +7,12 @@ import type { Database } from "@/lib/types/database";
  * layouts (via requireAccountFor) and anywhere that bounces an already
  * authenticated visitor away from login/register.
  *
- *   suspended account / vendor on hold      → /account/suspended
+ *   suspended account / vendor suspended    → /account/suspended
  *   new account, email not verified        → /verify/email
  *   authenticator app on, code not entered → /mfa/verify (any role)
  *   admin without an authenticator app     → /mfa/setup (required for admins)
- *   vendor in draft / rejected KYC         → /vendor/<type>/onboarding
- *   vendor with KYC under review           → /account/under-review
+ *   vendor in draft / rejected / correction → /vendor/<portal>/onboarding
+ *   vendor submitted / under review        → /account/under-review
  *   everyone else                          → their dashboard
  */
 export async function getDashboardPath(
@@ -45,16 +45,19 @@ export async function getDashboardPath(
       .select("vendor_type, kyc_status")
       .eq("id", userId)
       .single();
-    const type = vendorProfile?.vendor_type ?? "fabrication";
+    // "both" vendors land in the fabrication portal and can switch (F5.6).
+    const portal = vendorProfile?.vendor_type === "raw_material" ? "raw_material" : "fabrication";
     switch (vendorProfile?.kyc_status) {
       case "approved":
-        return `/vendor/${type}`;
+        return `/vendor/${portal}`;
       case "pending":
+      case "under_review":
         return "/account/under-review";
       case "on_hold":
+      case "suspended":
         return "/account/suspended";
-      default:
-        return `/vendor/${type}/onboarding`;
+      default: // draft, rejected, correction_required
+        return `/vendor/${portal}/onboarding`;
     }
   }
 

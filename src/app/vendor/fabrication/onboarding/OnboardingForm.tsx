@@ -3,7 +3,6 @@
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { updateOnboardingAction, type OnboardingState } from "./actions";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import type { Tables } from "@/lib/types/database";
 import type { KycView } from "@/lib/kyc/server";
 import { AddressField, BankFields, ConsentBlock, PanField } from "@/components/kyc/KycFields";
@@ -11,11 +10,14 @@ import {
   AddressExtraFields,
   BusinessProfileExtra,
   DocumentsSection,
+  CorrectionNote,
   FabricationCapabilityFields,
   OperationsSection,
   PrimaryContactSection,
 } from "@/components/kyc/ProfileFields";
 import type { DetailsRow } from "@/lib/kyc/details";
+import { KycFormFooter, KycFormNotice } from "@/components/kyc/KycFormFooter";
+import { REVIEW_SECTIONS, canEditKyc, type CorrectionRemarks } from "@/lib/kyc/status";
 
 const SECRET_INPUTS = ["pan", "bank_account_number", "bank_account_number_confirm", "ifsc_code"];
 
@@ -40,10 +42,12 @@ export function OnboardingForm({
   details,
   processOptions,
   materialOptions,
+  corrections,
 }: {
   vendorProfile: Tables<"vendor_profiles">;
   kyc: KycView;
   details: DetailsRow | null;
+  corrections: CorrectionRemarks;
   processOptions: Tables<"master_items">[];
   materialOptions: Tables<"master_items">[];
 }) {
@@ -78,6 +82,11 @@ export function OnboardingForm({
 
   return (
     <form ref={formRef} onSubmit={onSubmit} className="max-w-[760px]" noValidate>
+      <KycFormNotice
+        status={vendorProfile.kyc_status}
+        portal="fabrication"
+        correctionSections={REVIEW_SECTIONS.filter((s) => corrections[s.key]).map((s) => s.label)}
+      />
       {state.success && !state.error && (
         <div className="mb-5 rounded-lg bg-good-bg px-3.5 py-3 text-[13px] font-medium text-[#0a6b0a]">
           {state.success}
@@ -89,7 +98,10 @@ export function OnboardingForm({
         </div>
       )}
 
+      <fieldset disabled={!canEditKyc(vendorProfile.kyc_status)} className="min-w-0">
+      <div id="kyc-business" className="scroll-mt-6">
       <Card className="mb-4.5 p-6">
+        <CorrectionNote text={corrections.business} />
         <h3 className="mb-1 text-[14.5px] font-semibold">Business Details</h3>
         <p className="mb-4.5 text-[12.5px] text-muted">
           This is used to verify your business and generate GST-compliant invoices.
@@ -163,11 +175,14 @@ export function OnboardingForm({
         <AddressField kyc={kyc} errors={fe} />
         <AddressExtraFields kyc={kyc} errors={fe} />
       </Card>
+      </div>
 
-      <PrimaryContactSection kyc={kyc} errors={fe} />
-      <OperationsSection details={details} errors={fe} kind="fabrication" />
+      <PrimaryContactSection kyc={kyc} errors={fe} remark={corrections.contact} />
+      <OperationsSection details={details} errors={fe} kind="fabrication" remark={corrections.operations} />
 
+      <div id="kyc-capability" className="scroll-mt-6">
       <Card className="mb-4.5 p-6">
+        <CorrectionNote text={corrections.capability} />
         <h3 className="mb-1 text-[14.5px] font-semibold">Manufacturing Capabilities</h3>
         <p className="mb-4.5 text-[12.5px] text-muted">
           Select every process your shop floor can produce &mdash; this decides which orders are
@@ -259,28 +274,31 @@ export function OnboardingForm({
           </div>
         </div>
       </Card>
+      </div>
 
+      <div id="kyc-bank" className="scroll-mt-6">
       <Card className="mb-4.5 p-6">
+        <CorrectionNote text={corrections.bank} />
         <h3 className="mb-1 text-[14.5px] font-semibold">Bank &amp; Payout Details</h3>
         <p className="mb-4.5 text-[12.5px] text-muted">
           Used to process your payouts once orders are delivered.
         </p>
         <BankFields kyc={kyc} vendorId={vendorProfile.id} errors={fe} />
       </Card>
+      </div>
 
-      <DocumentsSection kyc={kyc} vendorId={vendorProfile.id} kind="fabrication" errors={fe} />
+      <DocumentsSection
+        kyc={kyc}
+        vendorId={vendorProfile.id}
+        kind={vendorProfile.vendor_type}
+        errors={fe}
+        remark={corrections.documents}
+      />
 
       <ConsentBlock kyc={kyc} errors={fe} />
+      </fieldset>
 
-      <div className="flex justify-end gap-2.5">
-        <Button type="submit" variant="primary" size="lg" disabled={pending}>
-          {pending
-            ? "Saving…"
-            : vendorProfile.kyc_status === "draft" || vendorProfile.kyc_status === "rejected"
-              ? "Submit for Approval →"
-              : "Save Changes"}
-        </Button>
-      </div>
+      <KycFormFooter status={vendorProfile.kyc_status} portal="fabrication" pending={pending} />
     </form>
   );
 }

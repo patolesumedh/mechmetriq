@@ -5,6 +5,7 @@ import { OnboardingForm } from "./OnboardingForm";
 import { PrivacyCard } from "@/components/kyc/PrivacyCard";
 import { loadKycRow, toKycView } from "@/lib/kyc/server";
 import { loadDetailsRow } from "@/lib/kyc/details";
+import { loadCorrections } from "@/lib/kyc/vendorPortal";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -37,6 +38,7 @@ export default async function OnboardingPage() {
   const kyc = toKycView(kycRow);
 
   if (!vendorProfile) redirect("/login");
+  const { remarks: corrections } = await loadCorrections(supabase, vendorProfile);
 
   return (
     <div>
@@ -49,6 +51,7 @@ export default async function OnboardingPage() {
           vendorProfile={vendorProfile}
           kyc={kyc}
           details={details}
+          corrections={corrections}
           processOptions={processOptions ?? []}
           materialOptions={materialOptions ?? []}
         />

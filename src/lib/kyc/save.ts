@@ -1,21 +1,24 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, TablesUpdate } from "@/lib/types/database";
-import { parseDocMap, type FieldErrors, type KycFormState, type VendorKind } from "./rules";
+import type { FieldErrors, KycFormState } from "./rules";
+import { canEditKyc, canSubmitKyc, isUnderReview } from "./status";
+import { loadCompleteness } from "./completeness";
 import { commitDetails, loadDetailsRow, prepareDetails } from "./details";
-import { KycConfigError } from "./crypto";
-import { commitKyc, gstinMatchesPan, loadKycRow, logKycEvent, prepareKyc } from "./server";
+import { KycConfigError, panHash } from "./crypto";
+import { commitKyc, gstinMatchesPan, loadKycRow, prepareKyc } from "./server";
 
 type Client = SupabaseClient<Database>;
 
 /**
- * Shared save flow for both vendor KYC forms.
+ * Shared save flow for both vendor KYC forms. Saving never submits: the
+ * vendor submits from the Review & Submit page (F5.1).
  *
  * 1. Validate the profile fields (caller) and the sensitive fields (here) —
  *    nothing is written if anything is invalid.
- * 2. Encrypt + store the sensitive fields in vendor_kyc.
- * 3. Update the non-sensitive vendor_profiles fields and, when everything
- *    required is present, move the KYC from draft/rejected to pending.
+ * 2. Encrypt + store the sensitive fields in vendor_kyc (plus the PAN hashes
+ *    used by the duplicate-vendor check, F5.2).
+ * 3. Update the non-sensitive vendor_profiles fields.
  */
 export async function saveVendorKyc({
   supabase,
@@ -23,36 +26,44 @@ export async function saveVendorKyc({
   formData,
   profileUpdate,
   profileErrors,
-  profileMissing = [],
   gstin,
-  vendorKind,
+  portal,
 }: {
   supabase: Client;
   vendorId: string;
   formData: FormData;
   profileUpdate: TablesUpdate<"vendor_profiles">;
   profileErrors: FieldErrors;
-  /** Required profile fields (on vendor_profiles) that are still empty. */
-  profileMissing?: string[];
   gstin: string | null;
-  vendorKind: VendorKind;
+  /** Which portal's form this is (capability fields differ). */
+  portal: "fabrication" | "raw_material";
 }): Promise<KycFormState> {
   const { data: current } = await supabase
     .from("vendor_profiles")
-    .select("kyc_status")
+    .select("kyc_status, vendor_type")
     .eq("id", vendorId)
     .single();
   if (!current) return { error: "Vendor profile not found." };
+  if (!canEditKyc(current.kyc_status)) {
+    return {
+      error: isUnderReview(current.kyc_status)
+        ? "Your application is being reviewed, so it can't be changed right now."
+        : "Your KYC can't be changed right now. Please contact support.",
+    };
+  }
 
   const [existing, existingDetails] = await Promise.all([
     loadKycRow(supabase, vendorId),
     loadDetailsRow(supabase, vendorId),
   ]);
-  const details = prepareDetails(formData, vendorId, existingDetails, vendorKind);
+  const details = prepareDetails(formData, vendorId, existingDetails, portal);
 
   let result: ReturnType<typeof prepareKyc>;
   try {
-    result = prepareKyc(formData, vendorId, existing, vendorKind);
+    result = prepareKyc(formData, vendorId, existing, current.vendor_type);
+    if ("prepared" in result) {
+      result.prepared.row.gstin_pan_hash = gstin ? panHash(gstin.slice(2, 12)) : null;
+    }
   } catch (e) {
     if (e instanceof KycConfigError) console.error(e.message);
     return {
@@ -74,41 +85,23 @@ export async function saveVendorKyc({
   }
   const { prepared } = result;
 
-  const missing = [...profileMissing, ...details.missing, ...prepared.missingForSubmission];
-  if (gstin && !parseDocMap(prepared.row.documents).gst_certificate?.length) {
-    missing.push("GST registration certificate");
-  }
-
-  if (!(await commitDetails(supabase, details.row)) || !(await commitKyc(supabase, prepared))) {
-    return { error: "We couldn't save your details. Please try again." };
-  }
-
-  const canSubmit = current.kyc_status === "draft" || current.kyc_status === "rejected";
-  const complete = missing.length === 0;
-  const submitting = canSubmit && complete;
-
-  const { error } = await supabase
-    .from("vendor_profiles")
-    .update({ ...profileUpdate, ...(submitting ? { kyc_status: "pending" as const } : {}) })
-    .eq("id", vendorId);
+  const { error } = await supabase.from("vendor_profiles").update(profileUpdate).eq("id", vendorId);
   if (error) {
     console.error("vendor_profiles update failed", error.code);
     return { error: "We couldn't save your details. Please try again." };
   }
-
-  if (submitting) await logKycEvent(supabase, vendorId, "submit");
-
-  if (submitting) {
-    return {
-      success: "Your KYC has been submitted. Our team will review it shortly.",
-      savedAt: Date.now(),
-    };
+  if (!(await commitDetails(supabase, details.row)) || !(await commitKyc(supabase, prepared))) {
+    return { error: "We couldn't save your details. Please try again." };
   }
-  if (canSubmit) {
-    return {
-      success: `Saved as draft. To submit for approval, add: ${missing.join(", ")}.`,
-      savedAt: Date.now(),
-    };
+
+  if (!canSubmitKyc(current.kyc_status)) {
+    return { success: "Your details have been saved.", savedAt: Date.now() };
   }
-  return { success: "Your details have been saved.", savedAt: Date.now() };
+  const { missing } = await loadCompleteness(supabase, vendorId);
+  return {
+    success: missing.length
+      ? `Saved. Still needed before you can submit: ${missing.map((m) => m.label.toLowerCase()).join(", ")}.`
+      : "Saved. Everything required is filled in — click Review & submit to send your application.",
+    savedAt: Date.now(),
+  };
 }

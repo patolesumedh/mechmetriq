@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardPath } from "./getDashboardPath";
+import { portalsFor } from "@/lib/kyc/status";
 
 export type AccountArea = "buyer" | "admin" | "fabrication" | "raw_material";
 
@@ -30,12 +31,21 @@ export async function requireAccountFor(area: AccountArea) {
   if (area === "buyer" || area === "admin") {
     allowed = home === `/${area}`;
   } else {
-    const root = `/vendor/${area}`;
-    const onboarding = `${root}/onboarding`;
+    // A "both" vendor may use either portal (F5.6).
+    const { data: vendor } = await supabase
+      .from("vendor_profiles")
+      .select("vendor_type")
+      .eq("id", user.id)
+      .maybeSingle();
+    const portals = vendor ? portalsFor(vendor.vendor_type) : [];
+    const onboarding = `/vendor/${area}/onboarding`;
+    const approvedHome = portals.some((p) => home === `/vendor/${p}`);
+    const onboardingHome =
+      home === "/account/under-review" || portals.some((p) => home === `/vendor/${p}/onboarding`);
     allowed =
-      home === root ||
-      ((home === onboarding || home === "/account/under-review") &&
-        (pathname === onboarding || pathname.startsWith(onboarding + "/")));
+      portals.includes(area) &&
+      (approvedHome ||
+        (onboardingHome && (pathname === onboarding || pathname.startsWith(onboarding + "/"))));
   }
 
   if (!allowed) redirect(home);

@@ -89,8 +89,13 @@ export function kycStatusTone(status: KycStatus): BadgeTone {
       return "pending";
     case "rejected":
       return "rejected";
-    case "on_hold":
+    case "under_review":
       return "review";
+    case "correction_required":
+      return "pending";
+    case "on_hold":
+    case "suspended":
+      return "rejected";
     case "draft":
     default:
       return "inactive";

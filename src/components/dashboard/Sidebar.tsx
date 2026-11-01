@@ -20,10 +20,13 @@ export function Sidebar({
   sectionLabel,
   items,
   footer,
+  switcher,
 }: {
   logoLabel?: string;
   sectionLabel: string;
   items: NavItem[];
+  /** Link to another portal of the same account (vendors of type "both"). */
+  switcher?: { label: string; href: string };
   footer: { initials: string; name: string; subtitle: string };
 }) {
   const pathname = usePathname();
@@ -47,6 +50,15 @@ export function Sidebar({
         </span>
         {logoLabel ?? "MECHmetrIQ"}
       </Link>
+      {switcher && (
+        <Link
+          href={switcher.href}
+          className="mb-1 flex items-center justify-between rounded-lg border border-grid px-2.5 py-2 text-[12.5px] font-semibold text-brand hover:bg-brand-light"
+        >
+          <span>{switcher.label}</span>
+          <span aria-hidden>&#8644;</span>
+        </Link>
+      )}
       <div className="px-2.5 pb-1.5 pt-3 text-[11px] font-semibold uppercase tracking-wide text-muted">
         {sectionLabel}
       </div>

@@ -1,5 +1,5 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, randomBytes } from "node:crypto";
 
 /**
  * Field-level encryption for KYC data (PAN, bank account, IFSC).
@@ -48,4 +48,15 @@ export function decryptField(stored: string | null | undefined): string | null {
 
 export function last4(value: string): string {
   return value.slice(-4);
+}
+
+/**
+ * Deterministic keyed hash (HMAC-SHA256) of a PAN, for duplicate-vendor
+ * checks: PAN itself is encrypted with a random IV, so equal PANs don't
+ * produce equal ciphertexts. The HMAC key is derived from the encryption
+ * key, so a database leak alone can't be used to test guessed PANs.
+ */
+export function panHash(pan: string): string {
+  const macKey = createHmac("sha256", getKey()).update("mmq-pan-hash-v1").digest();
+  return createHmac("sha256", macKey).update(pan.trim().toUpperCase()).digest("hex");
 }

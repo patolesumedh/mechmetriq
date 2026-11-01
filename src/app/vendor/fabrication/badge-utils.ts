@@ -91,8 +91,13 @@ export function kycStatusTone(status: Enums<"kyc_status">): BadgeTone {
       return "review";
     case "rejected":
       return "rejected";
+    case "under_review":
+      return "review";
+    case "correction_required":
+      return "pending";
     case "on_hold":
-      return "inactive";
+    case "suspended":
+      return "rejected";
     case "draft":
     default:
       return "pending";

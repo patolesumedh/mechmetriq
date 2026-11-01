@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Tables } from "@/lib/types/database";
-import { decryptField, encryptField, KycConfigError, last4 } from "./crypto";
+import { decryptField, encryptField, KycConfigError, last4, panHash } from "./crypto";
 import {
   ACCOUNT_RE,
   CONSENT_VERSION,
@@ -258,6 +258,9 @@ export function prepareKyc(
     contact_mobile: contactMobile || null,
     contact_email: contactEmail || null,
     documents,
+    // Filled in below once the effective PAN is known; gstin_pan_hash is set by saveVendorKyc.
+    pan_hash: null,
+    gstin_pan_hash: existing?.gstin_pan_hash ?? null,
   };
 
   const missing: string[] = [];
@@ -277,12 +280,15 @@ export function prepareKyc(
   if (!row.ifsc_enc) missing.push("IFSC code");
   if (!row.cancelled_cheque_path) missing.push("cancelled cheque / passbook image");
 
+  const effectivePan = pan || decryptField(existing?.pan_enc);
+  row.pan_hash = effectivePan ? panHash(effectivePan) : null;
+
   return {
     prepared: {
       row,
       changedFields: changed,
       removedPaths,
-      effectivePan: pan || decryptField(existing?.pan_enc),
+      effectivePan,
       missingForSubmission: missing,
       consentGiven: !consentCurrent,
     },

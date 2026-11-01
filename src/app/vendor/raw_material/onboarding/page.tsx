@@ -5,6 +5,8 @@ import { OnboardingForm } from "./OnboardingForm";
 import { PrivacyCard } from "@/components/kyc/PrivacyCard";
 import { loadKycRow, toKycView } from "@/lib/kyc/server";
 import { loadDetailsRow } from "@/lib/kyc/details";
+import { loadCorrections } from "@/lib/kyc/vendorPortal";
+import { KYC_STATUS_LABEL } from "@/lib/kyc/status";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -26,6 +28,7 @@ export default async function OnboardingPage() {
     loadDetailsRow(supabase, user.id),
   ]);
   const kyc = toKycView(kycRow);
+  const { remarks: corrections } = await loadCorrections(supabase, vendor);
 
   const { data: materials } = await supabase
     .from("master_items")
@@ -40,12 +43,18 @@ export default async function OnboardingPage() {
       <Topbar
         title="KYC / Profile"
         pill={{
-          label: vendor.kyc_status.replace("_", " "),
+          label: KYC_STATUS_LABEL[vendor.kyc_status],
           tone: vendor.kyc_status === "approved" ? "brand" : "orange",
         }}
       />
       <div className="mt-6">
-        <OnboardingForm vendor={vendor} kyc={kyc} details={details} materials={materials ?? []} />
+        <OnboardingForm
+          vendor={vendor}
+          kyc={kyc}
+          details={details}
+          materials={materials ?? []}
+          corrections={corrections}
+        />
         <PrivacyCard kyc={kyc} />
       </div>
     </div>
