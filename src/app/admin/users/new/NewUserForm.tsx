@@ -41,6 +41,7 @@ export function NewUserForm() {
             <select id="vendor_type" name="vendor_type" required defaultValue="fabrication" className={inputClass}>
               <option value="fabrication">Fabrication / machining</option>
               <option value="raw_material">Raw material supplier</option>
+              <option value="both">Both (switch between portals)</option>
             </select>
           </Field>
           <Field label="Company name" htmlFor="company_name">

@@ -19,14 +19,15 @@ export default async function UnderReviewPage() {
 
   const { data: vendor } = await supabase
     .from("vendor_profiles")
-    .select("vendor_type, company_name, updated_at")
+    .select("vendor_type, company_name, kyc_status, application_id, submitted_at")
     .eq("id", user.id)
     .single();
-  const type = vendor?.vendor_type ?? "fabrication";
+  const type = vendor?.vendor_type === "raw_material" ? "raw_material" : "fabrication";
+  const underReview = vendor?.kyc_status === "under_review";
 
   return (
     <AuthCard
-      title="Your KYC is under review"
+      title={underReview ? "Your application is under review" : "Application submitted"}
       subtitle={
         <>
           Thanks{vendor?.company_name ? <>, <b className="text-ink">{vendor.company_name}</b></> : ""}. Our team
@@ -36,11 +37,31 @@ export default async function UnderReviewPage() {
       }
       width={460}
     >
+      {vendor?.application_id && (
+        <div className="mb-4 rounded-lg border border-grid px-4 py-3 text-[13px]">
+          <div className="flex justify-between">
+            <span className="text-muted">Application ID</span>
+            <b className="font-mono text-ink">{vendor.application_id}</b>
+          </div>
+          {vendor.submitted_at && (
+            <div className="mt-1.5 flex justify-between">
+              <span className="text-muted">Submitted</span>
+              <span className="text-ink">
+                {new Date(vendor.submitted_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+              </span>
+            </div>
+          )}
+          <div className="mt-1.5 flex justify-between">
+            <span className="text-muted">Status</span>
+            <span className="font-semibold text-ink">{underReview ? "Under review" : "Waiting for review"}</span>
+          </div>
+        </div>
+      )}
       <Link
-        href={`/vendor/${type}/onboarding`}
+        href={`/vendor/${type}/onboarding/review`}
         className="mb-3 block w-full rounded-[9px] bg-brand py-3 text-center text-[14.5px] font-bold text-white"
       >
-        View submitted KYC
+        View submitted application
       </Link>
       <div className="flex justify-between text-[12.5px]">
         <Link href="/account/security" className="font-semibold text-brand">

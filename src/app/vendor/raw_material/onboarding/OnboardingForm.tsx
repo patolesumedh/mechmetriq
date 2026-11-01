@@ -8,12 +8,15 @@ import { AddressField, BankFields, ConsentBlock, PanField } from "@/components/k
 import {
   AddressExtraFields,
   BusinessProfileExtra,
+  CorrectionNote,
   DocumentsSection,
   OperationsSection,
   PrimaryContactSection,
   SupplierCapabilityFields,
 } from "@/components/kyc/ProfileFields";
 import type { DetailsRow } from "@/lib/kyc/details";
+import { KycFormFooter, KycFormNotice } from "@/components/kyc/KycFormFooter";
+import { REVIEW_SECTIONS, canEditKyc, type CorrectionRemarks } from "@/lib/kyc/status";
 
 const SECRET_INPUTS = ["pan", "bank_account_number", "bank_account_number_confirm", "ifsc_code"];
 
@@ -28,10 +31,12 @@ export function OnboardingForm({
   kyc,
   details,
   materials,
+  corrections,
 }: {
   vendor: Tables<"vendor_profiles">;
   kyc: KycView;
   details: DetailsRow | null;
+  corrections: CorrectionRemarks;
   materials: { id: string; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(updateKycAction, initialState);
@@ -60,6 +65,11 @@ export function OnboardingForm({
 
   return (
     <form ref={formRef} onSubmit={onSubmit} className="max-w-[760px]" noValidate>
+      <KycFormNotice
+        status={vendor.kyc_status}
+        portal="raw_material"
+        correctionSections={REVIEW_SECTIONS.filter((s) => corrections[s.key]).map((s) => s.label)}
+      />
       {state.error && (
         <div className="mb-4 rounded-lg bg-crit-bg px-3.5 py-3 text-[13px] font-medium text-[#a12525]">
           {state.error}
@@ -71,7 +81,9 @@ export function OnboardingForm({
         </div>
       )}
 
-      <div className="mb-4.5 rounded-[10px] border border-grid bg-surface p-6">
+      <fieldset disabled={!canEditKyc(vendor.kyc_status)} className="min-w-0">
+      <div id="kyc-business" className="mb-4.5 scroll-mt-6 rounded-[10px] border border-grid bg-surface p-6">
+        <CorrectionNote text={corrections.business} />
         <h3 className="mb-1 text-[14.5px] font-semibold">Business Details</h3>
         <p className="mb-4.5 text-[12.5px] text-muted">
           This is used to verify your business and generate GST-compliant invoices.
@@ -142,10 +154,11 @@ export function OnboardingForm({
         <AddressExtraFields kyc={kyc} errors={fe} />
       </div>
 
-      <PrimaryContactSection kyc={kyc} errors={fe} />
-      <OperationsSection details={details} errors={fe} kind="raw_material" />
+      <PrimaryContactSection kyc={kyc} errors={fe} remark={corrections.contact} />
+      <OperationsSection details={details} errors={fe} kind="raw_material" remark={corrections.operations} />
 
-      <div className="mb-4.5 rounded-[10px] border border-grid bg-surface p-6">
+      <div id="kyc-capability" className="mb-4.5 scroll-mt-6 rounded-[10px] border border-grid bg-surface p-6">
+        <CorrectionNote text={corrections.capability} />
         <h3 className="mb-1 text-[14.5px] font-semibold">Materials Supplied</h3>
         <p className="mb-4.5 text-[12.5px] text-muted">
           Select every material you stock — this drives which listings you can create.
@@ -182,7 +195,8 @@ export function OnboardingForm({
         </div>
       </div>
 
-      <div className="mb-4.5 rounded-[10px] border border-grid bg-surface p-6">
+      <div id="kyc-bank" className="mb-4.5 scroll-mt-6 rounded-[10px] border border-grid bg-surface p-6">
+        <CorrectionNote text={corrections.bank} />
         <h3 className="mb-1 text-[14.5px] font-semibold">Bank &amp; Payout Details</h3>
         <p className="mb-4.5 text-[12.5px] text-muted">
           Used to process your marketplace payouts.
@@ -190,23 +204,18 @@ export function OnboardingForm({
         <BankFields kyc={kyc} vendorId={vendor.id} errors={fe} />
       </div>
 
-      <DocumentsSection kyc={kyc} vendorId={vendor.id} kind="raw_material" errors={fe} />
+      <DocumentsSection
+        kyc={kyc}
+        vendorId={vendor.id}
+        kind={vendor.vendor_type}
+        errors={fe}
+        remark={corrections.documents}
+      />
 
       <ConsentBlock kyc={kyc} errors={fe} />
+      </fieldset>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-lg bg-brand px-5 py-3 text-[14.5px] font-bold text-white disabled:opacity-60"
-        >
-          {pending
-            ? "Saving…"
-            : vendor.kyc_status === "draft" || vendor.kyc_status === "rejected"
-              ? "Submit for Approval →"
-              : "Save Changes"}
-        </button>
-      </div>
+      <KycFormFooter status={vendor.kyc_status} portal="raw_material" pending={pending} />
     </form>
   );
 }

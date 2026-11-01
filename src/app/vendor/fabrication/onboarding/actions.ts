@@ -48,12 +48,8 @@ export async function updateOnboardingAction(
     vendorId: user.id,
     formData,
     gstin: gstin || null,
-    vendorKind: "fabrication",
+    portal: "fabrication",
     profileErrors: errors,
-    profileMissing: [
-      ...(businessType ? [] : ["business type"]),
-      ...(pincode ? [] : ["registered pincode"]),
-    ],
     profileUpdate: {
       company_name: companyName,
       business_type: businessType || null,

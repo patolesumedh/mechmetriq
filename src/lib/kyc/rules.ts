@@ -47,7 +47,8 @@ export interface KycFormState {
 // capability, additional documents.
 // ---------------------------------------------------------------------------
 
-export type VendorKind = "fabrication" | "raw_material";
+/** A portal's form ("fabrication" | "raw_material") or a vendor's type, which can also be "both". */
+export type VendorKind = "fabrication" | "raw_material" | "both";
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const MOBILE_RE = /^[6-9][0-9]{9}$/;
@@ -88,7 +89,7 @@ export interface DocKind {
   label: string;
   hint?: string;
   max: number;
-  for: "both" | VendorKind;
+  for: VendorKind;
   /** Needed before the vendor can submit for approval. */
   required?: boolean;
   /** Needed only when a GSTIN is entered. */
@@ -138,7 +139,7 @@ export const DOC_KINDS: DocKind[] = [
 ];
 
 export function docKindsFor(kind: VendorKind): DocKind[] {
-  return DOC_KINDS.filter((d) => d.for === "both" || d.for === kind);
+  return DOC_KINDS.filter((d) => kind === "both" || d.for === "both" || d.for === kind);
 }
 
 export type DocMap = Record<string, string[]>;

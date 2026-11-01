@@ -65,7 +65,7 @@ export default async function AdminOrderDetailPage({
         supabase
           .from("vendor_profiles")
           .select("id, company_name")
-          .eq("vendor_type", "raw_material")
+          .in("vendor_type", ["raw_material", "both"])
           .eq("kyc_status", "approved")
           .order("company_name"),
       ])

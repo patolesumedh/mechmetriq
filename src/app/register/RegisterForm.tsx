@@ -10,7 +10,7 @@ const initialState: RegisterState = {};
 export function RegisterForm() {
   const [state, formAction, pending] = useActionState(registerAction, initialState);
   const [accountType, setAccountType] = useState<"buyer" | "vendor">("vendor");
-  const [vendorType, setVendorType] = useState<"fabrication" | "raw_material">("fabrication");
+  const [vendorType, setVendorType] = useState<"fabrication" | "raw_material" | "both">("fabrication");
 
   const isVendor = accountType === "vendor";
   const values = state.values ?? {};
@@ -82,11 +82,12 @@ export function RegisterForm() {
 
           {isVendor && (
             <>
-              <div className="mb-5 grid grid-cols-2 gap-3">
+              <div className="mb-5 grid grid-cols-3 gap-3">
                 {(
                   [
                     { key: "fabrication", icon: "⚙️", title: "Machining / Fabrication", desc: "Receive RFQs, submit quotes, produce custom parts." },
                     { key: "raw_material", icon: "🧱", title: "Raw Material Supplier", desc: "List materials, manage stock, fulfil marketplace orders." },
+                    { key: "both", icon: "🔁", title: "Both", desc: "One login for both portals — switch between fabrication and raw material." },
                   ] as const
                 ).map((opt) => (
                   <button

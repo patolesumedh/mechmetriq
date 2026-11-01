@@ -20,7 +20,7 @@ export async function createListingAction(
     .select("id,vendor_type")
     .eq("id", user.id)
     .single();
-  if (!vendor || vendor.vendor_type !== "raw_material") {
+  if (!vendor || vendor.vendor_type === "fabrication") {
     return { error: "Only raw material vendors can create listings." };
   }
 

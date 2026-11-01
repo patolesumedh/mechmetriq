@@ -32,7 +32,7 @@ export default async function AdminOverviewPage() {
     supabase
       .from("vendor_profiles")
       .select("*", { count: "exact", head: true })
-      .eq("kyc_status", "pending"),
+      .in("kyc_status", ["pending", "under_review"]),
     supabase.from("orders").select("total_amount"),
     supabase.from("disputes").select("*", { count: "exact", head: true }).eq("status", "open"),
     supabase.from("listings").select("*", { count: "exact", head: true }).eq("status", "active"),
@@ -52,7 +52,7 @@ export default async function AdminOverviewPage() {
   const { data: pendingVendors } = await supabase
     .from("vendor_profiles")
     .select("id, company_name, vendor_type, kyc_status, created_at")
-    .eq("kyc_status", "pending")
+    .in("kyc_status", ["pending", "under_review"])
     .order("created_at", { ascending: false })
     .limit(5);
 

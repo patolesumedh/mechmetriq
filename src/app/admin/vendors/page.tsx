@@ -5,12 +5,21 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Table, Th, Td, EmptyRow } from "../_components/table";
 import { FilterTabs } from "../_components/FilterTabs";
-import { formatDate, kycTone, titleCase, vendorTypeTone } from "../_lib/format";
+import { formatDate, kycTone, vendorTypeTone } from "../_lib/format";
 import type { Database } from "@/lib/types/database";
+import { KYC_STATUS_LABEL, VENDOR_TYPE_LABEL } from "@/lib/kyc/status";
 
 type KycStatus = Database["public"]["Enums"]["kyc_status"];
 
-const KYC_STATUSES: KycStatus[] = ["draft", "pending", "approved", "rejected", "on_hold"];
+const KYC_STATUSES: KycStatus[] = [
+  "draft",
+  "pending",
+  "under_review",
+  "correction_required",
+  "approved",
+  "rejected",
+  "suspended",
+];
 
 export default async function AdminVendorsPage({
   searchParams,
@@ -29,11 +38,17 @@ export default async function AdminVendorsPage({
     .select("id, company_name, vendor_type, kyc_status, gstin, rating, created_at")
     .order("created_at", { ascending: false });
 
-  if (statusFilter) {
+  if (statusFilter === "suspended") {
+    query = query.in("kyc_status", ["suspended", "on_hold"]);
+  } else if (statusFilter) {
     query = query.eq("kyc_status", statusFilter);
   }
 
-  const { data: vendors } = await query;
+  const [{ data: vendors }, { data: flags }] = await Promise.all([
+    query,
+    supabase.from("vendor_duplicate_flags").select("vendor_id, matched_vendor_id").is("resolved_at", null),
+  ]);
+  const flagged = new Set((flags ?? []).flatMap((f) => [f.vendor_id, f.matched_vendor_id]));
 
   const vendorIds = (vendors ?? []).map((v) => v.id);
   const { data: profiles } = vendorIds.length
@@ -43,7 +58,18 @@ export default async function AdminVendorsPage({
 
   return (
     <div>
-      <Topbar title="Vendors" pill={{ label: `${vendors?.length ?? 0} total` }} />
+      <Topbar
+        title="Vendors"
+        pill={{ label: `${vendors?.length ?? 0} total` }}
+        right={
+          <Link
+            href="/admin/vendors/invites"
+            className="rounded-lg bg-brand px-3.5 py-2 text-[13px] font-bold text-white"
+          >
+            Invite vendor
+          </Link>
+        }
+      />
 
       <div className="mt-6">
         <FilterTabs
@@ -53,10 +79,12 @@ export default async function AdminVendorsPage({
           tabs={[
             { label: "All", value: undefined },
             { label: "Draft", value: "draft" },
-            { label: "Pending", value: "pending" },
+            { label: "Submitted", value: "pending" },
+            { label: "Under review", value: "under_review" },
+            { label: "Correction required", value: "correction_required" },
             { label: "Approved", value: "approved" },
             { label: "Rejected", value: "rejected" },
-            { label: "On Hold", value: "on_hold" },
+            { label: "Suspended", value: "suspended" },
           ]}
         />
 
@@ -80,12 +108,19 @@ export default async function AdminVendorsPage({
               )}
               {(vendors ?? []).map((v) => (
                 <tr key={v.id}>
-                  <Td strong>{v.company_name}</Td>
-                  <Td>
-                    <Badge tone={vendorTypeTone(v.vendor_type)}>{titleCase(v.vendor_type)}</Badge>
+                  <Td strong>
+                    {v.company_name}
+                    {flagged.has(v.id) && (
+                      <span className="ml-2 rounded-full bg-crit-bg px-2 py-0.5 text-[10.5px] font-bold text-[#a12525]">
+                        Possible duplicate
+                      </span>
+                    )}
                   </Td>
                   <Td>
-                    <Badge tone={kycTone(v.kyc_status)}>{titleCase(v.kyc_status)}</Badge>
+                    <Badge tone={vendorTypeTone(v.vendor_type)}>{VENDOR_TYPE_LABEL[v.vendor_type]}</Badge>
+                  </Td>
+                  <Td>
+                    <Badge tone={kycTone(v.kyc_status)}>{KYC_STATUS_LABEL[v.kyc_status]}</Badge>
                   </Td>
                   <Td>{v.gstin ?? "—"}</Td>
                   <Td>{v.rating != null ? v.rating.toFixed(1) : "—"}</Td>

@@ -15,21 +15,22 @@ export default async function SuspendedPage() {
   if (!user) redirect("/login");
   if ((await getDashboardPath(supabase, user.id)) !== "/account/suspended") redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("account_status, suspended_reason")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: vendor }] = await Promise.all([
+    supabase.from("profiles").select("account_status, suspended_reason").eq("id", user.id).single(),
+    supabase.from("vendor_profiles").select("kyc_status_reason").eq("id", user.id).maybeSingle(),
+  ]);
+  const accountSuspended = profile?.account_status === "suspended";
+  const reason = accountSuspended ? profile?.suspended_reason : vendor?.kyc_status_reason;
 
   return (
     <AuthCard
-      title={profile?.account_status === "suspended" ? "Your account is suspended" : "Your vendor account is on hold"}
+      title={accountSuspended ? "Your account is suspended" : "Your vendor account is suspended"}
       subtitle="You can't use MECHmetrIQ dashboards while your account is in this state. Your data is safe and nothing has been deleted."
       width={460}
     >
-      {profile?.suspended_reason && (
+      {reason && (
         <div className="mb-4 rounded-lg bg-warn-bg px-3.5 py-3 text-[13px] text-[#8a5a00]">
-          <b>Reason:</b> {profile.suspended_reason}
+          <b>Reason:</b> {reason}
         </div>
       )}
       <p className="mb-5 text-[13px] text-ink-2">

@@ -58,7 +58,7 @@ export async function createUserAction(formData: FormData) {
   if (!isValidEmail(email)) fail("Enter a valid email address.");
   if (role === "vendor") {
     if (!companyName) fail("Company name is required for vendors.");
-    if (vendorType !== "fabrication" && vendorType !== "raw_material") fail("Choose a vendor type.");
+    if (!["fabrication", "raw_material", "both"].includes(vendorType)) fail("Choose a vendor type.");
   }
 
   // One-time token that tells the sign-up trigger this account is admin-made.

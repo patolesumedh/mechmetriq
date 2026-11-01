@@ -23,7 +23,7 @@ export async function registerAction(
   formData: FormData
 ): Promise<RegisterState> {
   const accountType = str(formData.get("accountType")); // "buyer" | "vendor"
-  const vendorType = str(formData.get("vendorType")); // "fabrication" | "raw_material"
+  const vendorType = str(formData.get("vendorType")); // "fabrication" | "raw_material" | "both"
   const fullName = str(formData.get("fullName"));
   const companyName = str(formData.get("companyName"));
   const email = str(formData.get("email")).toLowerCase();
@@ -45,7 +45,7 @@ export async function registerAction(
     return fail("Choose whether you're signing up as a buyer or a vendor.");
   }
   const isVendor = accountType === "vendor";
-  if (isVendor && vendorType !== "fabrication" && vendorType !== "raw_material") {
+  if (isVendor && !["fabrication", "raw_material", "both"].includes(vendorType)) {
     return fail("Choose a vendor type.");
   }
   if (!fullName || fullName.length > 120) return fail("Enter your full name.");

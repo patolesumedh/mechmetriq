@@ -9,7 +9,6 @@ import {
   URL_RE,
   clean,
   type FieldErrors,
-  type VendorKind,
 } from "./rules";
 
 type Client = SupabaseClient<Database>;
@@ -56,7 +55,7 @@ export function prepareDetails(
   formData: FormData,
   vendorId: string,
   existing: DetailsRow | null,
-  kind: VendorKind
+  kind: "fabrication" | "raw_material"
 ): { errors: FieldErrors } | { row: DetailsInput; missing: string[] } {
   const errors: FieldErrors = {};
   const thisYear = new Date().getFullYear();

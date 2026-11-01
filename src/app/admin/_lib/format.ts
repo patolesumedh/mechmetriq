@@ -62,8 +62,13 @@ export function kycTone(status: Database["public"]["Enums"]["kyc_status"]): Badg
       return "pending";
     case "rejected":
       return "rejected";
-    case "on_hold":
+    case "under_review":
       return "review";
+    case "correction_required":
+      return "pending";
+    case "on_hold":
+    case "suspended":
+      return "rejected";
     case "draft":
     default:
       return "inactive";
@@ -183,7 +188,7 @@ export function roleTone(role: Database["public"]["Enums"]["user_role"]): BadgeT
 export function vendorTypeTone(
   type: Database["public"]["Enums"]["vendor_type"]
 ): BadgeTone {
-  return type === "fabrication" ? "quoted" : "production";
+  return type === "fabrication" ? "quoted" : type === "both" ? "review" : "production";
 }
 
 export function orderTypeTone(type: Database["public"]["Enums"]["order_type"]): BadgeTone {

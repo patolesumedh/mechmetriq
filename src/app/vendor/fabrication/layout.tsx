@@ -1,8 +1,7 @@
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { requireAccountFor } from "@/lib/auth/guard";
 import { Sidebar } from "@/components/dashboard/Sidebar";
-import { Card } from "@/components/ui/Card";
+import { VendorStatusBanner } from "@/components/kyc/VendorStatusBanner";
+import { loadCorrections, loadVendorPortal } from "@/lib/kyc/vendorPortal";
+import { KYC_STATUS_LABEL } from "@/lib/kyc/status";
 
 function initialsFor(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -16,33 +15,14 @@ export default async function FabricationVendorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Until KYC is approved, only the KYC / onboarding pages are reachable.
-  const { supabase, user } = await requireAccountFor("fabrication");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile || profile.role !== "vendor") redirect("/login");
-
-  const { data: vendorProfile } = await supabase
-    .from("vendor_profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (!vendorProfile || vendorProfile.vendor_type !== "fabrication") {
-    redirect("/login");
-  }
-
-  const kycStatus = vendorProfile.kyc_status;
+  const { supabase, vendor, switcher } = await loadVendorPortal("fabrication");
+  const { remarks } = await loadCorrections(supabase, vendor);
 
   return (
     <div className="flex min-h-screen">
       <Sidebar
         sectionLabel="Fabrication Vendor"
+        switcher={switcher}
         items={[
           { label: "Overview", href: "/vendor/fabrication" },
           { label: "RFQ Inbox", href: "/vendor/fabrication/rfqs" },
@@ -52,51 +32,13 @@ export default async function FabricationVendorLayout({
           { label: "KYC / Profile", href: "/vendor/fabrication/onboarding" },
         ]}
         footer={{
-          initials: initialsFor(vendorProfile.company_name),
-          name: vendorProfile.company_name,
-          subtitle:
-            kycStatus === "approved"
-              ? "Vendor · KYC Verified"
-              : kycStatus === "pending"
-                ? "Vendor · KYC Pending"
-                : kycStatus === "rejected"
-                  ? "Vendor · KYC Rejected"
-                  : kycStatus === "on_hold"
-                    ? "Vendor · On Hold"
-                    : "Vendor · Draft",
+          initials: initialsFor(vendor.company_name),
+          name: vendor.company_name,
+          subtitle: `Vendor · KYC ${KYC_STATUS_LABEL[vendor.kyc_status]}`,
         }}
       />
       <main className="flex-1 p-7">
-        {kycStatus !== "approved" && (
-          <Card
-            className={
-              "mb-5 flex items-center justify-between px-5 py-3.5 text-[13px] font-medium " +
-              (kycStatus === "rejected"
-                ? "bg-crit-bg text-[#a12525]"
-                : kycStatus === "on_hold"
-                  ? "bg-warn-bg text-[#8a5a00]"
-                  : kycStatus === "pending"
-                    ? "bg-warn-bg text-[#8a5a00]"
-                    : "bg-brand-light text-brand-dark")
-            }
-          >
-            <span>
-              {kycStatus === "pending" &&
-                "Your KYC is submitted and pending review by the MECHmetrIQ team."}
-              {kycStatus === "rejected" &&
-                (vendorProfile.kyc_rejection_reason
-                  ? `Your KYC was rejected: ${vendorProfile.kyc_rejection_reason}`
-                  : "Your KYC was rejected. Please review and resubmit your details.")}
-              {kycStatus === "on_hold" &&
-                "Your vendor account is on hold. Contact support for details."}
-              {kycStatus === "draft" &&
-                "Complete your KYC to start receiving orders."}
-            </span>
-            <Link href="/vendor/fabrication/onboarding" className="font-bold underline">
-              {kycStatus === "draft" ? "Complete KYC →" : "View KYC / Profile →"}
-            </Link>
-          </Card>
-        )}
+        <VendorStatusBanner vendor={vendor} portal="fabrication" correctionCount={Object.keys(remarks).length} />
         {children}
       </main>
     </div>

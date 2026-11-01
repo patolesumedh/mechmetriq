@@ -31,17 +31,32 @@ function Req() {
   return <span className="text-crit">*</span>;
 }
 
+/** Admin's "Correction required" remark for a section (F5.4). */
+export function CorrectionNote({ text }: { text?: string }) {
+  if (!text) return null;
+  return (
+    <div className="mb-3.5 rounded-lg border border-[#f3c4c4] bg-crit-bg px-3.5 py-2.5 text-[12.5px] text-[#a12525]">
+      <b>Please fix:</b> {text}
+    </div>
+  );
+}
+
 export function Section({
+  id,
   title,
   subtitle,
+  remark,
   children,
 }: {
+  id?: string;
   title: string;
   subtitle?: string;
+  remark?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="mb-4.5 rounded-[10px] border border-grid bg-surface p-6">
+    <div id={id} className="mb-4.5 scroll-mt-6 rounded-[10px] border border-grid bg-surface p-6">
+      <CorrectionNote text={remark} />
       <h3 className="mb-1 text-[14.5px] font-semibold">{title}</h3>
       {subtitle && <p className="mb-4.5 text-[12.5px] text-muted">{subtitle}</p>}
       {!subtitle && <div className="mb-3.5" />}
@@ -209,9 +224,22 @@ export function AddressExtraFields({ kyc, errors }: { kyc: KycView; errors?: Fie
 }
 
 /** Step 3a: primary contact person. */
-export function PrimaryContactSection({ kyc, errors }: { kyc: KycView; errors?: FieldErrors }) {
+export function PrimaryContactSection({
+  kyc,
+  errors,
+  remark,
+}: {
+  kyc: KycView;
+  errors?: FieldErrors;
+  remark?: string;
+}) {
   return (
-    <Section title="Primary Contact" subtitle="The person our team will coordinate orders and payouts with.">
+    <Section
+      id="kyc-contact"
+      remark={remark}
+      title="Primary Contact"
+      subtitle="The person our team will coordinate orders and payouts with."
+    >
       <div className="mb-3.5 grid grid-cols-2 gap-3">
         <Input name="contact_name" label="Name" required errors={errors} defaultValue={kyc.contactName} placeholder="Full name" maxLength={120} />
         <Input name="contact_designation" label="Designation" required errors={errors} defaultValue={kyc.contactDesignation} placeholder="e.g. Owner, Production Manager" maxLength={80} />
@@ -229,14 +257,21 @@ export function OperationsSection({
   details,
   errors,
   kind,
+  remark,
 }: {
   details: DetailsRow | null;
   errors?: FieldErrors;
   kind: VendorKind;
+  remark?: string;
 }) {
   const fab = kind === "fabrication";
   return (
-    <Section title="Facility & Operations" subtitle="Helps us plan which orders and volumes to send you.">
+    <Section
+      id="kyc-operations"
+      remark={remark}
+      title="Facility & Operations"
+      subtitle="Helps us plan which orders and volumes to send you."
+    >
       <div className="mb-3.5">
         <TextArea name="facility_locations" label={fab ? "Factory / workshop locations" : "Warehouse / godown locations"} errors={errors} defaultValue={details?.facility_locations} placeholder="One per line, e.g. Plot 12, MIDC Bhosari, Pune" maxLength={500} />
       </div>
@@ -325,14 +360,19 @@ export function DocumentsSection({
   vendorId,
   kind,
   errors,
+  remark,
 }: {
   kyc: KycView;
   vendorId: string;
   kind: VendorKind;
   errors?: FieldErrors;
+  remark?: string;
 }) {
   return (
-    <Section title="Business Documents" subtitle="JPG, PNG or PDF, max 5 MB each. Stored privately; only our verification team can open them.">
+    <Section
+      id="kyc-documents"
+      remark={remark}
+      title="Business Documents" subtitle="JPG, PNG or PDF, max 5 MB each. Stored privately; only our verification team can open them.">
       <div className="space-y-4.5">
         {docKindsFor(kind).map((d) => (
           <div key={d.key}>

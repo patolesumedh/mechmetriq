@@ -3,18 +3,21 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { formatDate, kycTone, titleCase } from "../../_lib/format";
+import { formatDate } from "../../_lib/format";
 import { loadKycForAdmin } from "@/lib/kyc/server";
 import { loadDetailsRow } from "@/lib/kyc/details";
 import { DOC_KINDS } from "@/lib/kyc/rules";
+import { updateVendorMetaAction } from "./actions";
 import {
-  approveVendorAction,
-  rejectVendorAction,
-  holdVendorAction,
-  updateVendorMetaAction,
-} from "./actions";
+  DuplicatesPanel,
+  KycDecisionCard,
+  ReviewHistoryCard,
+  VendorTypeCard,
+  type DuplicateRow,
+  type ReviewRow,
+} from "./ReviewPanels";
+import { KYC_STATUS_LABEL, VENDOR_TYPE_LABEL } from "@/lib/kyc/status";
 
 export default async function AdminVendorDetailPage({
   params,
@@ -48,7 +51,59 @@ export default async function AdminVendorDetailPage({
   const d = details;
   const k = kyc?.row;
 
-  const isFabrication = vendor.vendor_type === "fabrication";
+  // Review history + possible duplicates (F5.2 / F5.4).
+  const [{ data: reviewRows }, { data: flagRows }] = await Promise.all([
+    supabase
+      .from("vendor_kyc_reviews")
+      .select("*")
+      .eq("vendor_id", id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("vendor_duplicate_flags")
+      .select("id, field, vendor_id, matched_vendor_id, detected_at")
+      .or(`vendor_id.eq.${id},matched_vendor_id.eq.${id}`)
+      .is("resolved_at", null),
+  ]);
+  const otherIds = [...new Set((flagRows ?? []).map((f) => (f.vendor_id === id ? f.matched_vendor_id : f.vendor_id)))];
+  const peopleIds = [
+    ...new Set(
+      [...(reviewRows ?? []).map((r) => r.actor_id), vendor.kyc_reviewed_by].filter((x): x is string => !!x)
+    ),
+  ];
+  const [{ data: others }, { data: people }] = await Promise.all([
+    otherIds.length
+      ? supabase.from("vendor_profiles").select("id, company_name").in("id", otherIds)
+      : Promise.resolve({ data: [] as { id: string; company_name: string }[] }),
+    peopleIds.length
+      ? supabase.from("profiles").select("id, full_name").in("id", peopleIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+  ]);
+  const nameOf = new Map((people ?? []).map((p) => [p.id, p.full_name]));
+  const companyOf = new Map((others ?? []).map((o) => [o.id, o.company_name]));
+  const reviews: ReviewRow[] = (reviewRows ?? []).map((r) => ({
+    ...r,
+    actor_name: r.actor_id ? (nameOf.get(r.actor_id) ?? null) : null,
+  }));
+  const seen = new Set<string>();
+  const duplicates: DuplicateRow[] = [];
+  for (const f of flagRows ?? []) {
+    const other = f.vendor_id === id ? f.matched_vendor_id : f.vendor_id;
+    const key = `${other}:${f.field}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    duplicates.push({
+      id: f.id,
+      field: f.field,
+      other_id: other,
+      other_name: companyOf.get(other) ?? "another vendor",
+      detected_at: f.detected_at,
+    });
+  }
+  const showFab = vendor.vendor_type !== "raw_material";
+  const showRaw = vendor.vendor_type !== "fabrication";
+
+  const isFabrication = vendor.vendor_type !== "raw_material";
   const skillTags = isFabrication ? vendor.capabilities : vendor.materials_handled;
 
   return (
@@ -56,7 +111,7 @@ export default async function AdminVendorDetailPage({
       <Topbar
         title={vendor.company_name}
         pill={{
-          label: titleCase(vendor.kyc_status),
+          label: KYC_STATUS_LABEL[vendor.kyc_status],
           tone: vendor.kyc_status === "approved" ? "brand" : "orange",
         }}
         right={
@@ -69,17 +124,23 @@ export default async function AdminVendorDetailPage({
       <div className="mt-6 space-y-4.5">
         {msg && (
           <div className="rounded-lg bg-good-bg px-4 py-3 text-[13px] font-medium text-[#0a6b0a]">
-            {msg === "approved" && "Vendor approved."}
-            {msg === "rejected" && "Vendor rejected."}
-            {msg === "on_hold" && "Vendor put on hold."}
+            {msg === "approve" && "Vendor approved."}
+            {msg === "reject" && "Application rejected. The vendor can see the reason."}
+            {msg === "start_review" && "Review started. The vendor now sees \"Under review\"."}
+            {msg === "request_correction" && "Correction request sent. The vendor sees your remarks on their KYC page."}
+            {msg === "suspend" && "Vendor suspended. Their orders, listings and supply are blocked."}
+            {msg === "reactivate" && "Vendor reactivated."}
+            {msg === "type_changed" && "Vendor type updated."}
+            {msg === "duplicate_resolved" && "Duplicate flag marked as checked."}
             {msg === "saved" && "Changes saved."}
           </div>
         )}
-        {error === "reason_required" && (
+        {error && (
           <div className="rounded-lg bg-crit-bg px-4 py-3 text-[13px] font-medium text-[#a12525]">
-            A rejection reason is required.
+            {error}
           </div>
         )}
+        <DuplicatesPanel vendorId={vendor.id} flags={duplicates} />
 
         <div className="grid grid-cols-3 gap-4.5">
           <div className="col-span-2 space-y-4.5">
@@ -87,7 +148,16 @@ export default async function AdminVendorDetailPage({
               <CardHeader title="Company & Contact" />
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-[13px]">
                 <Field label="Company name" value={vendor.company_name} />
-                <Field label="Vendor type" value={titleCase(vendor.vendor_type)} />
+                <Field label="Vendor type" value={VENDOR_TYPE_LABEL[vendor.vendor_type]} />
+                <Field label="Application ID" value={vendor.application_id ?? "Not submitted"} />
+                <Field
+                  label="Declarations accepted"
+                  value={
+                    vendor.declarations_accepted_at
+                      ? `${formatDate(vendor.declarations_accepted_at)} (${vendor.declarations_version})`
+                      : "—"
+                  }
+                />
                 <Field label="Business type" value={vendor.business_type ?? "—"} />
                 <Field label="Contact name" value={profile?.full_name ?? "—"} />
                 <Field label="Email" value={profile?.email ?? "—"} />
@@ -263,9 +333,11 @@ export default async function AdminVendorDetailPage({
             </Card>
 
             <Card>
-              <CardHeader title={isFabrication ? "Manufacturing Capability" : "Supply Details"} />
+              <CardHeader
+                title={showFab && showRaw ? "Capability & Supply" : showFab ? "Manufacturing Capability" : "Supply Details"}
+              />
               <div className="grid grid-cols-2 gap-x-6 gap-y-4 p-5 text-[13px]">
-                {isFabrication ? (
+                {showFab && (
                   <>
                     <Field label="Machines" value={d?.machines ?? "—"} />
                     <Field label="Max job size" value={d?.max_job_size ?? "—"} />
@@ -273,7 +345,8 @@ export default async function AdminVendorDetailPage({
                     <Field label="Industries" value={d?.industries?.join(", ") || "—"} />
                     <Field label="Inspection" value={d?.inspection_capability?.join(", ") || "—"} />
                   </>
-                ) : (
+                )}
+                {showRaw && (
                   <>
                     <Field label="Brands / mills" value={d?.brands ?? "—"} />
                     <Field label="Supply capacity" value={d?.supply_capacity ?? "—"} />
@@ -286,63 +359,12 @@ export default async function AdminVendorDetailPage({
           </div>
 
           <div className="space-y-4.5">
-            <Card>
-              <CardHeader title="KYC Decision" />
-              <div className="space-y-3 p-5">
-                <div className="flex items-center gap-2 text-[13px]">
-                  <span className="text-ink-2">Current status:</span>
-                  <Badge tone={kycTone(vendor.kyc_status)}>{titleCase(vendor.kyc_status)}</Badge>
-                </div>
-                {vendor.kyc_rejection_reason && (
-                  <div className="rounded-lg bg-crit-bg px-3.5 py-3 text-[12.5px] text-[#a12525]">
-                    <b>Last rejection reason:</b> {vendor.kyc_rejection_reason}
-                  </div>
-                )}
-
-                <form action={approveVendorAction}>
-                  <input type="hidden" name="vendorId" value={vendor.id} />
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={vendor.kyc_status === "approved"}
-                  >
-                    Approve
-                  </Button>
-                </form>
-
-                <form action={holdVendorAction}>
-                  <input type="hidden" name="vendorId" value={vendor.id} />
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    className="w-full"
-                    disabled={vendor.kyc_status === "on_hold"}
-                  >
-                    Put On Hold
-                  </Button>
-                </form>
-
-                <form action={rejectVendorAction} className="space-y-2 border-t border-grid pt-3">
-                  <input type="hidden" name="vendorId" value={vendor.id} />
-                  <label className="block text-[12px] font-semibold text-ink-2">
-                    Rejection reason
-                  </label>
-                  <textarea
-                    name="reason"
-                    rows={3}
-                    placeholder="Explain why this vendor's KYC is being rejected…"
-                    className="w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13px] outline-none focus:border-brand"
-                  />
-                  <Button
-                    type="submit"
-                    variant="outline"
-                    className="w-full border-crit text-crit hover:bg-crit-bg"
-                  >
-                    Reject
-                  </Button>
-                </form>
-              </div>
-            </Card>
+            <KycDecisionCard
+              vendor={vendor}
+              reviewerName={vendor.kyc_reviewed_by ? (nameOf.get(vendor.kyc_reviewed_by) ?? null) : null}
+            />
+            <ReviewHistoryCard reviews={reviews} />
+            <VendorTypeCard vendor={vendor} />
 
             <Card>
               <CardHeader title="Commission & Internal Notes" />
