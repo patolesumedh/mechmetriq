@@ -1,0 +1,11 @@
+title = "MechOneHub Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow placeholder examples in documentation and .env.example"
+paths = [
+  '''^\.env\.example$''',
+  '''^docs/.*\.md$''',
+]

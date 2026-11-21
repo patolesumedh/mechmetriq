@@ -214,7 +214,7 @@ Now configure **WAF & Rate Limiting** in the **`mechonehub.com`** zone:
 ### 2.4 Create a Read-Only Backup Database Role & Offline `age` Encryption Key
 1. In **`mechonehub-prod` → SQL Editor**, run this once to create a read-only Postgres user for nightly backups (so the backup secret cannot modify or delete rows):
    ```sql
-   create role backup_reader with login password 'REPLACE_WITH_STRONG_32_CHAR_PASSWORD';
+   create role backup_reader with login password '<db-password>'; -- gitleaks:allow
    grant connect on database postgres to backup_reader;
    grant usage on schema public, auth to backup_reader;
    grant select on all tables in schema public, auth to backup_reader;
