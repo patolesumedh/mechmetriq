@@ -1,6 +1,6 @@
 # MECHmetriQ (MechOneHub) Smart Quote Isolated CAD Worker (v1)
 # Security: Non-root execution (CIS Docker Benchmark 4.1), zero database credentials.
-FROM python:3.11-slim
+FROM python:3.15-slim
 
 # OpenCascade (via cadquery-ocp) needs X/GL shared libraries even headless.
 RUN apt-get update && apt-get install -y --no-install-recommends \
