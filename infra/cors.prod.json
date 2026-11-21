@@ -1,0 +1,8 @@
+[
+  {
+    "origin": ["https://mechonehub.com"],
+    "method": ["PUT", "GET", "HEAD"],
+    "responseHeader": ["Content-Type", "Content-Length", "ETag", "x-goog-content-length-range"],
+    "maxAgeSeconds": 3600
+  }
+]

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminSession } from "@/lib/auth/guard";
 import { createAdminClient, hasAdminClientConfig } from "@/lib/supabase/admin";
-import { createEmailLinkClient } from "@/lib/supabase/emailLinks";
+import { createServiceEmailLinkClient } from "@/lib/supabase/emailLinks";
 import { siteUrl } from "@/lib/auth/siteUrl";
 import { isValidEmail } from "@/lib/auth/validation";
 import type { Database } from "@/lib/types/database";
@@ -91,7 +91,7 @@ export async function createUserAction(formData: FormData) {
   }
 
   // Email them a link to choose their password.
-  const mailer = createEmailLinkClient();
+  const mailer = createServiceEmailLinkClient();
   const { error: mailError } = await mailer.auth.resetPasswordForEmail(email, {
     redirectTo: `${await siteUrl()}/auth/callback?next=/reset-password`,
   });

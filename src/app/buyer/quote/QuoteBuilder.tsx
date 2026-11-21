@@ -6,12 +6,10 @@ import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { isStepFile } from "@/lib/smartQuote/shared";
 import {
-  estimatePart,
   formatInr,
-  type GradeRate,
-  type PartConfig,
-  type PricingSettings,
-} from "@/lib/smartQuote/pricing";
+  type GradeOption,
+  type PreviewPriceResponse,
+} from "@/lib/smartQuote/pricingFormat";
 import {
   ACCEPTED_EXTENSIONS,
   CERTIFICATE_OPTIONS,
@@ -26,6 +24,7 @@ import {
 } from "@/lib/smartQuote/options";
 import {
   getPartAnalysisAction,
+  requestCadUploadUrlAction,
   startPartAnalysisAction,
   submitQuoteAction,
   type PartView,
@@ -48,6 +47,8 @@ interface Part {
   config: Config;
   drawings: { name: string; path: string }[];
   startedAt: number;
+  preview: PreviewPriceResponse | null;
+  pricingLoading: boolean;
 }
 
 const inputCls =
@@ -64,31 +65,64 @@ function fmtDate(iso: string) {
 }
 const mm = (n: number) => n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
-async function uploadToStorage(userId: string, file: File) {
+async function computeSha256Hex(file: File): Promise<string | null> {
+  try {
+    if (typeof window === "undefined" || !window.crypto?.subtle) return null;
+    const buf = await file.arrayBuffer();
+    const hashBuf = await window.crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(hashBuf))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  } catch {
+    return null;
+  }
+}
+
+async function uploadCadFile(file: File): Promise<{
+  objectPath: string;
+  contentType: string;
+  sha256: string | null;
+}> {
+  const [signed, sha256] = await Promise.all([
+    requestCadUploadUrlAction({ fileName: file.name, fileSize: file.size }),
+    isStepFile(file.name) ? computeSha256Hex(file) : Promise.resolve(null),
+  ]);
+
+  if (signed.error || !signed.objectPath) {
+    throw new Error(signed.error || "Could not prepare upload URL.");
+  }
+
+  if (signed.mode === "gcs" && signed.uploadUrl) {
+    const res = await fetch(signed.uploadUrl, {
+      method: "PUT",
+      headers: signed.requiredHeaders ?? { "Content-Type": signed.contentType },
+      body: file,
+    });
+    if (!res.ok) {
+      throw new Error(`Storage upload returned HTTP ${res.status}.`);
+    }
+    return { objectPath: signed.objectPath, contentType: signed.contentType, sha256 };
+  }
+
+  // Fallback for local dev when GCS_CAD_BUCKET is not set
   const supabase = createClient();
-  const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const path = `${userId}/${Date.now()}-${safe}`;
-  const { error } = await supabase.storage.from("rfq-attachments").upload(path, file, {
-    contentType: file.type || "application/octet-stream",
+  const { error } = await supabase.storage.from("rfq-attachments").upload(signed.objectPath, file, {
+    contentType: signed.contentType || file.type || "application/octet-stream",
     upsert: false,
   });
   if (error) throw new Error(error.message);
-  return path;
+  return { objectPath: signed.objectPath, contentType: signed.contentType, sha256 };
 }
 
 // ====================================================================
 
 export function QuoteBuilder({
-  userId,
   addresses,
   grades,
-  settings,
   instantEnabled,
 }: {
-  userId: string;
   addresses: { id: string; label: string; full_address: string }[];
-  grades: GradeRate[];
-  settings: PricingSettings | null;
+  grades: GradeOption[];
   instantEnabled: boolean;
 }) {
   const defaultGrade = useMemo(
@@ -132,7 +166,7 @@ export function QuoteBuilder({
     setError(null);
     for (const file of Array.from(list)) {
       if (file.size > MAX_FILE_BYTES) {
-        setError(`"${file.name}" is over 25 MB and was skipped.`);
+        setError(`"${file.name}" is over 50 MB and was skipped.`);
         continue;
       }
       const key = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -153,17 +187,32 @@ export function QuoteBuilder({
           config: { ...DEFAULT_PART_CONFIG },
           drawings: [],
           startedAt: Date.now(),
+          preview: null,
+          pricingLoading: false,
         },
       ]);
       try {
-        const path = await uploadToStorage(userId, file);
+        const uploaded = await uploadCadFile(file);
         if (!step || !instantEnabled) {
-          patch(key, { storagePath: path, status: "manual" });
+          patch(key, { storagePath: uploaded.objectPath, status: "manual" });
           continue;
         }
-        const res = await startPartAnalysisAction(path);
-        if (res.error || !res.id) patch(key, { storagePath: path, status: "manual", error: res.error ?? null });
-        else patch(key, { storagePath: path, analysisId: res.id, status: "reading", startedAt: Date.now() });
+        const res = await startPartAnalysisAction(uploaded.objectPath, {
+          fileName: file.name,
+          sha256: uploaded.sha256,
+          fileSize: file.size,
+          contentType: uploaded.contentType,
+        });
+        if (res.error || !res.id) {
+          patch(key, { storagePath: uploaded.objectPath, status: "manual", error: res.error ?? null });
+        } else {
+          patch(key, {
+            storagePath: uploaded.objectPath,
+            analysisId: res.id,
+            status: "reading",
+            startedAt: Date.now(),
+          });
+        }
       } catch (e) {
         patch(key, { status: "failed", error: `Upload failed: ${e instanceof Error ? e.message : "unknown error"}` });
       }
@@ -175,8 +224,8 @@ export function QuoteBuilder({
     for (const file of Array.from(list)) {
       if (file.size > MAX_FILE_BYTES) continue;
       try {
-        const path = await uploadToStorage(userId, file);
-        patch(key, (p) => ({ drawings: [...p.drawings, { name: file.name, path }] }));
+        const uploaded = await uploadCadFile(file);
+        patch(key, (p) => ({ drawings: [...p.drawings, { name: file.name, path: uploaded.objectPath }] }));
       } catch (e) {
         setError(`Couldn't upload "${file.name}": ${e instanceof Error ? e.message : "error"}`);
       }
@@ -207,10 +256,13 @@ export function QuoteBuilder({
   }
 
   // Order total across priced parts (selected tiers).
-  const priced = parts
-    .map((p) => (p.status === "ready" ? quoteFor(p, grades, settings) : null))
-    .filter((e): e is NonNullable<ReturnType<typeof quoteFor>> => !!e);
-  const orderTotal = priced.reduce((sum, q) => sum + q.selected.total, 0);
+  const selectedTiers = parts
+    .map((p) => {
+      if (p.status !== "ready" || !p.preview?.tiers?.length) return null;
+      return p.preview.tiers.find((t) => t.key === p.tier) ?? p.preview.tiers[1] ?? p.preview.tiers[0];
+    })
+    .filter((t): t is NonNullable<typeof t> => !!t);
+  const orderTotal = selectedTiers.reduce((sum, t) => sum + t.total, 0);
 
   return (
     <div className="flex max-w-[1100px] flex-col gap-4">
@@ -235,7 +287,6 @@ export function QuoteBuilder({
                 index={i + 1}
                 part={p}
                 grades={grades}
-                settings={settings}
                 onChange={(x) => patch(p.key, x)}
                 onRemove={() => setParts((all) => all.filter((x) => x.key !== p.key))}
                 onDrawings={(l) => addDrawings(p.key, l)}
@@ -281,7 +332,7 @@ export function QuoteBuilder({
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-grid pt-4">
             <div className="text-[12.5px] text-ink-2">
-              {priced.length > 0 ? (
+              {selectedTiers.length > 0 ? (
                 <>
                   Estimated total{" "}
                   <span className="text-[17px] font-extrabold text-ink">{formatInr(orderTotal)}</span>{" "}
@@ -307,25 +358,6 @@ export function QuoteBuilder({
 }
 
 // ====================================================================
-
-function quoteFor(p: Part, grades: GradeRate[], settings: PricingSettings | null) {
-  const grade = grades.find((g) => g.id === p.gradeId);
-  if (!grade || !settings || !p.view?.geometry) return null;
-  const cfg: PartConfig = {
-    quantity: p.config.quantity,
-    finish: p.config.finish,
-    tolerance: p.config.tolerance,
-    roughness: p.config.roughness,
-    threads_qty: p.config.threads_qty,
-    inserts_qty: p.config.inserts_qty,
-    inspection: p.config.inspection,
-    certificates: p.config.certificates,
-    part_marking: p.config.part_marking,
-  };
-  const est = estimatePart(p.view.geometry, grade, cfg, settings);
-  const selected = est.tiers.find((t) => t.key === p.tier) ?? est.tiers[1] ?? est.tiers[0];
-  return { est, selected };
-}
 
 function Dropzone({
   onFiles,
@@ -365,8 +397,8 @@ function Dropzone({
       </span>
       <span className="text-[12px] text-muted">
         {instantEnabled
-          ? "STEP (.step, .stp) files are priced instantly · IGES, DWG, DXF, STL, PDF quoted by our team · up to 25 MB"
-          : "STEP, IGES, DWG, DXF, STL, PDF or images · up to 25 MB · our team prices every part"}
+          ? "STEP (.step, .stp) files are priced instantly · IGES, DWG, DXF, STL, PDF quoted by our team · up to 50 MB"
+          : "STEP, IGES, DWG, DXF, STL, PDF or images · up to 50 MB · our team prices every part"}
       </span>
       <input
         ref={ref}
@@ -387,27 +419,74 @@ export function PartCard({
   index,
   part: p,
   grades,
-  settings,
   onChange,
   onRemove,
   onDrawings,
 }: {
   index: number;
   part: Part;
-  grades: GradeRate[];
-  settings: PricingSettings | null;
+  grades: GradeOption[];
   onChange: (x: Partial<Part>) => void;
   onRemove: () => void;
   onDrawings: (l: FileList | null) => void;
 }) {
   const drawingRef = useRef<HTMLInputElement>(null);
   const setCfg = (c: Partial<Config>) => onChange({ config: { ...p.config, ...c } });
-  const q = p.status === "ready" ? quoteFor(p, grades, settings) : null;
   const s = p.view?.summary;
   const geo = p.view?.geometry;
 
+  // Fetch server-computed pricing preview whenever analysis finishes or options change
+  const configKey = JSON.stringify({
+    quantity: p.config.quantity,
+    finish: p.config.finish,
+    tolerance: p.config.tolerance,
+    roughness: p.config.roughness,
+    threads_qty: p.config.threads_qty,
+    inserts_qty: p.config.inserts_qty,
+    inspection: p.config.inspection,
+    certificates: p.config.certificates,
+    part_marking: p.config.part_marking,
+  });
+
+  useEffect(() => {
+    if (p.status !== "ready" || !p.analysisId || !p.gradeId) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      onChange({ pricingLoading: true });
+      try {
+        const res = await fetch("/api/preview-price", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            analysisId: p.analysisId,
+            gradeId: p.gradeId,
+            config: JSON.parse(configKey),
+          }),
+        });
+        if (cancelled) return;
+        if (res.ok) {
+          const data = (await res.json()) as PreviewPriceResponse;
+          onChange({ preview: data, pricingLoading: false });
+        } else {
+          onChange({ preview: null, pricingLoading: false });
+        }
+      } catch {
+        if (!cancelled) onChange({ preview: null, pricingLoading: false });
+      }
+    }, 200);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.status, p.analysisId, p.gradeId, configKey]);
+
+  const selectedTier = p.preview?.tiers
+    ? (p.preview.tiers.find((t) => t.key === p.tier) ?? p.preview.tiers[1] ?? p.preview.tiers[0])
+    : null;
+
   const groups = useMemo(() => {
-    const m = new Map<string, GradeRate[]>();
+    const m = new Map<string, GradeOption[]>();
     for (const g of grades) m.set(g.material_name, [...(m.get(g.material_name) ?? []), g]);
     return [...m.entries()];
   }, [grades]);
@@ -680,10 +759,10 @@ export function PartCard({
               Submit the request and we&rsquo;ll send a price within 24 hours.
             </Info>
           )}
-          {q && (
+          {p.status === "ready" && p.preview && selectedTier && (
             <div className="flex flex-col gap-2.5">
-              {q.est.tiers.map((t) => {
-                const active = t.key === q.selected.key;
+              {p.preview.tiers.map((t) => {
+                const active = t.key === selectedTier.key;
                 return (
                   <button
                     type="button"
@@ -710,11 +789,12 @@ export function PartCard({
               })}
               <p className="text-[11.5px] leading-relaxed text-muted">
                 Instant estimate, excl. GST. Our team confirms the final price before you pay.
-                {q.est.notes.length > 0 && ` ${q.est.notes.join(" ")}`}
+                {p.preview.notes.length > 0 && ` ${p.preview.notes.join(" ")}`}
               </p>
             </div>
           )}
-          {p.status === "ready" && !q && (
+          {p.status === "ready" && !p.preview && p.pricingLoading && <Info>Calculating price…</Info>}
+          {p.status === "ready" && !p.preview && !p.pricingLoading && (
             <Info tone="warn">Pricing isn&rsquo;t available for this material. Our team will quote it.</Info>
           )}
         </div>
@@ -761,5 +841,3 @@ function Checks({
     </div>
   );
 }
-
-

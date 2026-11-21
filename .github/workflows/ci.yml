@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [staging, main]
+  push:
+    branches: [staging, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Web (lint, typecheck, standalone build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - name: Production standalone build (dummy public vars)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          NEXT_PUBLIC_SITE_URL: https://mechonehub.com
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+        run: |
+          npm run build
+          test -f .next/standalone/server.js
+
+  parser:
+    name: CAD Parser (Docker build & sample STEP smoke test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build parser container
+        run: docker build -t smartquote-ci services/smartquote
+      - name: Smoke test all sample STEP files against /analyze
+        run: |
+          docker run -d --name sq -p 8080:8080 -e SMARTQUOTE_API_KEY=ci-test-key smartquote-ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          curl -fsS http://localhost:8080/health | grep -q '"ok":true'
+          for step_file in services/smartquote/samples/*.step; do
+            echo "Testing ${step_file}..."
+            curl -fsS -H "X-API-Key: ci-test-key" -F "file=@${step_file}" http://localhost:8080/analyze | grep -q '"feature_count"'
+          done
+          docker rm -f sq
+
+  migrations:
+    name: Supabase Migrations (prefix check & local db start)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail on duplicate migration number prefixes
+        run: |
+          DUPES=$(ls supabase/migrations/*.sql | xargs -n1 basename | cut -d_ -f1 | sort | uniq -d)
+          if [ -n "$DUPES" ]; then
+            echo "Duplicate migration prefixes found: $DUPES"
+            exit 1
+          fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Verify migrations and seed against throwaway local Postgres
+        run: |
+          supabase start
+          supabase stop --no-backup
+
+  security:
+    name: Security (gitleaks, npm audit, pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Node dependency audit (fail on high/critical)
+        run: npm audit --omit=dev --audit-level=high
+      - name: Python dependency audit
+        run: pipx run pip-audit -r services/smartquote/requirements.txt
+
+  guard-main-source:
+    name: Guard main branch source (only staging or hotfix/*)
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check head_ref is staging or hotfix/*
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [[ "$HEAD_REF" == "staging" || "$HEAD_REF" == hotfix/* ]]; then
+            echo "Allowed source branch into main: ${HEAD_REF}"
+          else
+            echo "Error: PRs targeting 'main' must originate from 'staging' or 'hotfix/*'. Got '${HEAD_REF}'."
+            exit 1
+          fi

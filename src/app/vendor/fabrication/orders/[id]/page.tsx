@@ -11,6 +11,7 @@ import {
   orderStatusTone,
 } from "../../badge-utils";
 import { StatusUpdateForm } from "./StatusUpdateForm";
+import { signAttachmentDownloadUrls } from "@/lib/storage/gcs";
 
 export default async function OrderDetailPage({
   params,
@@ -96,10 +97,8 @@ export default async function OrderDetailPage({
 
   let cadFileLinks: { name: string; url: string }[] = [];
   if (spec?.cad_file_urls?.length) {
-    const { data: signed } = await supabase.storage
-      .from("rfq-attachments")
-      .createSignedUrls(spec.cad_file_urls, 60 * 60);
-    cadFileLinks = (signed ?? [])
+    const signed = await signAttachmentDownloadUrls(supabase, spec.cad_file_urls, 10 * 60);
+    cadFileLinks = signed
       .map((f, i) => ({
         name: (spec.cad_file_urls![i].split("/").pop() ?? `CAD file ${i + 1}`).replace(/^[0-9]{10,}-/, ""),
         url: f.signedUrl,

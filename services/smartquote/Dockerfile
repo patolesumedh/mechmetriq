@@ -1,7 +1,8 @@
-# MECHmetriQ Smart Quote parser service (v1)
+# MECHmetriQ (MechOneHub) Smart Quote Isolated CAD Worker (v1)
+# Security: Non-root execution (CIS Docker Benchmark 4.1), zero database credentials.
 FROM python:3.11-slim
 
-# OpenCascade (via cadquery-ocp) needs a few X/GL shared libraries even headless.
+# OpenCascade (via cadquery-ocp) needs X/GL shared libraries even headless.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libgl1 libglib2.0-0 libxrender1 libxext6 libsm6 libx11-6 \
     && rm -rf /var/lib/apt/lists/*
@@ -16,10 +17,11 @@ COPY app ./app
 RUN useradd --create-home parser
 USER parser
 
-ENV PORT=8000 \
+ENV PORT=8080 \
     SMARTQUOTE_MAX_MB=50 \
     SMARTQUOTE_TIMEOUT_S=120 \
+    WEB_CONCURRENCY=1 \
     PYTHONUNBUFFERED=1
 
-EXPOSE 8000
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --workers ${WEB_CONCURRENCY:-2}"]
+EXPOSE 8080
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080} --workers ${WEB_CONCURRENCY:-1}"]

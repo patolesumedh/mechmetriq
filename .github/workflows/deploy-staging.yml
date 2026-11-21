@@ -1,0 +1,116 @@
+# Deploy — staging
+# Security note: In production operations, pin third-party actions (google-github-actions/auth,
+# google-github-actions/setup-gcloud, docker/setup-buildx-action, docker/build-push-action,
+# dorny/paths-filter, supabase/setup-cli) to full 40-char commit SHAs so a compromised action tag
+# cannot access cloud deployment tokens. Dependabot (`github-actions` ecosystem) keeps SHAs updated.
+name: Deploy — staging
+
+on:
+  push:
+    branches: [staging]
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGION: asia-south1
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Show pending migrations (dry run)
+        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --dry-run
+      - name: Apply migrations (IPv4 session pooler)
+        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}"
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      worker: ${{ steps.f.outputs.worker }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: f
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            worker:
+              - 'services/smartquote/**'
+
+  build:
+    needs: [migrate, changes]
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: deployer@${{ vars.GCP_PROJECT }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/web:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build & push worker image (only if changed)
+        if: needs.changes.outputs.worker == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: services/smartquote
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
+          cache-from: type=gha,scope=worker
+          cache-to: type=gha,scope=worker,mode=max
+
+  deploy:
+    needs: [build, changes]
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: deployer@${{ vars.GCP_PROJECT }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy worker (if changed)
+        if: needs.changes.outputs.worker == 'true'
+        run: |
+          gcloud run deploy mechonehub-cad-worker --region $REGION --project ${{ vars.GCP_PROJECT }} \
+            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
+      - name: Deploy web as a tagged revision with NO traffic
+        run: |
+          TAG="sha-${GITHUB_SHA::7}"
+          gcloud run deploy mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT }} \
+            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/web:${{ github.sha }} \
+            --no-traffic --tag "$TAG"
+          SVC=$(gcloud run services describe mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT }} \
+            --format="value(status.url)")
+          echo "CANDIDATE_URL=https://${TAG}---${SVC#https://}" >> $GITHUB_ENV
+          echo "TAG=$TAG" >> $GITHUB_ENV
+      - name: Health-check the candidate revision (/api/health is exempt from origin lock)
+        run: curl --fail --retry 10 --retry-delay 3 --retry-all-errors "$CANDIDATE_URL/api/health"
+      - name: Shift 100% traffic to the verified candidate
+        run: |
+          gcloud run services update-traffic mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT }} \
+            --to-tags "$TAG=100"

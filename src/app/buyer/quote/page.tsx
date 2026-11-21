@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { loadGradeRates, loadPricingSettings } from "@/lib/smartQuote/data";
+import type { GradeOption } from "@/lib/smartQuote/pricingFormat";
 import { smartQuoteConfigured } from "@/lib/smartQuote/server";
 import { QuoteBuilder } from "./QuoteBuilder";
 
@@ -25,16 +26,22 @@ export default async function QuotePage() {
     loadPricingSettings(),
   ]);
 
+  // Strip rate_per_kg and proprietary sq_settings before passing props to the client
+  const gradeOptions: GradeOption[] = grades.map((g) => ({
+    id: g.id,
+    name: g.name,
+    material_slug: g.material_slug,
+    material_name: g.material_name,
+  }));
+
   return (
     <>
       <div className="-mx-7 -mt-7 mb-7">
         <Topbar title="Get Instant Quote" />
       </div>
       <QuoteBuilder
-        userId={user.id}
         addresses={addresses ?? []}
-        grades={grades}
-        settings={settings}
+        grades={gradeOptions}
         instantEnabled={smartQuoteConfigured() && !!settings && grades.length > 0}
       />
     </>

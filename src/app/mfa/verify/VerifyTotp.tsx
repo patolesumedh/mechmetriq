@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthError, AuthField, AuthSubmit } from "@/components/auth/AuthCard";
+import { checkMfaVerifyRateLimitAction } from "./actions";
 
 /** Second step of a login with two-factor on: a code from the authenticator app. */
 export function VerifyTotp({ next }: { next?: string | null }) {
@@ -16,6 +17,13 @@ export function VerifyTotp({ next }: { next?: string | null }) {
     const code = String(new FormData(e.currentTarget).get("code") ?? "").replace(/\D/g, "");
     setPending(true);
     setError(null);
+
+    const rl = await checkMfaVerifyRateLimitAction();
+    if (!rl.allowed) {
+      setError(rl.error ?? "Too many attempts. Please wait a few minutes and try again.");
+      setPending(false);
+      return;
+    }
 
     const supabase = createClient();
     const { data: factors, error: listError } = await supabase.auth.mfa.listFactors();

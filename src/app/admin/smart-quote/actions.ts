@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAccountFor } from "@/lib/auth/guard";
+import { CACHE_KEYS, invalidateCache } from "@/lib/cache/redis";
 import type { Json } from "@/lib/types/database";
 
 type Cfg = Record<string, unknown>;
@@ -44,6 +45,7 @@ export async function saveSmartQuoteRatesAction(formData: FormData) {
     .update({ config: config as Json, updated_by: user.id })
     .eq("id", 1);
   if (error) redirect("/admin/smart-quote?error=save");
+  await invalidateCache(CACHE_KEYS.SQ_SETTINGS);
   revalidatePath("/admin/smart-quote");
   revalidatePath("/buyer/quote");
   redirect("/admin/smart-quote?saved=1");

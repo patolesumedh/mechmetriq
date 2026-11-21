@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Table, Th, Td, EmptyRow } from "../_components/table";
 import { formatDate, rfqStatusTone, titleCase } from "../_lib/format";
 import Link from "next/link";
-import { formatInr } from "@/lib/smartQuote/pricing";
+import { formatInr } from "@/lib/smartQuote/pricingFormat";
 import { analysisStatus, isRunning } from "@/components/smartQuote/AnalysisList";
 import { AutoRefresh } from "@/components/smartQuote/AutoRefresh";
 import { isStepFile } from "@/lib/smartQuote/shared";
