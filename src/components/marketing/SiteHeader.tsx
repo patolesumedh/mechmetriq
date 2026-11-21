@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 
 const NAV_LINKS = [
+  { label: "✨ AI CAD Designer", href: "/ai-cad" },
   { label: "How It Works", href: "/how-it-works" },
   { label: "Services", href: "/services" },
   { label: "Marketplace", href: "/raw-materials" },
@@ -84,7 +85,11 @@ export function SiteHeader() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={cn("transition-colors hover:text-ink", active && "font-semibold text-ink")}
+                className={cn(
+                  "transition-colors hover:text-ink",
+                  active && "font-semibold text-ink",
+                  link.href === "/ai-cad" && "font-semibold text-brand hover:text-brand-dark"
+                )}
               >
                 {link.label}
               </Link>

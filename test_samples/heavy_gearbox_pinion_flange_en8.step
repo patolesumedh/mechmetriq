@@ -1,0 +1,48 @@
+ISO-10303-21;
+HEADER;
+/* @TURN_CAD_JSON:{"id":"turncad-en8-gearbox-pinion","version":"2.7.0","part_name":"4-Step Gearbox Pinion Flange Shaft (EN8)","units":"mm","general_tolerance":"ISO 2768-m","surface_finish_ra":1.6,"material":{"slug":"steel","grade_name":"EN8 / 080M40 Medium Carbon Steel","density_g_cm3":7.85,"rate_per_kg_inr":95,"machinability_index":1.0,"min_wall_thickness_mm":1.5,"kc1_1_mpa":1800,"mc":0.25},"quantity":20,"segments":[{"id":"od_seg_1","label":"Coupling Hub Flange","diameter_mm":88,"length_mm":30,"chamfer_start_mm":2.0,"chamfer_end_mm":0.5,"fillet_end_mm":1.5,"thread":null,"groove":null,"semantic_ref":{"owner_feature":"od_seg_1","role":"primary_datum_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":15,"expected_radius":44}},{"id":"od_seg_2","label":"Main Helical Gear Seat","diameter_mm":64,"length_mm":50,"chamfer_start_mm":0,"chamfer_end_mm":0.5,"fillet_end_mm":1.2,"thread":null,"groove":{"width_mm":4.0,"depth_mm":2.0,"offset_from_start_mm":25,"type":"CIRCLIP_DIN471"},"semantic_ref":{"owner_feature":"od_seg_2","role":"step_2_shoulder_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":55,"expected_radius":32}},{"id":"od_seg_3","label":"Tapered Roller Bearing Shoulder","diameter_mm":45,"length_mm":35,"chamfer_start_mm":0,"chamfer_end_mm":0.5,"fillet_end_mm":1.0,"thread":null,"groove":{"width_mm":3.0,"depth_mm":1.5,"offset_from_start_mm":18,"type":"ORING_ISO3601"},"semantic_ref":{"owner_feature":"od_seg_3","role":"step_3_shoulder_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":97.5,"expected_radius":22.5}},{"id":"od_seg_4","label":"Thin Pilot Sleeve & M30 Thread","diameter_mm":30,"length_mm":25,"chamfer_start_mm":0,"chamfer_end_mm":1.5,"fillet_end_mm":0,"thread":{"designation":"M30x3.5","pitch_mm":3.5,"length_mm":20,"external":true,"tolerance_class":"6g"},"groove":null,"semantic_ref":{"owner_feature":"od_seg_4","role":"step_4_shoulder_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":127.5,"expected_radius":15}}],"bore":{"enabled":true,"diameter_mm":28,"depth_mm":140,"is_through":true,"chamfer_entry_mm":1.5,"thread":null},"confidence_map":{"overall_length_mm":{"value":140,"confidence":0.99,"source":"explicit"},"max_od_mm":{"value":88,"confidence":0.99,"source":"explicit"},"internal_bore_mm":{"value":28,"confidence":0.98,"source":"explicit"},"material_grade":{"value":"EN8 / 080M40 Medium Carbon Steel","confidence":0.97,"source":"explicit"},"general_tolerance":{"value":"ISO 2768-m","confidence":0.92,"source":"explicit"}}} */
+FILE_DESCRIPTION(('MECHmetrIQ Turning CAD Parametric Model - 4-Step Gearbox Pinion Flange Shaft (EN8)','2D Profile-First B-Rep Revolution (ISO 2768-m, Ra 1.6 um)'),'2;1');
+FILE_NAME('heavy_gearbox_pinion_flange_en8.step','2026-11-09T21:57:00',('MECHmetrIQ AI CAD Engine'),('MECHmetrIQ Manufacturing Platform'),'TurnCAD-v2.7','OpenCASCADE-CadQuery-Kernel','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
+ENDSEC;
+DATA;
+#1 = APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#2);
+#2 = APPLICATION_CONTEXT('core data for automotive mechanical design processes');
+#3 = SHAPE_DEFINITION_REPRESENTATION(#4,#10);
+#4 = PRODUCT_DEFINITION_SHAPE('','',#5);
+#5 = PRODUCT_DEFINITION('design','',#6,#9);
+#6 = PRODUCT_DEFINITION_FORMATION('','',#7);
+#7 = PRODUCT('turncad-en8-gearbox-pinion','4-Step Gearbox Pinion Flange Shaft (EN8)','Material: EN8 / 080M40 Medium Carbon Steel',(#8));
+#8 = PRODUCT_CONTEXT('',#2,'mechanical');
+#9 = PRODUCT_DEFINITION_CONTEXT('part definition',#2,'design');
+#10 = ADVANCED_BREP_SHAPE_REPRESENTATION('',(#11,#15),#20);
+#11 = MANIFOLD_SOLID_BREP('4-Step Gearbox Pinion Flange Shaft (EN8)',#12);
+#12 = CLOSED_SHELL('',(#30));
+#15 = AXIS2_PLACEMENT_3D('',#16,#17,#18);
+#16 = CARTESIAN_POINT('',(0.,0.,0.));
+#17 = DIRECTION('',(0.,0.,1.));
+#18 = DIRECTION('',(1.,0.,0.));
+#20 = ( GEOMETRIC_REPRESENTATION_CONTEXT(3) GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#24)) GLOBAL_UNIT_ASSIGNED_CONTEXT((#21,#22,#23)) REPRESENTATION_CONTEXT('Context #1','3D Context with UNIT and UNCERTAINTY') );
+#21 = ( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT(.MILLI.,.METRE.) );
+#22 = ( NAMED_UNIT(*) PLANE_ANGLE_UNIT() SI_UNIT($,.RADIAN.) );
+#23 = ( NAMED_UNIT(*) SOLID_ANGLE_UNIT() SI_UNIT($,.STERADIAN.) );
+#24 = UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#21,'distance_accuracy_value','confusion accuracy');
+#30 = ADVANCED_FACE('',(),#31,.T.);
+#31 = CYLINDRICAL_SURFACE('',#15,44.0000);
+#100 = CARTESIAN_POINT('od_seg_1_start',(0.,0.,0.0000));
+#101 = AXIS2_PLACEMENT_3D('',#100,#17,#18);
+#102 = CYLINDRICAL_SURFACE('Coupling Hub Flange',#101,44.0000);
+#110 = CARTESIAN_POINT('od_seg_2_start',(0.,0.,30.0000));
+#111 = AXIS2_PLACEMENT_3D('',#110,#17,#18);
+#112 = CYLINDRICAL_SURFACE('Main Helical Gear Seat',#111,32.0000);
+#120 = CARTESIAN_POINT('od_seg_3_start',(0.,0.,80.0000));
+#121 = AXIS2_PLACEMENT_3D('',#120,#17,#18);
+#122 = CYLINDRICAL_SURFACE('Tapered Roller Bearing Shoulder',#121,22.5000);
+#130 = CARTESIAN_POINT('od_seg_4_start',(0.,0.,115.0000));
+#131 = AXIS2_PLACEMENT_3D('',#130,#17,#18);
+#132 = CYLINDRICAL_SURFACE('Thin Pilot Sleeve & M30 Thread',#131,15.0000);
+#140 = CYLINDRICAL_SURFACE('INTERNAL_BORE_ID',#15,14.0000);
+/* CANONICAL_SUMMARY: MAX_OD=88MM, TOTAL_LENGTH=140MM, BORE=28MM */
+ENDSEC;
+END-ISO-10303-21;
+

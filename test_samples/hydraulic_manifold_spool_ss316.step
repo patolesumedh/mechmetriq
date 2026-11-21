@@ -1,0 +1,48 @@
+ISO-10303-21;
+HEADER;
+/* @TURN_CAD_JSON:{"id":"turncad-ss316-hydraulic-spool","version":"2.7.0","part_name":"4-Stage Hydraulic Valve Spool (SS 304/316)","units":"mm","general_tolerance":"ISO 2768-f","surface_finish_ra":0.4,"material":{"slug":"stainless","grade_name":"Stainless Steel 304","density_g_cm3":8.0,"rate_per_kg_inr":265,"machinability_index":0.65,"min_wall_thickness_mm":1.5,"kc1_1_mpa":2100,"mc":0.25},"quantity":40,"segments":[{"id":"od_seg_1","label":"Actuator Collar Head","diameter_mm":52,"length_mm":25,"chamfer_start_mm":1.5,"chamfer_end_mm":0.5,"fillet_end_mm":1.0,"thread":null,"groove":null,"semantic_ref":{"owner_feature":"od_seg_1","role":"primary_datum_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":12.5,"expected_radius":26}},{"id":"od_seg_2","label":"High-Pressure Metering Land","diameter_mm":42,"length_mm":48,"chamfer_start_mm":0,"chamfer_end_mm":0.5,"fillet_end_mm":0.8,"thread":null,"groove":{"width_mm":4.0,"depth_mm":2.2,"offset_from_start_mm":24,"type":"ORING_ISO3601"},"semantic_ref":{"owner_feature":"od_seg_2","role":"step_2_shoulder_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":49,"expected_radius":21}},{"id":"od_seg_3","label":"Secondary Pilot Land","diameter_mm":32,"length_mm":36,"chamfer_start_mm":0,"chamfer_end_mm":0.5,"fillet_end_mm":0.8,"thread":null,"groove":{"width_mm":3.0,"depth_mm":1.5,"offset_from_start_mm":18,"type":"RELIEF_DIN76"},"semantic_ref":{"owner_feature":"od_seg_3","role":"step_3_shoulder_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":91,"expected_radius":16}},{"id":"od_seg_4","label":"M16 Feedback Stem","diameter_mm":16,"length_mm":26,"chamfer_start_mm":0,"chamfer_end_mm":1.2,"fillet_end_mm":0,"thread":{"designation":"M16x2.0","pitch_mm":2.0,"length_mm":22,"external":true,"tolerance_class":"6g"},"groove":null,"semantic_ref":{"owner_feature":"od_seg_4","role":"step_4_shoulder_od","entity_type":"FACE","geometry_type":"CYLINDER","adjacent_surface_types":["PLANE","CYLINDER"],"expected_x":122,"expected_radius":8}}],"bore":{"enabled":true,"diameter_mm":12,"depth_mm":95,"is_through":false,"chamfer_entry_mm":1.0,"thread":null},"confidence_map":{"overall_length_mm":{"value":135,"confidence":0.99,"source":"explicit"},"max_od_mm":{"value":52,"confidence":0.99,"source":"explicit"},"internal_bore_mm":{"value":12,"confidence":0.97,"source":"explicit"},"material_grade":{"value":"Stainless Steel 304","confidence":0.98,"source":"explicit"},"general_tolerance":{"value":"ISO 2768-f","confidence":0.96,"source":"explicit"}}} */
+FILE_DESCRIPTION(('MECHmetrIQ Turning CAD Parametric Model - 4-Stage Hydraulic Valve Spool (SS 304/316)','2D Profile-First B-Rep Revolution (ISO 2768-f, Ra 0.4 um)'),'2;1');
+FILE_NAME('hydraulic_manifold_spool_ss316.step','2026-11-09T21:56:00',('MECHmetrIQ AI CAD Engine'),('MECHmetrIQ Manufacturing Platform'),'TurnCAD-v2.7','OpenCASCADE-CadQuery-Kernel','');
+FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));
+ENDSEC;
+DATA;
+#1 = APPLICATION_PROTOCOL_DEFINITION('international standard','automotive_design',2000,#2);
+#2 = APPLICATION_CONTEXT('core data for automotive mechanical design processes');
+#3 = SHAPE_DEFINITION_REPRESENTATION(#4,#10);
+#4 = PRODUCT_DEFINITION_SHAPE('','',#5);
+#5 = PRODUCT_DEFINITION('design','',#6,#9);
+#6 = PRODUCT_DEFINITION_FORMATION('','',#7);
+#7 = PRODUCT('turncad-ss316-hydraulic-spool','4-Stage Hydraulic Valve Spool (SS 304/316)','Material: Stainless Steel 304',(#8));
+#8 = PRODUCT_CONTEXT('',#2,'mechanical');
+#9 = PRODUCT_DEFINITION_CONTEXT('part definition',#2,'design');
+#10 = ADVANCED_BREP_SHAPE_REPRESENTATION('',(#11,#15),#20);
+#11 = MANIFOLD_SOLID_BREP('4-Stage Hydraulic Valve Spool (SS 304/316)',#12);
+#12 = CLOSED_SHELL('',(#30));
+#15 = AXIS2_PLACEMENT_3D('',#16,#17,#18);
+#16 = CARTESIAN_POINT('',(0.,0.,0.));
+#17 = DIRECTION('',(0.,0.,1.));
+#18 = DIRECTION('',(1.,0.,0.));
+#20 = ( GEOMETRIC_REPRESENTATION_CONTEXT(3) GLOBAL_UNCERTAINTY_ASSIGNED_CONTEXT((#24)) GLOBAL_UNIT_ASSIGNED_CONTEXT((#21,#22,#23)) REPRESENTATION_CONTEXT('Context #1','3D Context with UNIT and UNCERTAINTY') );
+#21 = ( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT(.MILLI.,.METRE.) );
+#22 = ( NAMED_UNIT(*) PLANE_ANGLE_UNIT() SI_UNIT($,.RADIAN.) );
+#23 = ( NAMED_UNIT(*) SOLID_ANGLE_UNIT() SI_UNIT($,.STERADIAN.) );
+#24 = UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(1.E-05),#21,'distance_accuracy_value','confusion accuracy');
+#30 = ADVANCED_FACE('',(),#31,.T.);
+#31 = CYLINDRICAL_SURFACE('',#15,26.0000);
+#100 = CARTESIAN_POINT('od_seg_1_start',(0.,0.,0.0000));
+#101 = AXIS2_PLACEMENT_3D('',#100,#17,#18);
+#102 = CYLINDRICAL_SURFACE('Actuator Collar Head',#101,26.0000);
+#110 = CARTESIAN_POINT('od_seg_2_start',(0.,0.,25.0000));
+#111 = AXIS2_PLACEMENT_3D('',#110,#17,#18);
+#112 = CYLINDRICAL_SURFACE('High-Pressure Metering Land',#111,21.0000);
+#120 = CARTESIAN_POINT('od_seg_3_start',(0.,0.,73.0000));
+#121 = AXIS2_PLACEMENT_3D('',#120,#17,#18);
+#122 = CYLINDRICAL_SURFACE('Secondary Pilot Land',#121,16.0000);
+#130 = CARTESIAN_POINT('od_seg_4_start',(0.,0.,109.0000));
+#131 = AXIS2_PLACEMENT_3D('',#130,#17,#18);
+#132 = CYLINDRICAL_SURFACE('M16 Feedback Stem',#131,8.0000);
+#140 = CYLINDRICAL_SURFACE('INTERNAL_BORE_ID',#15,6.0000);
+/* CANONICAL_SUMMARY: MAX_OD=52MM, TOTAL_LENGTH=135MM, BORE=12MM */
+ENDSEC;
+END-ISO-10303-21;
+
