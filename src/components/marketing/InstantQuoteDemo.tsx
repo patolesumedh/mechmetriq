@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 type Frame = {
   file: { name: string; size: string } | null;
@@ -46,7 +46,6 @@ function useCountUp(target: number) {
 
     if (target === 0) {
       fromRef.current = 0;
-      setDisplay(0);
       return;
     }
 
@@ -72,7 +71,23 @@ function useCountUp(target: number) {
     };
   }, [target]);
 
-  return display;
+  return target === 0 ? 0 : display;
+}
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onStoreChange: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener("change", onStoreChange);
+  return () => mq.removeEventListener("change", onStoreChange);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+function getReducedMotionServerSnapshot() {
+  return false;
 }
 
 function Field({ label, value }: { label: string; value: string | null }) {
@@ -91,17 +106,13 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export function InstantQuoteDemo() {
   const [frameIdx, setFrameIdx] = useState(0);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot
+  );
   const frame = FRAMES[reduceMotion ? STATIC_FRAME_INDEX : frameIdx];
   const displayPrice = useCountUp(reduceMotion ? frame.price : frame.price);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduceMotion(mq.matches);
-    const onChange = () => setReduceMotion(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
 
   useEffect(() => {
     if (reduceMotion) return;

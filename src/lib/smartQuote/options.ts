@@ -95,4 +95,4 @@ export const DEFAULT_PART_CONFIG = {
 };
 
 export const ACCEPTED_EXTENSIONS = ".step,.stp,.iges,.igs,.dwg,.dxf,.stl,.pdf,.png,.jpg,.jpeg";
-export const MAX_FILE_BYTES = 25 * 1024 * 1024;
+export const MAX_FILE_BYTES = 50 * 1024 * 1024;

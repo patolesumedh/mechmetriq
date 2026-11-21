@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 import { REMEMBER_COOKIE, REMEMBER_IDLE_TIMEOUT_MS } from "@/lib/auth/sessionPolicy";
 import { safeNextPath } from "@/lib/rawMaterials/format";
+import { checkAuthRateLimit, getTurnstileToken } from "@/lib/security/rateLimit";
 import { PENDING_EMAIL_COOKIE } from "@/app/verify/email/constants";
 
 export interface LoginState {
@@ -20,9 +21,19 @@ export async function loginAction(
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
   const rememberMe = formData.get("rememberMe") === "on";
+  const captchaToken = getTurnstileToken(formData);
+
+  const rl = await checkAuthRateLimit(email);
+  if (!rl.allowed) {
+    return { error: rl.error, identifier: email };
+  }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+    options: captchaToken ? { captchaToken } : undefined,
+  });
   const cookieStore = await cookies();
 
   if (error) {

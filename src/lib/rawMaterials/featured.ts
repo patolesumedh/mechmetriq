@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { CACHE_KEYS, cached } from "@/lib/cache/redis";
 import type { Database } from "@/lib/types/database";
 import { effectiveRate, type Formula } from "./weight";
 
@@ -37,9 +38,10 @@ export async function getFeaturedItems(): Promise<FeaturedItem[]> {
   }));
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return fallback;
+  if (!url || !key || url.includes("your-project.supabase.co")) return fallback;
 
-  try {
+  return cached(CACHE_KEYS.FEATURED_ITEMS, 300, async () => {
+    try {
     const supabase = createClient<Database>(url, key, { auth: { persistSession: false } });
     const [shapes, materials, grades] = await Promise.all([
       supabase.from("rm_shapes").select("id, slug, name, formula, rate_premium_pct").in("slug", FEATURED.map((f) => f.shape)),
@@ -71,7 +73,8 @@ export async function getFeaturedItems(): Promise<FeaturedItem[]> {
         ),
       };
     });
-  } catch {
-    return fallback;
-  }
+    } catch {
+      return fallback;
+    }
+  });
 }

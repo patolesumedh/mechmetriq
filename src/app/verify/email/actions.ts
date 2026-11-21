@@ -6,6 +6,7 @@ import { createEmailLinkClient } from "@/lib/supabase/emailLinks";
 import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 import { siteUrl } from "@/lib/auth/siteUrl";
 import { isValidEmail } from "@/lib/auth/validation";
+import { checkAuthRateLimit, getTurnstileToken } from "@/lib/security/rateLimit";
 
 export interface VerifyEmailState {
   email: string;
@@ -29,14 +30,21 @@ export async function verifyEmailAction(
   const email = String(formData.get("email") ?? prev.email).trim().toLowerCase();
   if (!isValidEmail(email)) return { email, error: "Enter the email you signed up with." };
 
+  const rl = await checkAuthRateLimit(email);
+  if (!rl.allowed) return { email, error: rl.error };
+
   const supabase = await createClient();
 
   if (intent === "resend") {
+    const captchaToken = getTurnstileToken(formData);
     // Implicit-flow link, so it works in any browser (see emailLinks.ts).
     const { error } = await createEmailLinkClient().auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: `${await siteUrl()}/auth/callback` },
+      options: {
+        emailRedirectTo: `${await siteUrl()}/auth/callback`,
+        ...(captchaToken ? { captchaToken } : {}),
+      },
     });
     if (error?.status === 429) {
       return { email, error: "Please wait a minute before asking for another email." };

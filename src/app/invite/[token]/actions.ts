@@ -7,6 +7,7 @@ import { createEmailLinkClient } from "@/lib/supabase/emailLinks";
 import { siteUrl } from "@/lib/auth/siteUrl";
 import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from "@/lib/auth/pwned";
 import { isValidGstin, normalizeMobile, passwordProblem } from "@/lib/auth/validation";
+import { checkAuthRateLimit, getTurnstileToken } from "@/lib/security/rateLimit";
 import { PENDING_EMAIL_COOKIE } from "@/app/verify/email/constants";
 
 export interface AcceptState {
@@ -52,13 +53,20 @@ export async function acceptInviteAction(_prev: AcceptState, formData: FormData)
   if (problem) return fail(problem);
   if (password !== confirmPassword) return fail("Passwords do not match.");
   if (!agreeTerms) return fail("You must agree to the Terms of Service and Privacy Policy.");
+
+  const rl = await checkAuthRateLimit(invite.email);
+  if (!rl.allowed) return fail(rl.error!);
+
   if (await isPasswordLeaked(password)) return fail(LEAKED_PASSWORD_MESSAGE);
+
+  const captchaToken = getTurnstileToken(formData);
 
   const { data, error } = await createEmailLinkClient().auth.signUp({
     email: invite.email,
     password,
     options: {
       emailRedirectTo: `${await siteUrl()}/auth/callback`,
+      ...(captchaToken ? { captchaToken } : {}),
       data: {
         role: "vendor",
         vendor_type: invite.vendor_type,

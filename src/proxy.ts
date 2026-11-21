@@ -6,46 +6,58 @@ import {
   REMEMBER_COOKIE,
   REMEMBER_IDLE_TIMEOUT_MS,
 } from "@/lib/auth/sessionPolicy";
+import { isFromEdge } from "@/lib/security/originVerify";
 
 /**
  * Next.js 16 renamed "middleware.ts" to "proxy.ts" (named export `proxy`,
  * nodejs runtime only). This runs on every request to:
+ *  - verify the Cloudflare Worker origin lock (`x-origin-verify`);
  *  - refresh the Supabase auth session and keep cookies in sync between the
  *    browser and server;
  *  - sign out sessions idle for longer than the timeout (F1.6);
  *  - pass the request path to Server Components as `x-pathname` (used by
  *    requireAccountFor in src/lib/auth/guard.ts).
- *
- * See: node_modules/next/dist/docs/01-app/01-getting-started/16-proxy.md
  */
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  // Exemptions (both safe to reach directly on *.run.app):
+  //  - /api/internal/*: worker->web callback, authenticated by HMAC instead
+  //  - /api/health:     returns {"status":"ok"} only; lets CI check a no-traffic revision
+  const exempt = path.startsWith("/api/internal/") || path === "/api/health";
+  if (!exempt && !isFromEdge(request.headers.get("x-origin-verify"))) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+  if (exempt) {
+    return NextResponse.next();
+  }
+
   const next = () => {
     const headers = new Headers(request.headers);
-    headers.set("x-pathname", request.nextUrl.pathname);
+    headers.set("x-pathname", path);
     return NextResponse.next({ request: { headers } });
   };
   let response = next();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          response = next();
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
-        },
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes("your-project.supabase.co")) {
+    return response;
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = next();
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
   // Touching getUser() is what actually refreshes an expiring session.
   const {
@@ -57,7 +69,9 @@ export async function proxy(request: NextRequest) {
   const now = Date.now();
   const lastSeen = Number(request.cookies.get(LAST_SEEN_COOKIE)?.value);
   const limit =
-    request.cookies.get(REMEMBER_COOKIE)?.value === "1" ? REMEMBER_IDLE_TIMEOUT_MS : IDLE_TIMEOUT_MS;
+    request.cookies.get(REMEMBER_COOKIE)?.value === "1"
+      ? REMEMBER_IDLE_TIMEOUT_MS
+      : IDLE_TIMEOUT_MS;
 
   if (lastSeen && now - lastSeen > limit) {
     // Ends this session server-side too, not just the cookies.

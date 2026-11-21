@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { CadAnalysisReport } from "@/components/smartQuote/CadAnalysisReport";
 import { analysisStatus, isRunning } from "@/components/smartQuote/AnalysisList";
 import { AutoRefresh } from "@/components/smartQuote/AutoRefresh";
+import { signAttachmentDownloadUrl } from "@/lib/storage/gcs";
 import type { CadAnalysisResult } from "@/lib/smartQuote/shared";
 import { formatDate } from "../../../_lib/format";
 import { rerunAnalysisAction } from "../../actions";
@@ -25,9 +26,12 @@ export default async function AdminAnalysisPage({ params }: { params: Promise<{ 
     .maybeSingle();
   if (!row) notFound();
 
-  const [{ data: buyer }, { data: signed }] = await Promise.all([
+  const [{ data: buyer }, signedUrl] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", row.buyer_id).maybeSingle(),
-    supabase.storage.from("rfq-attachments").createSignedUrl(row.storage_path, 60 * 10),
+    signAttachmentDownloadUrl(supabase, row.storage_path, {
+      downloadFileName: row.file_name,
+      expiresInSeconds: 60 * 10,
+    }),
   ]);
   const status = analysisStatus(row);
 
@@ -60,8 +64,8 @@ export default async function AdminAnalysisPage({ params }: { params: Promise<{ 
           <span>{row.rfq_id ? `RFQ ${row.rfq_id.slice(0, 8).toUpperCase()}` : "Not yet submitted"}</span>
           <span>Uploaded {formatDate(row.created_at)}</span>
           <span>Attempts: {row.attempts}</span>
-          {signed?.signedUrl && (
-            <a href={signed.signedUrl} className="font-semibold text-brand">
+          {signedUrl && (
+            <a href={signedUrl} className="font-semibold text-brand">
               Download STEP
             </a>
           )}

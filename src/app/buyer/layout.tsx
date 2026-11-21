@@ -38,6 +38,7 @@ export default async function BuyerLayout({
         sectionLabel="Buyer"
         items={[
           { label: "Overview", href: "/buyer" },
+          { label: "AI CAD Designer", href: "/ai-cad" },
           { label: "Get Instant Quote", href: "/buyer/quote" },
           {
             label: "Quotes & Cart",

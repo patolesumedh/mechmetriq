@@ -1,0 +1,26 @@
+[
+  {
+    "name": "keep-last-10-web",
+    "action": { "type": "Keep" },
+    "mostRecentVersions": {
+      "packageNamePrefixes": ["web"],
+      "keepCount": 10
+    }
+  },
+  {
+    "name": "keep-last-5-cad-worker",
+    "action": { "type": "Keep" },
+    "mostRecentVersions": {
+      "packageNamePrefixes": ["cad-worker"],
+      "keepCount": 5
+    }
+  },
+  {
+    "name": "delete-untagged-after-7d",
+    "action": { "type": "Delete" },
+    "condition": {
+      "tagState": "UNTAGGED",
+      "olderThan": "604800s"
+    }
+  }
+]

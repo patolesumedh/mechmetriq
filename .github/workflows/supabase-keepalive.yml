@@ -1,0 +1,32 @@
+name: Supabase Database Keep-Alive
+
+on:
+  schedule:
+    - cron: '0 4 */2 * *'   # Every 2 days at 04:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Production & Staging Supabase Databases (anon key, read-only view)
+        env:
+          PROD_URL: ${{ vars.PROD_SUPABASE_URL }}
+          PROD_ANON: ${{ vars.PROD_SUPABASE_ANON_KEY }}
+          STG_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          STG_ANON: ${{ vars.STAGING_SUPABASE_ANON_KEY }}
+        run: |
+          for ENV_PAIR in "PROD|$PROD_URL|$PROD_ANON" "STAGING|$STG_URL|$STG_ANON"; do
+            IFS='|' read -r LABEL URL KEY <<< "$ENV_PAIR"
+            [ -z "$URL" ] && continue
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              "${URL}/rest/v1/health_ping?select=ok" \
+              -H "apikey: ${KEY}" -H "Authorization: Bearer ${KEY}")
+            echo "[${LABEL}] HTTP ${HTTP_CODE} at $(date -u)"
+            if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+              echo "Keep-alive failed for ${LABEL}!"; exit 1
+            fi
+          done

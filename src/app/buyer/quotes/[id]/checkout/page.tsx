@@ -6,6 +6,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { ButtonLink } from "@/components/ui/Button";
 import { formatDate } from "../../../_lib/ui";
 import { CheckoutForm } from "./CheckoutForm";
+import { signAttachmentDownloadUrl } from "@/lib/storage/gcs";
 import { QUOTE_VALID_DAYS, quoteValidity } from "@/lib/smartQuote/validity";
 
 const GST_RATE = 0.18;
@@ -63,8 +64,10 @@ export default async function QuoteCheckoutPage({ params }: { params: Promise<{ 
   const fileName =
     (rfq.cad_file_urls ?? [])[0]?.split("/").pop()?.replace(/^\d{10,}-/, "") ?? "Custom part";
   const thumbUrl = analysis?.thumbnail_path
-    ? (await supabase.storage.from("rfq-attachments").createSignedUrl(analysis.thumbnail_path, 600)).data
-        ?.signedUrl
+    ? await signAttachmentDownloadUrl(supabase, analysis.thumbnail_path, {
+        inline: true,
+        expiresInSeconds: 600,
+      })
     : null;
 
   const subtotal = Number(rfq.confirmed_total);

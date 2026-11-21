@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { TurnstileField } from "@/components/auth/TurnstileField";
 import { loginAction, type LoginState } from "./actions";
 
 const initialState: LoginState = {};
@@ -66,6 +67,7 @@ export function LoginForm({ next, notice }: { next?: string | null; notice?: str
             Forgot password?
           </Link>
         </div>
+        <TurnstileField action="login" resetSignal={state} />
         <button
           type="submit"
           disabled={pending}

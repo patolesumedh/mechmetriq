@@ -1,3 +1,5 @@
+# NOTE: Legacy Render Blueprint retained temporarily during Phase 5 migration to
+# GCP Cloud Run (`mechonehub-cad-worker` in `asia-south1`). Retire after cutover.
 # One-click deploy on Render (Blueprint). Other hosts: build services/smartquote/Dockerfile.
 services:
   - type: web

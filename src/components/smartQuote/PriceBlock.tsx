@@ -1,4 +1,4 @@
-import { formatInr } from "@/lib/smartQuote/pricing";
+import { formatInr } from "@/lib/smartQuote/pricingFormat";
 
 interface PriceFields {
   price_status: string;

@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminSession } from "@/lib/auth/guard";
+import { CACHE_KEYS, invalidateCache } from "@/lib/cache/redis";
 
 // Admin role + MFA-verified session.
 const requireAdmin = requireAdminSession;
 
-function refresh() {
+async function refresh() {
+  await invalidateCache(CACHE_KEYS.GRADE_RATES, CACHE_KEYS.FEATURED_ITEMS);
   revalidatePath("/admin/raw-materials");
   revalidatePath("/raw-materials", "layout");
   revalidatePath("/"); // homepage teaser shows live rates
@@ -43,7 +45,7 @@ export async function saveRatesAction(formData: FormData) {
       : await supabase.from("rm_rates").insert({ grade_id: c.grade_id, shape_id: null, rate_per_kg: c.rate });
     if (res.error) redirect(`/admin/raw-materials?tab=rates&error=save_failed#${material}`);
   }
-  refresh();
+  await refresh();
   redirect(`/admin/raw-materials?tab=rates&saved=${changes.length}#${material}`);
 }
 
@@ -86,7 +88,7 @@ export async function saveSettingsAction(formData: FormData) {
     if (!Number.isFinite(pct) || pct < -50 || pct > 200) continue;
     await supabase.from("rm_shapes").update({ rate_premium_pct: pct }).eq("id", key.slice(8));
   }
-  refresh();
+  await refresh();
   redirect("/admin/raw-materials?tab=settings&saved=1");
 }
 

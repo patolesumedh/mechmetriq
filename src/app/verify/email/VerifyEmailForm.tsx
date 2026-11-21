@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { AuthError, AuthField, AuthNotice, AuthSubmit } from "@/components/auth/AuthCard";
+import { TurnstileField } from "@/components/auth/TurnstileField";
 import { verifyEmailAction, type VerifyEmailState } from "./actions";
 
 export function VerifyEmailForm({ email }: { email: string }) {
@@ -37,6 +38,7 @@ export function VerifyEmailForm({ email }: { email: string }) {
       <form action={formAction} className="mt-4 text-center text-[12.5px] text-ink-2">
         <input type="hidden" name="intent" value="resend" />
         <input type="hidden" name="email" value={state.email} />
+        <TurnstileField action="resend-otp" resetSignal={state} />
         Didn&rsquo;t get it?{" "}
         <button type="submit" disabled={pending || !state.email} className="font-semibold text-brand disabled:opacity-60">
           Send a new code
