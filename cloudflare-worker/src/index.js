@@ -45,19 +45,10 @@ export default {
     const response = await fetch(originRequest);
     const respHeaders = new Headers(response.headers);
 
-    // Rewrite any Location redirect leaking the internal *.a.run.app or container bind URL
+    // Rewrite any Location redirect leaking the internal *.a.run.app URL
     const location = respHeaders.get("Location");
-    if (location) {
-      let rewritten = location;
-      if (originHost && rewritten.includes(originHost)) {
-        rewritten = rewritten.replaceAll(originHost, publicHost);
-      }
-      rewritten = rewritten
-        .replace(/^https?:\/\/0\.0\.0\.0(?::\d+)?/i, `https://${publicHost}`)
-        .replace(/^https?:\/\/localhost(?::\d+)?/i, `https://${publicHost}`);
-      if (rewritten !== location) {
-        respHeaders.set("Location", rewritten);
-      }
+    if (location && location.includes(originHost)) {
+      respHeaders.set("Location", location.replaceAll(originHost, publicHost));
     }
 
     // Preserve all chunked @supabase/ssr Set-Cookie headers intact
