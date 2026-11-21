@@ -15,9 +15,10 @@ function safeEqual(a: string, b: string): boolean {
  */
 export function isFromEdge(headerValue: string | null): boolean {
   if (process.env.NODE_ENV !== "production") return true;
-  const current = process.env.ORIGIN_VERIFY_SECRET;
-  const previous = process.env.ORIGIN_VERIFY_SECRET_PREVIOUS;
+  const current = process.env.ORIGIN_VERIFY_SECRET?.trim();
+  const previous = process.env.ORIGIN_VERIFY_SECRET_PREVIOUS?.trim();
   if (!current) return false;
   if (!headerValue) return false;
-  return safeEqual(headerValue, current) || (Boolean(previous) && safeEqual(headerValue, previous!));
+  const incoming = headerValue.trim();
+  return safeEqual(incoming, current) || (Boolean(previous) && safeEqual(incoming, previous!));
 }
