@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import type { CappProcessPlan, DfmIssue, TurnedPartDocument } from "@/lib/aiCad/types";
 import type { ParsedCadModel3D } from "@/lib/aiCad/cadFileParser";
