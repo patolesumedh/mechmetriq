@@ -41,12 +41,26 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
 ];
 
+const allowedServerActionOrigins = Array.from(
+  new Set([
+    host,
+    `www.${host.replace(/^www\./, "")}`,
+    "mechonehub.com",
+    "www.mechonehub.com",
+    "staging.mechonehub.com",
+    "*.a.run.app",
+    "localhost:3000",
+    "192.168.1.3:3000",
+  ])
+);
+
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  allowedDevOrigins: ["192.168.1.3", "192.168.1.*", "localhost"],
   experimental: {
     serverActions: {
-      allowedOrigins: [host],
+      allowedOrigins: allowedServerActionOrigins,
     },
   },
   async headers() {

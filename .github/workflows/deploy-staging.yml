@@ -98,6 +98,10 @@ jobs:
     needs: [build, changes]
     runs-on: ubuntu-latest
     environment: staging
+    env:
+      CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || '90d6429ee3422c4c82d37f6eebfdfb61' }}
     steps:
       - uses: google-github-actions/auth@v2
         with:
@@ -128,19 +132,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         if: env.CF_API_TOKEN != ''
-        env:
-          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         with:
           node-version: 22
       - name: Sync ORIGIN_VERIFY_SECRET from GCP Secret Manager & Deploy Cloudflare Worker (staging)
         if: env.CF_API_TOKEN != ''
         working-directory: cloudflare-worker
-        env:
-          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || '90d6429ee3422c4c82d37f6eebfdfb61' }}
         run: |
-          npx --yes wrangler@4 deploy --keep-vars -c wrangler.toml --env staging
+          ORIGIN_HOST="${SVC#https://}"
+          npx --yes wrangler@4 deploy --keep-vars --var "CLOUD_RUN_HOST:${ORIGIN_HOST}" -c wrangler.toml --env staging
           ORIGIN_SECRET=$(gcloud secrets versions access latest --secret=ORIGIN_VERIFY_SECRET --project="${{ vars.GCP_PROJECT }}" 2>/dev/null | tr -d '\r\n' || true)
           if [ -n "$ORIGIN_SECRET" ]; then
             printf "%s" "$ORIGIN_SECRET" | npx --yes wrangler@4 secret put ORIGIN_VERIFY_SECRET -c wrangler.toml --env staging
