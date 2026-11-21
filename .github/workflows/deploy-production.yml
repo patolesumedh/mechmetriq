@@ -58,10 +58,20 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+      - name: Sync baseline migration history if schema already exists
+        run: |
+          HAS_PROFILES=$(psql "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" -tAc "SELECT to_regclass('public.profiles') IS NOT NULL;" 2>/dev/null || echo "f")
+          HAS_0001=$(psql "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" -tAc "SELECT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '0001');" 2>/dev/null || echo "f")
+          if [ "$HAS_PROFILES" = "t" ] && [ "$HAS_0001" != "t" ]; then
+            echo "Existing schema detected without CLI history for 0001..0022; marking 0001..0022 as applied..."
+            for V in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022; do
+              supabase migration repair --status applied "$V" --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --yes || true
+            done
+          fi
       - name: Show pending migrations (dry run)
         run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --dry-run
       - name: Apply migrations (IPv4 session pooler)
-        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}"
+        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --yes
 
   changes:
     if: github.event_name != 'workflow_dispatch' || inputs.revision == ''
@@ -76,6 +86,7 @@ jobs:
           filters: |
             worker:
               - 'services/smartquote/**'
+              - '.github/workflows/deploy-production.yml'
 
   build:
     if: github.event_name != 'workflow_dispatch' || inputs.revision == ''
@@ -100,7 +111,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://mechonehub.com' }}
             NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
