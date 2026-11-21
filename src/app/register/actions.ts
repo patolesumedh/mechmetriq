@@ -8,6 +8,7 @@ import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 import { siteUrl } from "@/lib/auth/siteUrl";
 import { isPasswordLeaked, LEAKED_PASSWORD_MESSAGE } from "@/lib/auth/pwned";
 import { isValidEmail, isValidGstin, normalizeMobile, passwordProblem } from "@/lib/auth/validation";
+import { checkAuthRateLimit, getTurnstileToken } from "@/lib/security/rateLimit";
 import { PENDING_EMAIL_COOKIE } from "@/app/verify/email/constants";
 
 export interface RegisterState {
@@ -61,7 +62,13 @@ export async function registerAction(
   if (!agreeTerms) {
     return fail("You must agree to the Terms of Service and Privacy Policy.");
   }
+
+  const rl = await checkAuthRateLimit(email);
+  if (!rl.allowed) return fail(rl.error!);
+
   if (await isPasswordLeaked(password)) return fail(LEAKED_PASSWORD_MESSAGE);
+
+  const captchaToken = getTurnstileToken(formData);
 
   // Implicit-flow client so the confirmation link works in any browser
   // (see emailLinks.ts); it stores no session itself.
@@ -70,6 +77,7 @@ export async function registerAction(
     password,
     options: {
       emailRedirectTo: `${await siteUrl()}/auth/callback`,
+      ...(captchaToken ? { captchaToken } : {}),
       data: {
         role: accountType,
         vendor_type: isVendor ? vendorType : null,

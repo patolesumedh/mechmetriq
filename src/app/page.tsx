@@ -67,9 +67,12 @@ export default async function HomePage() {
               CAD file for instant pricing, or buy metals, plastics and sheets straight from
               verified vendors.
             </p>
-            <div className="mb-8 flex gap-3">
-              <ButtonLink href="/register?intent=quote" size="lg">
-                Get Instant Quote &rarr;
+            <div className="mb-8 flex flex-wrap gap-3">
+              <ButtonLink href="/ai-cad" size="lg">
+                ✨ AI CAD Designer &rarr;
+              </ButtonLink>
+              <ButtonLink href="/register?intent=quote" variant="outline" size="lg">
+                Get Instant Quote
               </ButtonLink>
               <ButtonLink href="/raw-materials" variant="outline" size="lg">
                 Browse Marketplace

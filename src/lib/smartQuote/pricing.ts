@@ -20,6 +20,7 @@
  * minimum order value. GST is extra.
  */
 
+import "server-only";
 import type { CadAnalysisResult } from "./shared";
 
 // ---------------------------------------------------------------- types

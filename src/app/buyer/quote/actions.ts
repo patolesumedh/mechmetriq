@@ -4,6 +4,12 @@ import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  isOwnedCadPath,
+  issueCadUploadSignedUrl,
+  signAttachmentDownloadUrl,
+  type SignedCadUploadResult,
+} from "@/lib/storage/gcs";
 import { createPartAnalysis, runCadAnalysis, smartQuoteConfigured } from "@/lib/smartQuote/server";
 import { loadGradeRates, loadPricingSettings } from "@/lib/smartQuote/data";
 import {
@@ -33,21 +39,36 @@ async function requireUser() {
   return { supabase, user };
 }
 
-function ownPath(userId: string, path: string) {
-  return typeof path === "string" && path.startsWith(`${userId}/`) && !path.includes("..") && path.length < 400;
+// ------------------------------------------------------------------ upload signing
+
+export async function requestCadUploadUrlAction(input: {
+  fileName: string;
+  fileSize: number;
+}): Promise<SignedCadUploadResult> {
+  const { user } = await requireUser();
+  return issueCadUploadSignedUrl({
+    userId: user.id,
+    fileName: input.fileName,
+    fileSize: input.fileSize,
+  });
 }
 
 // ------------------------------------------------------------------ analysis
 
 export async function startPartAnalysisAction(
-  storagePath: string
+  storagePath: string,
+  meta?: { fileName?: string; sha256?: string | null; fileSize?: number; contentType?: string }
 ): Promise<{ id?: string; error?: string }> {
   const { user } = await requireUser();
-  if (!ownPath(user.id, storagePath) || !isStepFile(storagePath)) return { error: "Not a STEP file." };
+  if (!isOwnedCadPath(user.id, storagePath) || !isStepFile(storagePath)) {
+    return { error: "Not a STEP file." };
+  }
   if (!smartQuoteConfigured()) return { error: "Instant quoting isn't available right now." };
   try {
-    const id = await createPartAnalysis(user.id, storagePath);
-    after(() => runCadAnalysis(id));
+    const { id, deduplicated } = await createPartAnalysis(user.id, storagePath, meta);
+    if (!deduplicated) {
+      after(() => runCadAnalysis(id));
+    }
     return { id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Couldn't start the analysis." };
@@ -100,8 +121,10 @@ export async function getPartAnalysisAction(id: string): Promise<PartView | null
     warnings: r.warnings ?? [],
   };
   if (row.thumbnail_path) {
-    const { data } = await supabase.storage.from("rfq-attachments").createSignedUrl(row.thumbnail_path, 60 * 60);
-    view.thumbnailUrl = data?.signedUrl ?? null;
+    view.thumbnailUrl = await signAttachmentDownloadUrl(supabase, row.thumbnail_path, {
+      inline: true,
+      expiresInSeconds: 10 * 60,
+    });
   }
   return view;
 }
@@ -153,8 +176,8 @@ export async function submitQuoteAction(payload: SubmitPayload): Promise<{ error
   const notes = String(payload.specialInstructions ?? "").trim().slice(0, 4000) || null;
 
   for (const part of payload.parts) {
-    if (!ownPath(user.id, part.storagePath)) return { error: "One of the files isn't yours." };
-    const drawings = (part.drawingPaths ?? []).filter((p) => ownPath(user.id, p)).slice(0, 10);
+    if (!isOwnedCadPath(user.id, part.storagePath)) return { error: "One of the files isn't yours." };
+    const drawings = (part.drawingPaths ?? []).filter((p) => isOwnedCadPath(user.id, p)).slice(0, 10);
     const c = part.config ?? ({} as SubmittedPart["config"]);
     const cfg: PartConfig = {
       quantity: int(c.quantity, 1, 1_000_000),

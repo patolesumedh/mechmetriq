@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { AuthCard, AuthError, AuthField, AuthNotice, AuthSubmit } from "@/components/auth/AuthCard";
+import { TurnstileField } from "@/components/auth/TurnstileField";
 import { forgotPasswordAction, type ForgotPasswordState } from "./actions";
 
 const initialState: ForgotPasswordState = {};
@@ -28,6 +29,7 @@ export function ForgotPasswordForm({ linkExpired }: { linkExpired: boolean }) {
       ) : (
         <form action={formAction}>
           <AuthField label="Email" name="email" type="email" autoComplete="email" required />
+          <TurnstileField action="forgot-password" resetSignal={state} />
           <AuthSubmit pending={pending} pendingLabel="Sending…">
             Send reset link
           </AuthSubmit>

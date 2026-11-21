@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Topbar } from "@/components/dashboard/Topbar";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { formatInr, type Estimate } from "@/lib/smartQuote/pricing";
+import { signAttachmentDownloadUrl, signAttachmentDownloadUrls } from "@/lib/storage/gcs";
+import type { Estimate } from "@/lib/smartQuote/pricing";
+import { formatInr } from "@/lib/smartQuote/pricingFormat";
 import { formatDate, rfqStatusTone, titleCase } from "../../_lib/format";
 import { confirmPriceAction } from "../actions";
 
@@ -33,7 +35,7 @@ export default async function AdminRfqPage({
   const { data: rfq } = await supabase.from("rfqs").select("*").eq("id", id).maybeSingle();
   if (!rfq) notFound();
 
-  const [{ data: buyer }, { data: grade }, { data: analysis }, { data: signed }] = await Promise.all([
+  const [{ data: buyer }, { data: grade }, { data: analysis }, signed] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", rfq.buyer_id).maybeSingle(),
     rfq.rm_grade_id
       ? supabase.from("rm_grades").select("name").eq("id", rfq.rm_grade_id).maybeSingle()
@@ -41,12 +43,13 @@ export default async function AdminRfqPage({
     rfq.analysis_id
       ? supabase.from("cad_analyses").select("id, status, thumbnail_path").eq("id", rfq.analysis_id).maybeSingle()
       : Promise.resolve({ data: null }),
-    (rfq.cad_file_urls ?? []).length
-      ? supabase.storage.from("rfq-attachments").createSignedUrls(rfq.cad_file_urls ?? [], 60 * 10)
-      : Promise.resolve({ data: [] as { signedUrl: string }[] }),
+    signAttachmentDownloadUrls(supabase, rfq.cad_file_urls ?? [], 60 * 10),
   ]);
   const thumb = analysis?.thumbnail_path
-    ? (await supabase.storage.from("rfq-attachments").createSignedUrl(analysis.thumbnail_path, 600)).data?.signedUrl
+    ? await signAttachmentDownloadUrl(supabase, analysis.thumbnail_path, {
+        inline: true,
+        expiresInSeconds: 600,
+      })
     : null;
 
   const est = rfq.estimate as unknown as Estimate | null;

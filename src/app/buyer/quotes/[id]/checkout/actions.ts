@@ -2,8 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, hasAdminClientConfig } from "@/lib/supabase/admin";
 import { GSTIN_RE } from "@/lib/kyc/rules";
 import { PAY_METHODS, newPaymentRef, type PayMethod } from "@/lib/payments/testGateway";
+import { isGcsCadEnabled, promoteCadFilesToOrderPrefix } from "@/lib/storage/gcs";
 
 export type PayQuoteResult =
   | { ok: true; orderId: string; paymentRef: string; paidAt: string }
@@ -49,6 +51,24 @@ export async function payQuoteAction(input: {
     p_billing_gstin: gstin || undefined,
   });
   if (error || !orderId) return { ok: false, error: error?.message ?? "Payment could not be recorded." };
+
+  // Preserve ordered CAD files in orders/{orderId}/ so the 90-day uploads/ lifecycle doesn't delete them
+  if (isGcsCadEnabled() && hasAdminClientConfig()) {
+    try {
+      const admin = createAdminClient();
+      const { data: rfq } = await admin
+        .from("rfqs")
+        .select("cad_file_urls")
+        .eq("id", input.rfqId)
+        .maybeSingle();
+      if (rfq?.cad_file_urls?.length) {
+        const promoted = await promoteCadFilesToOrderPrefix(orderId, rfq.cad_file_urls);
+        await admin.from("rfqs").update({ cad_file_urls: promoted }).eq("id", input.rfqId);
+      }
+    } catch {
+      // Non-fatal: order payment succeeded
+    }
+  }
 
   revalidatePath("/buyer/quotes");
   revalidatePath("/buyer/orders");

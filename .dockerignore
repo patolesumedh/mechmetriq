@@ -1,0 +1,17 @@
+.env*
+.git
+.github
+.vscode
+node_modules
+.next
+out
+build
+coverage
+services
+supabase
+cloudflare-worker
+infra
+docs
+test_samples
+*.md
+*.tsbuildinfo

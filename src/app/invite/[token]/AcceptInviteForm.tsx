@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { PASSWORD_HINT } from "@/lib/auth/validation";
 import { AuthError } from "@/components/auth/AuthCard";
+import { TurnstileField } from "@/components/auth/TurnstileField";
 import { acceptInviteAction, type AcceptState } from "./actions";
 
 const input = "w-full rounded-[9px] border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand";
@@ -62,6 +63,7 @@ export function AcceptInviteForm({
         <input type="checkbox" name="agreeTerms" required className="mt-0.5" />
         <span>I agree to the Terms of Service and Privacy Policy.</span>
       </label>
+      <TurnstileField action="accept-invite" resetSignal={state} />
       <button
         type="submit"
         disabled={pending}

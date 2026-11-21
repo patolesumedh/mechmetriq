@@ -1,4 +1,9 @@
 import "server-only";
+import {
+  isGcsCadEnabled,
+  isGcsObjectPath,
+  publishCadAnalysisJob,
+} from "@/lib/storage/gcs";
 import { createAdminClient, hasAdminClientConfig } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/types/database";
 import {
@@ -13,9 +18,13 @@ const BUCKET = "rfq-attachments";
 const SERVICE_TIMEOUT_MS = 240_000;
 
 export function smartQuoteConfigured() {
-  return Boolean(
+  const gcsPubSubReady = Boolean(
+    isGcsCadEnabled() && process.env.PUBSUB_CAD_TOPIC && hasAdminClientConfig()
+  );
+  const legacyHttpReady = Boolean(
     process.env.SMARTQUOTE_API_URL && process.env.SMARTQUOTE_API_KEY && hasAdminClientConfig()
   );
+  return gcsPubSubReady || legacyHttpReady;
 }
 
 /**
@@ -58,8 +67,11 @@ async function readServiceError(res: Response) {
 }
 
 /**
- * Download the STEP file, send it to the parser service and store the result.
- * Never throws: failures are written to the row so the UI can show them.
+ * Dispatches or executes a STEP file analysis.
+ * - Production / Staging (GCS + Pub/Sub): publishes a job to `PUBSUB_CAD_TOPIC`;
+ *   the isolated worker downloads from GCS and posts an HMAC-signed callback
+ *   to `/api/internal/cad-result`.
+ * - Local dev fallback: downloads from Supabase Storage and calls `/analyze` directly.
  */
 export async function runCadAnalysis(analysisId: string) {
   if (!hasAdminClientConfig()) {
@@ -70,22 +82,54 @@ export async function runCadAnalysis(analysisId: string) {
 
   const { data: row } = await admin
     .from("cad_analyses")
-    .select("id, buyer_id, storage_path, file_name, attempts")
+    .select("id, buyer_id, storage_path, file_name, status, attempts, sha256")
     .eq("id", analysisId)
     .maybeSingle();
-  if (!row) return;
+  if (!row || row.status === "completed") return;
 
   const fail = async (message: string) => {
     await admin
       .from("cad_analyses")
-      .update({ status: "failed", error: message.slice(0, 500), completed_at: new Date().toISOString() })
+      .update({
+        status: "failed",
+        error: message.slice(0, 500),
+        completed_at: new Date().toISOString(),
+      })
       .eq("id", analysisId);
   };
 
+  // Production path: GCS + Pub/Sub push to isolated worker
+  if (isGcsCadEnabled() && process.env.PUBSUB_CAD_TOPIC && isGcsObjectPath(row.storage_path)) {
+    await admin
+      .from("cad_analyses")
+      .update({
+        status: "pending",
+        error: null,
+        attempts: (row.attempts ?? 0) + 1,
+      })
+      .eq("id", analysisId);
+
+    try {
+      await publishCadAnalysisJob({
+        analysisId: row.id,
+        objectPath: row.storage_path,
+        fileName: row.file_name,
+        sha256: row.sha256,
+      });
+    } catch (err) {
+      console.error("[smartquote] pubsub publish failed", err instanceof Error ? err.message : err);
+      await fail("Could not queue CAD analysis job. Our team will price this part.");
+    }
+    return;
+  }
+
+  // Legacy / Local Dev path: direct HTTP call to SMARTQUOTE_API_URL
   const url = process.env.SMARTQUOTE_API_URL;
   const key = process.env.SMARTQUOTE_API_KEY;
   if (!url || !key) {
-    await fail("The analysis service isn't configured yet (SMARTQUOTE_API_URL / SMARTQUOTE_API_KEY).");
+    await fail(
+      "The analysis service isn't configured yet (GCS_CAD_BUCKET/PUBSUB_CAD_TOPIC or SMARTQUOTE_API_URL)."
+    );
     return;
   }
 
@@ -176,20 +220,81 @@ export async function runCadAnalyses(ids: string[]) {
 
 /**
  * Analyse a STEP file the buyer has just uploaded, before any RFQ exists.
- * Returns the analysis id; the work continues in the background.
+ * Checks SHA-256 deduplication against prior verified analyses by the same buyer
+ * before publishing to `PUBSUB_CAD_TOPIC`.
  */
-export async function createPartAnalysis(buyerId: string, storagePath: string) {
+export async function createPartAnalysis(
+  buyerId: string,
+  storagePath: string,
+  meta?: {
+    fileName?: string;
+    sha256?: string | null;
+    fileSize?: number | null;
+    contentType?: string | null;
+  }
+): Promise<{ id: string; deduplicated: boolean }> {
   const admin = createAdminClient();
+  const cleanSha =
+    meta?.sha256 && /^[0-9a-f]{64}$/i.test(meta.sha256) ? meta.sha256.toLowerCase() : null;
+  const displayName = (meta?.fileName?.trim() || fileNameFromPath(storagePath)).slice(0, 240);
+
+  // SHA-256 deduplication (scoped to same buyer and worker-verified hash)
+  if (cleanSha) {
+    const { data: existing } = await admin
+      .from("cad_analyses")
+      .select("result, summary, analysis_version, processing_ms, thumbnail_path")
+      .eq("buyer_id", buyerId)
+      .eq("sha256", cleanSha)
+      .eq("sha256_verified", true)
+      .eq("status", "completed")
+      .not("result", "is", null)
+      .order("completed_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing && existing.result) {
+      const { data: cloned, error: cloneErr } = await admin
+        .from("cad_analyses")
+        .insert({
+          rfq_id: null,
+          buyer_id: buyerId,
+          storage_path: storagePath,
+          file_name: displayName,
+          sha256: cleanSha,
+          sha256_verified: true,
+          file_size: meta?.fileSize ?? null,
+          content_type: meta?.contentType ?? null,
+          status: "completed",
+          result: existing.result,
+          summary: existing.summary,
+          analysis_version: existing.analysis_version,
+          processing_ms: existing.processing_ms ?? 0,
+          thumbnail_path: existing.thumbnail_path,
+          completed_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+
+      if (!cloneErr && cloned) {
+        return { id: cloned.id, deduplicated: true };
+      }
+    }
+  }
+
   const { data, error } = await admin
     .from("cad_analyses")
     .insert({
       rfq_id: null,
       buyer_id: buyerId,
       storage_path: storagePath,
-      file_name: fileNameFromPath(storagePath),
+      file_name: displayName,
+      sha256: cleanSha,
+      sha256_verified: false,
+      file_size: meta?.fileSize ?? null,
+      content_type: meta?.contentType ?? null,
     })
     .select("id")
     .single();
   if (error || !data) throw new Error(error?.message ?? "Couldn't start the analysis.");
-  return data.id;
+  return { id: data.id, deduplicated: false };
 }

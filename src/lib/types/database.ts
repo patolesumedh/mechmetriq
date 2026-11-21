@@ -58,13 +58,17 @@ export type Database = {
           attempts: number
           buyer_id: string
           completed_at: string | null
+          content_type: string | null
           created_at: string
           error: string | null
           file_name: string
+          file_size: number | null
           id: string
           processing_ms: number | null
           result: Json | null
           rfq_id: string | null
+          sha256: string | null
+          sha256_verified: boolean
           status: string
           storage_path: string
           summary: Json | null
@@ -76,13 +80,17 @@ export type Database = {
           attempts?: number
           buyer_id: string
           completed_at?: string | null
+          content_type?: string | null
           created_at?: string
           error?: string | null
           file_name: string
+          file_size?: number | null
           id?: string
           processing_ms?: number | null
           result?: Json | null
           rfq_id?: string | null
+          sha256?: string | null
+          sha256_verified?: boolean
           status?: string
           storage_path: string
           summary?: Json | null
@@ -94,13 +102,17 @@ export type Database = {
           attempts?: number
           buyer_id?: string
           completed_at?: string | null
+          content_type?: string | null
           created_at?: string
           error?: string | null
           file_name?: string
+          file_size?: number | null
           id?: string
           processing_ms?: number | null
           result?: Json | null
           rfq_id?: string | null
+          sha256?: string | null
+          sha256_verified?: boolean
           status?: string
           storage_path?: string
           summary?: Json | null
@@ -1547,6 +1559,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      payment_webhook_events: {
+        Row: {
+          event_id: string
+          event_type: string
+          payload: Json
+          processed_at: string | null
+          provider: string
+          received_at: string
+        }
+        Insert: {
+          event_id: string
+          event_type: string
+          payload: Json
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+        }
+        Relationships: []
       }
       sq_settings: {
         Row: {

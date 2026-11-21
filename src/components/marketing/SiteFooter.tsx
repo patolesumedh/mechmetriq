@@ -4,6 +4,7 @@ const COLUMNS: [string, { label: string; href: string }[]][] = [
   [
     "Platform",
     [
+      { label: "AI CAD Designer", href: "/ai-cad" },
       { label: "Instant Quote", href: "/register?intent=quote" },
       { label: "Raw Material Marketplace", href: "/raw-materials" },
       { label: "Weight Calculator", href: "/raw-materials/weight-calculator" },

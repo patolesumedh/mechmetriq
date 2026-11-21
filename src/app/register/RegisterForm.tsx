@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { TurnstileField } from "@/components/auth/TurnstileField";
 import { PASSWORD_HINT } from "@/lib/auth/validation";
 import { registerAction, type RegisterState } from "./actions";
 
@@ -159,6 +160,8 @@ export function RegisterForm() {
             <input type="checkbox" name="agreeTerms" required className="mt-0.5" />
             <span>I agree to the Terms of Service and Privacy Policy.</span>
           </label>
+
+          <TurnstileField action="register" resetSignal={state} />
 
           <button
             type="submit"

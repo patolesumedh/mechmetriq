@@ -27,7 +27,8 @@ the team but not read by this version.
 | Method | Path | |
 |---|---|---|
 | `GET` | `/health` | `{"ok": true, "version": "smartquote-v1"}` |
-| `POST` | `/analyze` | multipart form, field `file` = `.step`/`.stp`. Header `X-API-Key: <SMARTQUOTE_API_KEY>` |
+| `POST` | `/analyze` | multipart form, field `file` = `.step`/`.stp`. Header `X-API-Key: <SMARTQUOTE_API_KEY>` (local dev & CI smoke test) |
+| `POST` | `/pubsub/analyze` | GCP Pub/Sub authenticated push handler (downloads from `GCS_CAD_BUCKET` `uploads/`, writes thumbnail under `derived/`, and POSTs HMAC-signed callback to `${WEB_CALLBACK_URL}/api/internal/cad-result` using `CAD_CALLBACK_SECRET`) |
 
 Responses: `200` JSON analysis · `401` bad key · `413` too big · `415` not a
 STEP file · `422` STEP couldn't be read (message says why) · `504` took longer

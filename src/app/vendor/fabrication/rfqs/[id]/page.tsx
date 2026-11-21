@@ -5,6 +5,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatDate, quoteStatusTone } from "../../badge-utils";
 import { QuoteForm } from "./QuoteForm";
+import { signAttachmentDownloadUrls } from "@/lib/storage/gcs";
 
 export default async function RfqDetailPage({
   params,
@@ -76,10 +77,8 @@ export default async function RfqDetailPage({
   // public URLs — resolve short-lived signed URLs to actually render them.
   let cadFileLinks: { name: string; url: string }[] = [];
   if (r.cad_file_urls && r.cad_file_urls.length > 0) {
-    const { data: signed } = await supabase.storage
-      .from("rfq-attachments")
-      .createSignedUrls(r.cad_file_urls, 60 * 60);
-    cadFileLinks = (signed ?? [])
+    const signed = await signAttachmentDownloadUrls(supabase, r.cad_file_urls, 10 * 60);
+    cadFileLinks = signed
       .map((s, i) => ({
         name: r.cad_file_urls![i].split("/").pop() ?? `CAD file ${i + 1}`,
         url: s.signedUrl,
