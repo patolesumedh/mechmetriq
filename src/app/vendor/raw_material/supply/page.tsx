@@ -37,7 +37,7 @@ export default async function SupplyPage() {
     <div>
       <Topbar title="What I Supply" />
       <p className="mt-5 max-w-[760px] text-[13px] leading-relaxed text-ink-2">
-        MECHmetrIQ sets marketplace prices from its rate card and assigns each approved order to a verified supplier.
+        MechOneHub sets marketplace prices from its rate card and assigns each approved order to a verified supplier.
         Tell us which shapes and grades you can supply and where you dispatch from — orders for those lines are routed
         to you first.
       </p>

@@ -42,7 +42,7 @@ export async function acceptInviteAction(_prev: AcceptState, formData: FormData)
   const { data: rows } = await supabase.rpc("vendor_invite_lookup", { p_token: token });
   const invite = rows?.[0];
   if (!invite || invite.status !== "valid") {
-    return { error: "This invitation link is no longer valid. Ask the MECHmetrIQ team to resend it." };
+    return { error: "This invitation link is no longer valid. Ask the MechOneHub team to resend it." };
   }
 
   if (!fullName || fullName.length > 120) return fail("Enter your full name.");

@@ -6,7 +6,7 @@ import { QuickFinder, type FinderShape } from "./_components/QuickFinder";
 import { ShapeIcon } from "./_components/ShapeIcon";
 
 export const metadata: Metadata = {
-  title: "Raw Material Marketplace — Buy Metals Online | MECHmetrIQ",
+  title: "Raw Material Marketplace — Buy Metals Online | MechOneHub",
   description:
     "Buy stainless steel, mild steel, alloy and tool steel, aluminium, copper, brass, bronze, nickel alloys and titanium as bars, sheets, plates, pipes and sections. Transparent ₹/kg rates, cut-to-size, MTC and GST invoicing.",
 };

@@ -31,7 +31,7 @@ export default function AboutPage() {
             Making sourcing simpler for buyers and vendors
           </h1>
           <p className="text-[16px] leading-relaxed text-ink-2">
-            MECHmetrIQ brings custom manufacturing and raw materials sourcing together on one
+            MechOneHub brings custom manufacturing and raw materials sourcing together on one
             platform, connecting buyers with verified vendors across India.
           </p>
         </div>
@@ -49,7 +49,7 @@ export default function AboutPage() {
             <p className="mb-3 text-[14.5px] leading-relaxed text-ink-2">
               Sourcing a custom part and buying standard raw material are usually two completely
               different processes, handled through different channels with little visibility into
-              pricing or timelines. MECHmetrIQ was built to bring both under one roof — a
+              pricing or timelines. MechOneHub was built to bring both under one roof — a
               quote-to-order engine for custom manufacturing, and a marketplace for standard
               materials — so buyers and vendors can work from a single, transparent dashboard.
             </p>
@@ -112,10 +112,10 @@ export default function AboutPage() {
             set up. Reach out and we&apos;ll get back to you.
           </p>
           <a
-            href="mailto:hello@mechmetriq.com"
+            href="mailto:hello@MechOneHub.com"
             className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-brand hover:underline"
           >
-            hello@mechmetriq.com &rarr;
+            hello@MechOneHub.com &rarr;
           </a>
         </div>
       </section>

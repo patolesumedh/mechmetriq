@@ -134,7 +134,7 @@ export function modelFromTurnedDoc(
  * Parse ISO 10303-21 STEP (.step / .stp) text.
  */
 export function parseStepText(stepText: string, fileName: string): ParsedCadModel3D {
-  // 1. Check if the STEP file contains our embedded MECHmetrIQ .turncad JSON comment
+  // 1. Check if the STEP file contains our embedded MechOneHub .turncad JSON comment
   const embeddedMatch = stepText.match(/\/\*\s*@TURN_CAD_JSON:(\{[\s\S]*?\})\s*\*\//);
   if (embeddedMatch?.[1]) {
     try {

@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { TurnstileField } from "@/components/auth/TurnstileField";
+import { MechOneHubLogo } from "@/components/ui/MechOneHubLogo";
 import { PASSWORD_HINT } from "@/lib/auth/validation";
 import { registerAction, type RegisterState } from "./actions";
 
@@ -17,62 +18,61 @@ export function RegisterForm() {
   const values = state.values ?? {};
 
   return (
-    <div className="grid min-h-screen grid-cols-[1fr_1.1fr]">
-      <div className="flex flex-col justify-between bg-linear-to-br from-[#12335c] via-brand-dark to-brand p-12 text-white">
-        <Link href="/" className="flex w-fit items-center gap-2.5 text-[19px] font-bold transition-opacity hover:opacity-90">
-          <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-white/15 text-[15px] font-extrabold">
-            M
-          </span>
-          MECHmetrIQ
+    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[1fr_1.1fr]">
+      <div className="flex flex-col justify-between bg-[#0D1F3B] p-12 text-[#E7EDF5]">
+        <Link href="/" className="flex w-fit items-center text-[19px] font-bold transition-opacity hover:opacity-90">
+          <MechOneHubLogo theme="dark" markSize={30} />
         </Link>
         <div>
-          <h2 className="mb-3.5 max-w-[380px] text-[28px] leading-tight tracking-tight">
+          <h2 className="mb-3.5 max-w-[380px] text-[28px] font-semibold leading-tight tracking-tight text-white">
             One account. Custom parts made, or raw materials delivered.
           </h2>
-          <p className="max-w-[360px] text-sm leading-relaxed text-[#cfe0f5]">
+          <p className="max-w-[360px] text-sm leading-relaxed text-[#C9D4E3]">
             Join as a buyer to get instant quotes and source materials, or as a vendor to receive
             jobs and sell to verified procurement teams across India.
           </p>
         </div>
-        <div className="flex gap-7 text-[12.5px] text-[#cfe0f5]">
+        <div className="flex gap-7 text-[12.5px] text-[#93A4BC]">
           <div>
-            <b className="block text-xl font-extrabold text-white">1,200+</b>
+            <b className="block font-mono text-xl font-bold text-white">1,200+</b>
             Vendors
           </div>
           <div>
-            <b className="block text-xl font-extrabold text-white">40,000+</b>
+            <b className="block font-mono text-xl font-bold text-white">40,000+</b>
             Parts quoted
           </div>
           <div>
-            <b className="block text-xl font-extrabold text-white">4.8/5</b>
+            <b className="block font-mono text-xl font-bold text-white">4.8/5</b>
             Avg. rating
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-center p-12">
-        <form action={formAction} className="w-full max-w-[480px]">
-          <h1 className="mb-1.5 text-2xl font-bold tracking-tight">Create your account</h1>
+      <div className="flex items-center justify-center bg-plane p-8 sm:p-12">
+        <form action={formAction} className="w-full max-w-[480px] rounded-[10px] border border-grid bg-surface p-8">
+          <h1 className="mb-1.5 text-2xl font-bold tracking-tight text-ink">Create your account</h1>
           <p className="mb-6 text-[13.5px] text-ink-2">
-            Choose how you&rsquo;ll use MECHmetrIQ &mdash; this decides which fields and dashboard
+            Choose how you&rsquo;ll use MechOneHub &mdash; this decides which fields and dashboard
             you&rsquo;ll get.
           </p>
 
           {state.error && (
-            <div className="mb-4 rounded-lg bg-crit-bg px-3.5 py-3 text-[13px] font-medium text-[#a12525]">
+            <div className="mb-4 rounded-[6px] bg-crit-bg px-3.5 py-3 text-[13px] font-medium text-crit">
               {state.error}
             </div>
           )}
 
-          <div className="mb-4.5 flex rounded-[10px] border border-grid bg-plane p-1">
+          <div className="mb-4.5 flex gap-1.5">
             {(["buyer", "vendor"] as const).map((t) => (
               <button
                 type="button"
                 key={t}
                 onClick={() => setAccountType(t)}
                 className={
-                  "flex-1 rounded-lg py-2 text-[13.5px] font-bold capitalize " +
-                  (accountType === t ? "bg-surface text-ink shadow-sm" : "text-ink-2")
+                  "flex-1 rounded-[6px] border py-2 text-[13.5px] font-semibold capitalize transition-colors " +
+                  (accountType === t
+                    ? "border-[#102D52] bg-[#E4ECF6] text-[#102D52]"
+                    : "border-grid bg-surface text-ink-2 hover:bg-plane")
                 }
               >
                 {t}
@@ -83,12 +83,12 @@ export function RegisterForm() {
 
           {isVendor && (
             <>
-              <div className="mb-5 grid grid-cols-3 gap-3">
+              <div className="mb-5 grid grid-cols-3 gap-2.5">
                 {(
                   [
-                    { key: "fabrication", icon: "⚙️", title: "Machining / Fabrication", desc: "Receive RFQs, submit quotes, produce custom parts." },
-                    { key: "raw_material", icon: "🧱", title: "Raw Material Supplier", desc: "List materials, manage stock, fulfil marketplace orders." },
-                    { key: "both", icon: "🔁", title: "Both", desc: "One login for both portals — switch between fabrication and raw material." },
+                    { key: "fabrication", title: "Machining / Fab", desc: "Receive RFQs, submit quotes, produce custom parts." },
+                    { key: "raw_material", title: "Raw Material", desc: "List materials, manage stock, fulfil marketplace orders." },
+                    { key: "both", title: "Both Portals", desc: "One login for both fabrication and raw material portals." },
                   ] as const
                 ).map((opt) => (
                   <button
@@ -96,21 +96,20 @@ export function RegisterForm() {
                     key={opt.key}
                     onClick={() => setVendorType(opt.key)}
                     className={
-                      "rounded-[10px] border-[1.5px] p-3.5 text-left " +
+                      "rounded-[8px] border p-3 text-left transition-colors " +
                       (vendorType === opt.key
-                        ? "border-brand bg-brand-light"
-                        : "border-grid")
+                        ? "border-[#102D52] bg-[#E4ECF6] text-[#102D52]"
+                        : "border-grid bg-surface text-ink-2 hover:bg-plane")
                     }
                   >
-                    <div className="mb-2 text-lg">{opt.icon}</div>
-                    <b className="mb-0.5 block text-[13.5px]">{opt.title}</b>
+                    <b className="mb-1 block text-[13px] text-ink">{opt.title}</b>
                     <span className="text-[11.5px] leading-snug text-ink-2">{opt.desc}</span>
                   </button>
                 ))}
               </div>
               <input type="hidden" name="vendorType" value={vendorType} />
-              <div className="mb-5 flex gap-2.5 rounded-lg bg-brand-light p-3.5 text-[12.5px] leading-relaxed text-brand-dark">
-                &#9432; Selecting a vendor type customises the fields below &mdash; Fabrication
+              <div className="mb-5 flex gap-2.5 rounded-[6px] border border-grid bg-raised p-3.5 text-[12.5px] leading-relaxed text-ink-2">
+                Selecting a vendor type customises the fields below &mdash; Fabrication
                 vendors set process capabilities during KYC; Raw Material suppliers set materials
                 handled and warehouse details instead.
               </div>
@@ -155,7 +154,6 @@ export function RegisterForm() {
             />
           )}
 
-          {/* Not pre-ticked: consent has to be an active choice (F1.3). */}
           <label className="my-4.5 flex items-start gap-2 text-[12.5px] text-ink-2">
             <input type="checkbox" name="agreeTerms" required className="mt-0.5" />
             <span>I agree to the Terms of Service and Privacy Policy.</span>
@@ -166,13 +164,13 @@ export function RegisterForm() {
           <button
             type="submit"
             disabled={pending}
-            className="block w-full rounded-[9px] bg-brand py-3.5 text-center text-[14.5px] font-bold text-white disabled:opacity-60"
+            className="btn btn-primary h-12 w-full rounded-[6px] text-center text-[14.5px] font-semibold transition-colors duration-120 ease-out"
           >
             {pending ? "Creating account…" : `Create ${isVendor ? "Vendor" : "Buyer"} Account →`}
           </button>
           <div className="mt-4.5 text-center text-[13px] text-ink-2">
             Already have an account?{" "}
-            <Link href="/login" className="font-bold text-brand">
+            <Link href="/login" className="font-semibold text-link hover:underline">
               Log in
             </Link>
           </div>
@@ -201,7 +199,7 @@ function Field({
 }) {
   return (
     <div className="mb-3.5">
-      <label className="mb-1.5 block text-[12.5px] font-semibold text-ink-2">
+      <label className="mb-1.5 block text-[12px] font-medium text-muted">
         {label} {required && <span className="text-crit">*</span>}
       </label>
       <input
@@ -210,7 +208,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         defaultValue={defaultValue}
-        className="w-full rounded-lg border border-grid px-3.5 py-2.5 text-[13.5px] outline-none focus:border-brand"
+        className="h-10 w-full rounded-[6px] border border-grid bg-surface px-3.5 text-[14px] text-ink outline-none focus:border-brand"
       />
       {hint && <div className="mt-1 text-[11.5px] text-muted">{hint}</div>}
     </div>

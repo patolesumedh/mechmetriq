@@ -29,7 +29,7 @@ export async function generateMetadata({
   const r = await resolve(params);
   if (!r) return {};
   return {
-    title: `${r.material.name} ${r.shape.name} — ${r.grades.map((g) => g.name).slice(0, 5).join(", ")} | MECHmetrIQ`,
+    title: `${r.material.name} ${r.shape.name} — ${r.grades.map((g) => g.name).slice(0, 5).join(", ")} | MechOneHub`,
     description: `Buy ${r.material.name} ${r.shape.name} in ${r.grades.length} grades. Live ₹/kg rates, cut-to-size, MTC and PAN-India delivery.`,
   };
 }

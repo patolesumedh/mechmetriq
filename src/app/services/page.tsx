@@ -90,7 +90,7 @@ export default function ServicesPage() {
             Manufacturing processes &amp; materials, all in one place
           </h1>
           <p className="text-[16px] leading-relaxed text-ink-2">
-            Whatever the job needs — a machined part or standard stock delivered fast — MECHmetrIQ
+            Whatever the job needs — a machined part or standard stock delivered fast — MechOneHub
             routes it to a verified vendor who specialises in it.
           </p>
         </div>

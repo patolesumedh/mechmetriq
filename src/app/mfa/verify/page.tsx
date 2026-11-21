@@ -5,7 +5,7 @@ import { safeNextPath } from "@/lib/rawMaterials/format";
 import { requireLanding } from "../_lib";
 import { VerifyTotp } from "./VerifyTotp";
 
-export const metadata = { title: "Two-factor login · MECHmetrIQ" };
+export const metadata = { title: "Two-factor login · MechOneHub" };
 
 export default async function MfaVerifyPage({
   searchParams,
@@ -22,7 +22,7 @@ export default async function MfaVerifyPage({
       subtitle={
         resetting
           ? "Your account has two-factor login on, so changing the password also needs the 6-digit code from your authenticator app."
-          : "Open your authenticator app and enter the 6-digit code for MECHmetrIQ."
+          : "Open your authenticator app and enter the 6-digit code for MechOneHub."
       }
     >
       <VerifyTotp next={next} />

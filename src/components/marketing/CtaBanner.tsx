@@ -2,7 +2,7 @@ import { ButtonLink } from "@/components/ui/Button";
 
 export function CtaBanner({
   title = "Ready to get started?",
-  subtitle = "Join buyers and vendors already sourcing smarter on MECHmetrIQ.",
+  subtitle = "Join buyers and vendors already sourcing smarter on MechOneHub.",
   primary = { label: "Get Instant Quote →", href: "/register?intent=quote" },
   secondary = { label: "Register as a Vendor", href: "/register" },
 }: {

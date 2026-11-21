@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none" role="img" aria-label="MechOneHub">
+  <rect width="36" height="36" rx="8" fill="#102D52"/>
+  <path d="M6.5 27V9H10.6L15.2 19.2L19.8 9H23.9V27H20.3V15.4L16.3 24.1H14.1L10.1 15.4V27H6.5Z" fill="#FFFFFF"/>
+  <rect x="25.5" y="9" width="4" height="18" rx="0.8" fill="#FF7900"/>
+  <path d="M23.2 11.4L26.5 9H29.5V12.2L23.2 14.5V11.4Z" fill="#FF7900"/>
+</svg>

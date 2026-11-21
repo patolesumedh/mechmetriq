@@ -19,7 +19,7 @@ export const MAX_CERTIFICATIONS = 5;
 export const CONSENT_VERSION = "2026-09-v1";
 
 /** Contact shown in the privacy notice for access, correction, deletion and grievances. */
-export const PRIVACY_CONTACT_EMAIL = "hello@mechmetriq.com";
+export const PRIVACY_CONTACT_EMAIL = "hello@MechOneHub.com";
 
 export function mask(last4: string | null | undefined): string | null {
   return last4 ? `••••••${last4}` : null;

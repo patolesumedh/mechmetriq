@@ -147,7 +147,7 @@ export function RmOrderDetail({
           <RmTotals order={order} />
           {order.rm_admin_note && !cancelled && (
             <p className="rounded-lg bg-plane px-3 py-2 text-[12.5px] text-ink-2">
-              <b className="text-ink">Note from MECHmetrIQ: </b>
+              <b className="text-ink">Note from MechOneHub: </b>
               {order.rm_admin_note}
             </p>
           )}

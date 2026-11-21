@@ -181,7 +181,7 @@ export function ConsentBlock({ kyc, errors }: { kyc: KycView; errors?: FieldErro
         </li>
         <li>
           <b>Protection:</b> PAN and bank details are encrypted, shown back only in masked form,
-          and visible in full only to authorised MECHmetrIQ staff. Every access is logged.
+          and visible in full only to authorised MechOneHub staff. Every access is logged.
         </li>
         <li>
           <b>How long:</b> while you are an active vendor, and after that only as long as tax and
@@ -210,7 +210,7 @@ export function ConsentBlock({ kyc, errors }: { kyc: KycView; errors?: FieldErro
         <label className="flex items-start gap-2.5 font-medium text-ink">
           <input type="checkbox" name="consent" value="yes" className="mt-0.5 h-4 w-4" />
           <span>
-            I have read this notice and consent to MECHmetrIQ processing these details for the
+            I have read this notice and consent to MechOneHub processing these details for the
             purposes above.
           </span>
         </label>

@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey) {
       try {
-        const sysPrompt = `You are the MECHmetrIQ Turning CAD Intent Parser ("AI interprets; geometry code decides").
+        const sysPrompt = `You are the MechOneHub Turning CAD Intent Parser ("AI interprets; geometry code decides").
 Given the user's message and the current TurnedPartDocument JSON, return ONLY a JSON object with:
 {
   "part_name": string,

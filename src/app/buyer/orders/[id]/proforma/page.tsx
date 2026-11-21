@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PrintButton } from "@/components/rawMaterials/PrintButton";
 import { RmLinesTable, RmTotals } from "@/components/rawMaterials/RmOrderParts";
+import { MechOneHubLogo } from "@/components/ui/MechOneHubLogo";
 import { rmStatusLabel } from "@/lib/rawMaterials/format";
 import { sellerDetails } from "@/lib/rawMaterials/seller";
 import { formatDate } from "../../../_lib/ui";
@@ -40,7 +41,10 @@ export default async function ProformaPage({ params }: { params: Promise<{ id: s
       <article className="rounded-xl border border-grid bg-surface p-8 print:border-0 print:p-0">
         <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-grid pb-5">
           <div>
-            <div className="text-[20px] font-extrabold tracking-tight">{seller.legalName}</div>
+            <div className="mb-1.5 text-[20px] font-bold tracking-tight">
+              <MechOneHubLogo markSize={28} />
+            </div>
+            <div className="text-[13px] font-semibold text-ink">{seller.legalName}</div>
             {seller.address && <div className="max-w-[320px] text-[12px] text-ink-2">{seller.address}</div>}
             <div className="text-[12px] text-ink-2">
               {seller.gstin ? `GSTIN ${seller.gstin}` : "GSTIN: to be printed on the tax invoice"} · {seller.email}

@@ -17,7 +17,7 @@ export async function generateMetadata({
   if (!shape) return {};
   const mats = materialsForShape(cat, shape).map((m) => m.name);
   return {
-    title: `Buy ${shape.name} Online — ${mats.slice(0, 4).join(", ")} | MECHmetrIQ`,
+    title: `Buy ${shape.name} Online — ${mats.slice(0, 4).join(", ")} | MechOneHub`,
     description: `${shape.description} Available in ${mats.join(", ")}. Transparent ₹/kg rates, cut-to-size, MTC.`,
   };
 }

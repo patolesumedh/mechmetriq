@@ -15,7 +15,7 @@ export default function NotFoundPage() {
           This page or module isn&rsquo;t available at this URL
         </h1>
         <p className="mt-2 max-w-[580px] text-[14.5px] leading-relaxed text-ink-2">
-          The section you requested may still be under development or requires an authenticated buyer/vendor database session. Use the links below to jump to any active MECHmetrIQ workspace.
+          The section you requested may still be under development or requires an authenticated buyer/vendor database session. Use the links below to jump to any active MechOneHub workspace.
         </p>
 
         <div className="mt-7 flex flex-wrap justify-center gap-3">

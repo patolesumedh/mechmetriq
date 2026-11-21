@@ -28,9 +28,9 @@ export function VendorStatusBanner({
     s === "draft"
       ? "Complete your KYC, then Review & submit it to start receiving orders."
       : s === "pending"
-        ? `${app} is submitted and waiting for review by the MECHmetrIQ team.`
+        ? `${app} is submitted and waiting for review by the MechOneHub team.`
         : s === "under_review"
-          ? `${app} is under review by the MECHmetrIQ team.`
+          ? `${app} is under review by the MechOneHub team.`
           : s === "correction_required"
             ? `Our team asked for corrections in ${correctionCount} section${correctionCount === 1 ? "" : "s"}. Fix them and resubmit.`
             : s === "rejected"

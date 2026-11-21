@@ -21,7 +21,7 @@ import {
 } from "@/lib/payments/testGateway";
 
 /**
- * MECHmetriQ Pay — TEST MODE checkout.
+ * MechOneHub Pay — TEST MODE checkout.
  *
  * Looks and behaves like a hosted payment gateway (method picker, UPI
  * collect/QR, card + bank OTP, netbanking/wallet redirect, processing,
@@ -258,31 +258,25 @@ export function TestPaymentGateway({
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b1526]/60 p-0 backdrop-blur-[2px] sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="MECHmetriQ Pay checkout"
+      aria-label="MechOneHub Pay checkout"
     >
       <div className="gw-pop relative flex h-full w-full flex-col overflow-hidden bg-surface shadow-2xl sm:h-[600px] sm:max-h-[calc(100vh-2rem)] sm:max-w-[780px] sm:flex-row sm:rounded-2xl">
         {/* ---------------- Left: merchant + amount ---------------- */}
-        <aside className="relative flex shrink-0 flex-col justify-between overflow-hidden bg-gradient-to-br from-[#1c5cab] via-[#174e93] to-[#0e3466] px-5 py-4 text-white sm:w-[270px] sm:px-6 sm:py-6">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-white/[0.06]"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-white/[0.05]"
-          />
+        <aside className="relative flex shrink-0 flex-col justify-between overflow-hidden bg-[#0D1F3B] px-5 py-4 text-white sm:w-[270px] sm:px-6 sm:py-6">
           <div className="relative">
             <div className="flex items-center gap-2.5">
-              <div className="grid h-9 w-9 place-items-center rounded-lg bg-white text-[15px] font-black text-brand-dark">
-                M
+              <div className="grid h-9 w-9 place-items-center rounded-[7px] bg-[#13284A] border border-[#1F3657] text-[14px] font-black text-white">
+                <span>M<span className="text-[#FF7900]">1</span></span>
               </div>
               <div className="leading-tight">
-                <div className="text-[14.5px] font-bold">MECHmetriQ</div>
+                <div className="text-[14.5px] font-bold">
+                  mech<span className="text-[#FF7900]">one</span>hub
+                </div>
                 <div className="flex items-center gap-1 text-[11px] text-white/70">
                   <ShieldIcon className="h-3 w-3" /> Verified merchant
                 </div>
               </div>
-              <span className="ml-auto rounded-md bg-[#ffcf4a] px-2 py-[3px] text-[10px] font-extrabold tracking-wider text-[#4a3500] sm:hidden">
+              <span className="ml-auto rounded-md bg-[#FF7900] px-2 py-[3px] text-[10px] font-extrabold tracking-wider text-[#0B2140] sm:hidden">
                 TEST MODE
               </span>
             </div>
@@ -333,7 +327,7 @@ export function TestPaymentGateway({
             <div className="mt-3 flex items-center gap-1.5 text-[10.5px] text-white/55">
               <LockIcon className="h-3 w-3 shrink-0" />
               <span>
-                Secured by <b className="font-semibold text-white/80">MECHmetriQ Pay</b> · 256-bit SSL
+                Secured by <b className="font-semibold text-white/80">MechOneHub Pay</b> · 256-bit SSL
               </span>
             </div>
           </div>
@@ -395,7 +389,7 @@ export function TestPaymentGateway({
                   </ul>
                 </details>
                 <p className="mt-5 px-1 text-center text-[11px] text-muted">
-                  By proceeding you agree to MECHmetriQ&rsquo;s terms of sale. Payments in this environment are simulated.
+                  By proceeding you agree to MechOneHub&rsquo;s terms of sale. Payments in this environment are simulated.
                 </p>
               </div>
             )}
@@ -563,7 +557,7 @@ export function TestPaymentGateway({
                   </div>
                   <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 px-4 py-3.5 text-[12.5px]">
                     <dt className="text-muted">Merchant</dt>
-                    <dd className="font-medium text-ink">MECHmetriQ</dd>
+                    <dd className="font-medium text-ink">MechOneHub</dd>
                     <dt className="text-muted">Amount</dt>
                     <dd className="font-semibold text-ink">{inr(amount)}</dd>
                     <dt className="text-muted">Card</dt>
@@ -966,7 +960,7 @@ function SimulatedProviderPage({
           <div className="flex-1 space-y-4 p-5">
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 rounded-xl border border-grid bg-surface px-4 py-3 text-[12.5px]">
               <dt className="text-muted">Pay to</dt>
-              <dd className="font-medium text-ink">MECHmetriQ (i-Source Infosystems)</dd>
+              <dd className="font-medium text-ink">MechOneHub (i-Source Infosystems)</dd>
               <dt className="text-muted">Amount</dt>
               <dd className="font-bold text-ink">{inr(amount)}</dd>
               <dt className="text-muted">Reference</dt>

@@ -25,7 +25,7 @@ const VENDOR_POINTS = [
   },
   {
     title: "Success-based model",
-    body: "MECHmetrIQ earns only when you win business through the platform — our incentives are aligned with yours.",
+    body: "MechOneHub earns only when you win business through the platform — our incentives are aligned with yours.",
   },
   {
     title: "No hidden charges",

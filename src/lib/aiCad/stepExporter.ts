@@ -16,8 +16,8 @@ export function generateStepFileContent(doc: TurnedPartDocument): string {
     "ISO-10303-21;",
     "HEADER;",
     `/* @TURN_CAD_JSON:${JSON.stringify(doc)} */`,
-    `FILE_DESCRIPTION(('MECHmetrIQ Turning CAD Parametric Model - ${doc.part_name}','2D Profile-First B-Rep Revolution (${doc.general_tolerance}, Ra ${doc.surface_finish_ra} um)'),'2;1');`,
-    `FILE_NAME('${doc.part_name.replace(/[^a-zA-Z0-9_-]/g, "_")}.step','${now}',('MECHmetrIQ AI CAD Engine'),('MECHmetrIQ Manufacturing Platform'),'TurnCAD-v2.7','OpenCASCADE-CadQuery-Kernel','');`,
+    `FILE_DESCRIPTION(('MechOneHub Turning CAD Parametric Model - ${doc.part_name}','2D Profile-First B-Rep Revolution (${doc.general_tolerance}, Ra ${doc.surface_finish_ra} um)'),'2;1');`,
+    `FILE_NAME('${doc.part_name.replace(/[^a-zA-Z0-9_-]/g, "_")}.step','${now}',('MechOneHub AI CAD Engine'),('MechOneHub Manufacturing Platform'),'TurnCAD-v2.7','OpenCASCADE-CadQuery-Kernel','');`,
     "FILE_SCHEMA(('AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }'));",
     "ENDSEC;",
     "DATA;",
@@ -90,7 +90,7 @@ export function generateCadQueryPythonScript(doc: TurnedPartDocument): string {
     .join("\n");
 
   return `"""
-MECHmetrIQ Parametric Turning CAD Script
+MechOneHub Parametric Turning CAD Script
 Part: ${doc.part_name}
 Material: ${doc.material.grade_name} (${doc.material.density_g_cm3} g/cm³)
 Standards: ${doc.general_tolerance}, Surface Finish Ra ${doc.surface_finish_ra} µm (ISO 21920)

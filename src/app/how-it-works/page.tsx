@@ -63,7 +63,7 @@ export default function HowItWorksPage() {
             One platform, two ways to source
           </h1>
           <p className="text-[16px] leading-relaxed text-ink-2">
-            Whether you need a custom part made or standard raw material delivered, MECHmetrIQ
+            Whether you need a custom part made or standard raw material delivered, MechOneHub
             connects you with verified vendors and keeps the whole order on one screen.
           </p>
         </div>

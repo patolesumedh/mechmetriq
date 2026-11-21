@@ -5,7 +5,7 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { logoutAction } from "@/lib/actions/auth";
 import { PRIVACY_CONTACT_EMAIL } from "@/lib/kyc/rules";
 
-export const metadata = { title: "Account on hold · MECHmetrIQ" };
+export const metadata = { title: "Account on hold · MechOneHub" };
 
 export default async function SuspendedPage() {
   const supabase = await createClient();
@@ -25,7 +25,7 @@ export default async function SuspendedPage() {
   return (
     <AuthCard
       title={accountSuspended ? "Your account is suspended" : "Your vendor account is suspended"}
-      subtitle="You can't use MECHmetrIQ dashboards while your account is in this state. Your data is safe and nothing has been deleted."
+      subtitle="You can't use MechOneHub dashboards while your account is in this state. Your data is safe and nothing has been deleted."
       width={460}
     >
       {reason && (

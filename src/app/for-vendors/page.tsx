@@ -47,10 +47,10 @@ export default function ForVendorsPage() {
             For Vendors
           </div>
           <h1 className="mb-4 text-[38px] font-bold leading-tight tracking-tight">
-            Grow your shop or supply business on MECHmetrIQ
+            Grow your shop or supply business on MechOneHub
           </h1>
           <p className="mb-7 text-[16px] leading-relaxed text-ink-2">
-            Whether you run a machining/fabrication shop or supply raw materials, MECHmetrIQ
+            Whether you run a machining/fabrication shop or supply raw materials, MechOneHub
             brings verified demand straight to your dashboard.
           </p>
           <div className="flex justify-center gap-3">
@@ -123,7 +123,7 @@ export default function ForVendorsPage() {
 
       <CtaBanner
         title="Ready to grow your order book?"
-        subtitle="Register your business and start receiving matched demand on MECHmetrIQ."
+        subtitle="Register your business and start receiving matched demand on MechOneHub."
         primary={{ label: "Register as a Vendor →", href: "/register" }}
         secondary={{ label: "Talk to Our Team", href: "/about#contact" }}
       />

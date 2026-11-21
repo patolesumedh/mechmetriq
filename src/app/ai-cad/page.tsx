@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/marketing/SiteFooter";
 import { AiCadStudio } from "@/components/aiCad/AiCadStudio";
 
 export const metadata = {
-  title: "AI-CAD Live Studio — MECHmetrIQ",
+  title: "AI-CAD Live Studio — MechOneHub",
   description:
     "Interactive AI Live Chat to 3D Turning CAD, 1-Click DFM Repair, What-If Price Sliders, and STEP AP242 Export.",
 };

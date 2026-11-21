@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ResetPasswordForm } from "./ResetPasswordForm";
 
-export const metadata = { title: "Set a new password · MECHmetrIQ" };
+export const metadata = { title: "Set a new password · MechOneHub" };
 
 // Reached from the reset email (via /auth/callback, which signs the user in
 // with a recovery session) or from Account security when already logged in.

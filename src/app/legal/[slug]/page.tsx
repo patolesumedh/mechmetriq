@@ -10,7 +10,7 @@ const POLICIES: Record<
     title: "Terms of Service",
     updated: "November 2026",
     summary:
-      "Standard terms governing custom CNC manufacturing RFQs, Smart Quote instant estimates, and Raw Material Marketplace orders on MECHmetrIQ.",
+      "Standard terms governing custom CNC manufacturing RFQs, Smart Quote instant estimates, and Raw Material Marketplace orders on MechOneHub.",
     sections: [
       [
         "1. Instant Quotes & Final Engineering Review",
@@ -30,7 +30,7 @@ const POLICIES: Record<
     title: "Privacy Policy",
     updated: "November 2026",
     summary:
-      "How MECHmetrIQ protects your account credentials, KYC documents, and proprietary CAD files.",
+      "How MechOneHub protects your account credentials, KYC documents, and proprietary CAD files.",
     sections: [
       [
         "1. Data Collection & Usage",
@@ -85,7 +85,7 @@ export default async function LegalPage({
   const doc = POLICIES[slug] ?? {
     title: "Platform Policy",
     updated: "November 2026",
-    summary: "MECHmetrIQ platform terms, compliance, and operational guidelines.",
+    summary: "MechOneHub platform terms, compliance, and operational guidelines.",
     sections: [
       [
         "Overview",

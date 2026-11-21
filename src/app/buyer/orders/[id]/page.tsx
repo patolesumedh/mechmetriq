@@ -104,7 +104,7 @@ export default async function OrderDetailPage({
 
       <div className="mb-6 flex items-center justify-between">
         <div className="text-[13.5px] text-ink-2">
-          {vendor?.company_name ?? "Fulfilled by MECHmetriQ"} · Placed {formatDate(order.created_at)}
+          {vendor?.company_name ?? "Fulfilled by MechOneHub"} · Placed {formatDate(order.created_at)}
         </div>
         <Badge tone={orderStatusTone(order.status)}>{statusLabel(order.status)}</Badge>
       </div>
@@ -127,7 +127,7 @@ export default async function OrderDetailPage({
           <div className="text-[13px] text-[#0a5a0a]">
             <div className="text-[14px] font-bold">Order complete</div>
             {order.completed_by_role === "admin"
-              ? `Closed by MECHmetriQ on ${formatDate(order.completed_at)}.`
+              ? `Closed by MechOneHub on ${formatDate(order.completed_at)}.`
               : `You confirmed receipt on ${formatDate(order.completed_at)}.`}
             {order.completion_note && order.completed_by_role !== "admin" && (
               <div className="mt-1 text-ink-2">Your feedback: &ldquo;{order.completion_note}&rdquo;</div>

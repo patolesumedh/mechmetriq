@@ -4,11 +4,11 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { VENDOR_TYPE_LABEL } from "@/lib/kyc/status";
 import { AcceptInviteForm } from "./AcceptInviteForm";
 
-export const metadata = { title: "Vendor invitation · MECHmetrIQ" };
+export const metadata = { title: "Vendor invitation · MechOneHub" };
 
 const PROBLEM: Record<string, { title: string; text: string }> = {
-  expired: { title: "This invitation has expired", text: "Invitation links work for 72 hours. Ask the MECHmetrIQ team to resend it." },
-  revoked: { title: "This invitation was withdrawn", text: "Contact the MECHmetrIQ team if you think this is a mistake." },
+  expired: { title: "This invitation has expired", text: "Invitation links work for 72 hours. Ask the MechOneHub team to resend it." },
+  revoked: { title: "This invitation was withdrawn", text: "Contact the MechOneHub team if you think this is a mistake." },
   accepted: { title: "This invitation has already been used", text: "Log in with the account you created." },
   invalid: { title: "Invitation not found", text: "Check that you opened the full link from your invitation." },
 };
@@ -51,7 +51,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
   return (
     <AuthCard
-      title={`Join MECHmetrIQ as a vendor`}
+      title={`Join MechOneHub as a vendor`}
       subtitle={
         <>
           You&rsquo;ve been invited to register <b className="text-ink">{invite.company_name}</b> as a{" "}

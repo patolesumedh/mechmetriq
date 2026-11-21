@@ -27,7 +27,7 @@ export default {
     headers.set("Host", originHost);
     headers.set("X-Forwarded-Host", publicHost);
     headers.set("X-Forwarded-Proto", "https");
-    headers.set("X-Origin-Verify", env.ORIGIN_VERIFY_SECRET);
+    headers.set("X-Origin-Verify", String(env.ORIGIN_VERIFY_SECRET ?? "").trim());
 
     const clientIp = request.headers.get("CF-Connecting-IP");
     if (clientIp) {

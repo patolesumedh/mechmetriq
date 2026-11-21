@@ -11,8 +11,8 @@ const label = "mb-1.5 block text-[12.5px] font-semibold text-ink-2";
 function LinkBox({ state }: { state: InviteState }) {
   const [copied, setCopied] = useState(false);
   if (!state.link) return null;
-  const subject = "You're invited to join MECHmetrIQ as a vendor";
-  const body = `Hello,\n\nMECHmetrIQ has invited ${state.company ?? "your company"} to register as a vendor.\n\nComplete your registration here (the link works for 72 hours and only once):\n${state.link}\n\nAfter registering you'll verify your email and complete KYC.\n\nRegards,\nMECHmetrIQ`;
+  const subject = "You're invited to join MechOneHub as a vendor";
+  const body = `Hello,\n\nMechOneHub has invited ${state.company ?? "your company"} to register as a vendor.\n\nComplete your registration here (the link works for 72 hours and only once):\n${state.link}\n\nAfter registering you'll verify your email and complete KYC.\n\nRegards,\nMechOneHub`;
   return (
     <div className="mt-4 rounded-lg border border-[#bfe3bf] bg-good-bg p-4 text-[13px] text-[#0a6b0a]">
       <b>Invitation link for {state.email}</b> — copy it now; for security it isn&rsquo;t shown again (use Resend

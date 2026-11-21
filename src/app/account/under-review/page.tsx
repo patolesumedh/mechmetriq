@@ -5,7 +5,7 @@ import { getDashboardPath } from "@/lib/auth/getDashboardPath";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { logoutAction } from "@/lib/actions/auth";
 
-export const metadata = { title: "KYC under review · MECHmetrIQ" };
+export const metadata = { title: "KYC under review · MechOneHub" };
 
 export default async function UnderReviewPage() {
   const supabase = await createClient();

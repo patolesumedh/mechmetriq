@@ -103,7 +103,7 @@ export function AiCadStudio({
       id: "welcome-1",
       role: "assistant",
       content:
-        "Welcome to **MECHmetrIQ AI-CAD Live Studio**.\nDescribe the part you need in plain English, click a prompt below to pre-fill the input box, or upload a `.STEP` / `.STL` file. You can **Revert** to any earlier message in the chat (which removes messages ahead of it).",
+        "Welcome to **MechOneHub AI-CAD Live Studio**.\nDescribe the part you need in plain English, click a prompt below to pre-fill the input box, or upload a `.STEP` / `.STL` file. You can **Revert** to any earlier message in the chat (which removes messages ahead of it).",
       timestamp: "Just now",
       applied_changes: [
         "Loaded preset: Stepped Drive Shaft (EN8 Steel, 3 steps, M24×3.0 thread, Ø14 mm through-bore)",

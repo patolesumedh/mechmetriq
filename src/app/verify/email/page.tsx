@@ -7,7 +7,7 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { PENDING_EMAIL_COOKIE } from "./constants";
 import { VerifyEmailForm } from "./VerifyEmailForm";
 
-export const metadata = { title: "Verify your email · MECHmetrIQ" };
+export const metadata = { title: "Verify your email · MechOneHub" };
 
 export default async function VerifyEmailPage() {
   const supabase = await createClient();

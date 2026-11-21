@@ -9,7 +9,7 @@ import { VENDOR_TYPE_LABEL } from "@/lib/kyc/status";
 import { NewInviteForm, ResendButton } from "./InviteForms";
 import { revokeInviteAction } from "./actions";
 
-export const metadata = { title: "Vendor invitations · MECHmetrIQ" };
+export const metadata = { title: "Vendor invitations · MechOneHub" };
 
 async function loadInvites() {
   const supabase = await createClient();

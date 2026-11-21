@@ -121,7 +121,7 @@ export default async function BuyerOverviewPage() {
                 <div>
                   <div className="font-semibold text-ink">{order.order_number}</div>
                   <div className="text-[12px] text-muted">
-                    {order.order_type === "raw_material" ? "MECHmetrIQ Raw Materials" : (vendorMap.get(order.vendor_id ?? "") ?? "Vendor")} · {formatDate(order.created_at)}
+                    {order.order_type === "raw_material" ? "MechOneHub Raw Materials" : (vendorMap.get(order.vendor_id ?? "") ?? "Vendor")} · {formatDate(order.created_at)}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">

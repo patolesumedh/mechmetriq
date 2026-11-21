@@ -6,7 +6,7 @@ import { AuthCard, AuthNotice } from "@/components/auth/AuthCard";
 import { IDLE_TIMEOUT_MS } from "@/lib/auth/sessionPolicy";
 import { disableMfaAction, revokeSessionAction, signOutOthersAction } from "./actions";
 
-export const metadata = { title: "Account security · MECHmetrIQ" };
+export const metadata = { title: "Account security · MechOneHub" };
 
 /** "Chrome on Windows" from a user-agent string; good enough for a list. */
 function describeDevice(ua: string | null): string {

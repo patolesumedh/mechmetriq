@@ -4,7 +4,7 @@ import { logoutAction } from "@/lib/actions/auth";
 import { requireMfaSetupAccess } from "../_lib";
 import { EnrollTotp } from "./EnrollTotp";
 
-export const metadata = { title: "Set up two-factor login · MECHmetrIQ" };
+export const metadata = { title: "Set up two-factor login · MechOneHub" };
 
 export default async function MfaSetupPage() {
   const { required } = await requireMfaSetupAccess();

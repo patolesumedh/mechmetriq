@@ -15,7 +15,8 @@ const supabaseWs = SUPABASE ? SUPABASE.replace(/^https:\/\//, "wss://").replace(
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://checkout.razorpay.com",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
   `img-src 'self' data: blob: ${SUPABASE} https://storage.googleapis.com`.replace(/\s+/g, " ").trim(),
   `connect-src 'self' ${SUPABASE} ${supabaseWs} https://storage.googleapis.com https://*.ingest.sentry.io https://api.razorpay.com`
     .replace(/\s+/g, " ")

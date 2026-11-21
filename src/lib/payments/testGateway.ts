@@ -1,5 +1,5 @@
 /**
- * MECHmetriQ Pay — TEST MODE gateway.
+ * MechOneHub Pay — TEST MODE gateway.
  *
  * A simulated payment gateway so the buyer can complete a purchase end to
  * end before a real gateway (e.g. Razorpay) is integrated. No money moves.

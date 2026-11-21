@@ -164,7 +164,7 @@ export function CheckoutForm({
             className="mt-0.5 accent-[#2a78d6]"
           />
           <span>
-            I confirm the part specification above and agree to MECHmetriQ&rsquo;s terms of sale, including the
+            I confirm the part specification above and agree to MechOneHub&rsquo;s terms of sale, including the
             cancellation and quality policy.
           </span>
         </label>

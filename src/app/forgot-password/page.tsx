@@ -1,6 +1,6 @@
 import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
-export const metadata = { title: "Reset password · MECHmetrIQ" };
+export const metadata = { title: "Reset password · MechOneHub" };
 
 export default async function ForgotPasswordPage({
   searchParams,

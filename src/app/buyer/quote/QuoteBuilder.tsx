@@ -297,7 +297,7 @@ export function QuoteBuilder({
       )}
 
       {parts.length > 0 && (
-        <div className="rounded-[10px] border border-grid bg-surface p-5">
+        <div className="rounded-[10px] border border-grid border-t-[3px] border-t-[#FF7900] bg-surface p-5">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className={labelCls}>Delivery address</label>
@@ -310,7 +310,7 @@ export function QuoteBuilder({
                   ))}
                 </select>
               ) : (
-                <div className="rounded-lg bg-warn-bg px-3 py-2.5 text-[12.5px] text-[#8a5a00]">
+                <div className="rounded-[6px] bg-warn-bg px-3 py-2.5 text-[12.5px] text-warn">
                   No saved address.{" "}
                   <Link href="/buyer/addresses" className="font-semibold underline">
                     Add one
@@ -335,7 +335,7 @@ export function QuoteBuilder({
               {selectedTiers.length > 0 ? (
                 <>
                   Estimated total{" "}
-                  <span className="text-[17px] font-extrabold text-ink">{formatInr(orderTotal)}</span>{" "}
+                  <span className="font-mono text-[22px] font-semibold text-ink">{formatInr(orderTotal)}</span>{" "}
                   <span className="text-muted">+ GST · confirmed by our team before you pay</span>
                 </>
               ) : (
@@ -346,7 +346,7 @@ export function QuoteBuilder({
               type="button"
               onClick={submit}
               disabled={submitting || busy || submittable.length === 0}
-              className="rounded-[9px] bg-brand px-5 py-3 text-[14px] font-bold text-white disabled:opacity-50"
+              className="btn btn-primary h-12 rounded-[6px] px-5 text-[14px] font-semibold transition-colors duration-120 ease-out"
             >
               {submitting ? "Submitting…" : busy ? "Waiting for files…" : "Request quote"}
             </button>
@@ -742,8 +742,8 @@ export function PartCard({
         </div>
 
         {/* price */}
-        <div>
-          <div className="mb-2 text-[13px] font-bold text-ink">Price and lead time</div>
+        <div className="rounded-[10px] border border-grid border-t-[3px] border-t-[#FF7900] bg-surface p-4">
+          <div className="mb-2.5 text-[13px] font-bold text-ink">Price and lead time</div>
           {p.status === "uploading" && <Info>Uploading…</Info>}
           {p.status === "reading" && (
             <Info>
@@ -769,20 +769,31 @@ export function PartCard({
                     key={t.key}
                     onClick={() => onChange({ tier: t.key })}
                     className={cn(
-                      "flex items-start justify-between rounded-lg border px-4 py-3 text-left transition-colors",
-                      active ? "border-brand bg-brand-light/50 ring-1 ring-brand" : "border-grid hover:border-brand"
+                      "flex items-center justify-between rounded-[8px] border px-4 py-3 text-left transition-colors",
+                      active
+                        ? "border-[#102D52] bg-[#E4ECF6]"
+                        : "border-grid bg-surface hover:border-[#102D52]"
                     )}
                     aria-pressed={active}
                   >
-                    <div>
-                      <div className={cn("text-[13.5px] font-semibold", active ? "text-brand-dark" : "text-ink")}>
-                        {t.label}
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={cn(
+                          "h-4 w-4 flex-none rounded-full bg-surface",
+                          active ? "border-[5px] border-[#FF7900]" : "border border-grid"
+                        )}
+                        aria-hidden="true"
+                      />
+                      <div>
+                        <div className="text-[13.5px] font-semibold text-ink">
+                          {t.label}
+                        </div>
+                        <div className="mt-0.5 text-[12px] text-ink-2">Arrives by {fmtDate(t.arrives_by)}</div>
                       </div>
-                      <div className="mt-1 text-[12.5px] text-ink-2">Arrives by {fmtDate(t.arrives_by)}</div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right font-mono">
                       <div className="text-[12px] text-muted">{formatInr(t.unit_price, 2)} ea.</div>
-                      <div className="text-[19px] font-extrabold text-ink">{formatInr(t.total)}</div>
+                      <div className="text-[20px] font-semibold text-ink">{formatInr(t.total)}</div>
                     </div>
                   </button>
                 );

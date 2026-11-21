@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!r) return {};
   const rate = rateFor(r.cat, r.shape, r.grade);
   return {
-    title: `${r.grade.name} ${r.material.name} ${r.shape.name}${rate ? ` — ${inr(rate)}/kg` : ""} | MECHmetrIQ`,
+    title: `${r.grade.name} ${r.material.name} ${r.shape.name}${rate ? ` — ${inr(rate)}/kg` : ""} | MechOneHub`,
     description: `Buy ${r.grade.name} (${r.grade.equivalents ?? r.material.name}) ${r.shape.name} online. ${r.grade.description} Cut to size, MTC, GST invoice.`,
   };
 }

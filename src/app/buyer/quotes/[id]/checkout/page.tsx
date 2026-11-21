@@ -161,7 +161,7 @@ export default async function QuoteCheckoutPage({ params }: { params: Promise<{ 
                 </dl>
                 {rfq.price_note && (
                   <p className="mt-3 rounded-lg bg-brand-light px-3 py-2 text-[12.5px] text-brand-dark">
-                    Note from MECHmetriQ: {rfq.price_note}
+                    Note from MechOneHub: {rfq.price_note}
                   </p>
                 )}
               </div>

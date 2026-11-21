@@ -4,7 +4,7 @@ import { Breadcrumbs } from "../_components/Breadcrumbs";
 import { WeightCalculator, type CalcMaterial, type CalcShape } from "./WeightCalculator";
 
 export const metadata: Metadata = {
-  title: "Metal Weight Calculator — Bars, Sheets, Pipes, Sections | MECHmetrIQ",
+  title: "Metal Weight Calculator — Bars, Sheets, Pipes, Sections | MechOneHub",
   description:
     "Calculate the theoretical weight of steel, stainless steel, aluminium, copper, brass and titanium bars, sheets, pipes, angles and channels using grade-specific densities.",
 };

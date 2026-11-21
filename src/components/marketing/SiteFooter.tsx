@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MechOneHubLogo } from "@/components/ui/MechOneHubLogo";
 
 const COLUMNS: [string, { label: string; href: string }[]][] = [
   [
@@ -24,25 +25,22 @@ const COLUMNS: [string, { label: string; href: string }[]][] = [
   [
     "Legal",
     [
-      { label: "Terms", href: "#" },
-      { label: "Privacy", href: "#" },
-      { label: "Refund Policy", href: "#" },
-      { label: "Shipping Policy", href: "#" },
+      { label: "Terms", href: "/legal/terms" },
+      { label: "Privacy", href: "/legal/privacy" },
+      { label: "Refund Policy", href: "/legal/refund-policy" },
+      { label: "Shipping Policy", href: "/legal/shipping-policy" },
     ],
   ],
 ];
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-grid bg-plane px-8 pb-6 pt-12">
-      <div className="mx-auto max-w-[1180px]">
-        <div className="mb-8 grid grid-cols-[1.4fr_1fr_1fr_1fr] gap-8">
+    <footer className="border-t border-grid bg-surface px-8 pb-6 pt-12">
+      <div className="mx-auto max-w-[1440px]">
+        <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <Link href="/" className="flex items-center gap-2 text-[19px] font-bold">
-              <span className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-linear-to-br from-brand to-brand-dark text-[15px] font-extrabold text-white">
-                M
-              </span>
-              MECHmetrIQ
+            <Link href="/" className="flex items-center text-[19px] font-bold">
+              <MechOneHubLogo markSize={28} />
             </Link>
             <p className="mt-3 max-w-[260px] text-[13px] leading-relaxed text-ink-2">
               Custom manufacturing and raw materials, sourced and delivered from one platform.
@@ -50,7 +48,9 @@ export function SiteFooter() {
           </div>
           {COLUMNS.map(([heading, links]) => (
             <div key={heading}>
-              <h4 className="mb-3.5 text-[12.5px] uppercase tracking-wide text-muted">{heading}</h4>
+              <h4 className="mb-3.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">
+                {heading}
+              </h4>
               {links.map((l) => (
                 <Link
                   key={l.label}
@@ -63,8 +63,8 @@ export function SiteFooter() {
             </div>
           ))}
         </div>
-        <div className="flex justify-between border-t border-grid pt-5 text-[12.5px] text-muted">
-          <span>&copy; 2026 MECHmetrIQ. All rights reserved.</span>
+        <div className="flex flex-wrap justify-between gap-2 border-t border-grid pt-5 text-[12.5px] text-muted">
+          <span>&copy; 2026 MechOneHub. All rights reserved.</span>
           <span>Made for makers, vendors &amp; procurement teams across India.</span>
         </div>
       </div>

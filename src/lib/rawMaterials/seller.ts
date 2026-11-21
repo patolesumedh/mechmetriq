@@ -6,9 +6,9 @@ import "server-only";
  */
 export function sellerDetails() {
   return {
-    legalName: process.env.RM_SELLER_LEGAL_NAME || "MECHmetrIQ",
+    legalName: process.env.RM_SELLER_LEGAL_NAME || "MechOneHub",
     gstin: process.env.RM_SELLER_GSTIN || null,
     address: process.env.RM_SELLER_ADDRESS || null,
-    email: process.env.RM_SELLER_EMAIL || "hello@mechmetriq.com",
+    email: process.env.RM_SELLER_EMAIL || "hello@MechOneHub.com",
   };
 }

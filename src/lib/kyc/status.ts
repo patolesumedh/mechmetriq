@@ -67,7 +67,7 @@ export const DECLARATIONS_VERSION = "2026-11-v1";
 export const DECLARATIONS = [
   "The information and documents in this application are true, complete and belong to this business.",
   "I am authorised to submit this application and to sign agreements on behalf of this business.",
-  "I agree to work with MECHmetrIQ as a contracted vendor: orders are assigned at agreed rates, and I will keep the drawings and data I receive confidential.",
+  "I agree to work with MechOneHub as a contracted vendor: orders are assigned at agreed rates, and I will keep the drawings and data I receive confidential.",
 ];
 
 /** Which portals a vendor type can open, first one is the default landing portal. */

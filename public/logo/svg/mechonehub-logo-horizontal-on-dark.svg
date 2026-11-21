@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 248 40" fill="none" role="img" aria-label="MechOneHub">
+  <!-- M1 Mark on dark -->
+  <rect x="0" y="2" width="36" height="36" rx="8" fill="#13284A" stroke="#1F3657" stroke-width="1"/>
+  <path d="M7.5 29V11H11.6L16.2 21.2L20.8 11H24.9V29H21.3V17.4L17.3 26.1H15.1L11.1 17.4V29H7.5Z" fill="#FFFFFF"/>
+  <rect x="26.1" y="11" width="3.8" height="18" rx="0.8" fill="#FF7900"/>
+  <path d="M23.8 13.4L27.1 11H29.9V14.2L23.8 16.5V13.4Z" fill="#FF7900"/>
+  <!-- Wordmark: mech (white) + one (orange) + hub (white) -->
+  <text x="46" y="27.5" font-family="'Archivo', system-ui, -apple-system, sans-serif" font-size="23" font-weight="700" letter-spacing="-0.02em">
+    <tspan fill="#FFFFFF">mech</tspan><tspan fill="#FF7900">one</tspan><tspan fill="#FFFFFF">hub</tspan>
+  </text>
+</svg>

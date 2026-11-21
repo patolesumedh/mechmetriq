@@ -172,7 +172,7 @@ export default async function OrderDetailPage({
                   <span>Your payout (excl. GST)</span>
                   <span>{formatINR(assignment.vendor_payout)}</span>
                 </div>
-                <p className="text-[12px] text-muted">Agreed job value set by MECHmetriQ when this job was assigned to you.</p>
+                <p className="text-[12px] text-muted">Agreed job value set by MechOneHub when this job was assigned to you.</p>
               </div>
             ) : (
             <div className="space-y-1.5 border-t border-grid px-5 py-4">
@@ -265,7 +265,7 @@ export default async function OrderDetailPage({
 
           {assignment?.note && (
             <Card className="border-[#f5dfa6] bg-warn-bg px-5 py-3.5 text-[13px] text-[#8a5a00]">
-              <span className="mb-1 block font-semibold">Note from MECHmetriQ</span>
+              <span className="mb-1 block font-semibold">Note from MechOneHub</span>
               {assignment.note}
             </Card>
           )}
