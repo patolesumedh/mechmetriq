@@ -66,13 +66,22 @@ export function Cad3DCanvas({
   const [viewMode, setViewMode] = useState<"3d" | "2d">("3d");
   const [renderStyle, setRenderStyle] = useState<"shaded" | "wireframe" | "xray">("shaded");
   const [colorFilter, setColorFilter] = useState<ColorFilterMode>("material");
-  const [geometrySource, setGeometrySource] = useState<"parametric" | "mesh" | "prismatic">(
+  const defaultGeometrySource: "parametric" | "mesh" | "prismatic" =
     parsedModel?.triangles && parsedModel.triangles.length > 0
       ? "mesh"
       : parsedModel && !parsedModel.rotational
       ? "prismatic"
-      : "parametric"
-  );
+      : "parametric";
+  const [geometryOverride, setGeometryOverride] = useState<{
+    model: ParsedCadModel3D | null | undefined;
+    source: "parametric" | "mesh" | "prismatic";
+  } | null>(null);
+  const geometrySource =
+    geometryOverride && geometryOverride.model === parsedModel
+      ? geometryOverride.source
+      : defaultGeometrySource;
+  const setGeometrySource = (source: "parametric" | "mesh" | "prismatic") =>
+    setGeometryOverride({ model: parsedModel, source });
   const [sectionCut, setSectionCut] = useState<boolean>(false);
   const [showChuck, setShowChuck] = useState<boolean>(true);
   const [showDims, setShowDims] = useState<boolean>(true);
@@ -82,17 +91,6 @@ export function Cad3DCanvas({
   const [expanded, setExpanded] = useState<boolean>(false);
   const [isInteracting, setIsInteracting] = useState<boolean>(false);
   const [canvasSize, setCanvasSize] = useState<{ w: number; h: number }>({ w: 720, h: 360 });
-
-  // Sync geometrySource when a new file is uploaded
-  useEffect(() => {
-    if (parsedModel?.triangles && parsedModel.triangles.length > 0) {
-      setGeometrySource("mesh");
-    } else if (parsedModel && !parsedModel.rotational) {
-      setGeometrySource("prismatic");
-    } else {
-      setGeometrySource("parametric");
-    }
-  }, [parsedModel]);
 
   // Orbit camera angles (yaw, pitch), pan offset, and zoom
   const [rotation, setRotation] = useState<{ yaw: number; pitch: number }>({
@@ -143,14 +141,17 @@ export function Cad3DCanvas({
   }, [autoRotate, viewMode]);
 
   // Material base RGB colors
-  const matColor: [number, number, number] =
-    doc.material.slug === "brass"
-      ? [218, 175, 72]
-      : doc.material.slug === "aluminium"
-      ? [196, 210, 226]
-      : doc.material.slug === "stainless"
-      ? [176, 186, 198]
-      : [132, 148, 168];
+  const matColor = useMemo<[number, number, number]>(
+    () =>
+      doc.material.slug === "brass"
+        ? [218, 175, 72]
+        : doc.material.slug === "aluminium"
+        ? [196, 210, 226]
+        : doc.material.slug === "stainless"
+        ? [176, 186, 198]
+        : [132, 148, 168],
+    [doc.material.slug]
+  );
 
   function resetCamera() {
     setRotation({ yaw: -0.58, pitch: 0.38 });
@@ -1473,12 +1474,16 @@ function Profile2DBlueprint({
         </text>
 
         {/* Segment Semantic Labels */}
-        {(() => {
-          let acc = 0;
-          return doc.segments.map((s) => {
-            const cx = x0 + (acc + s.length_mm / 2) * scale;
+        {doc.segments
+          .reduce<Array<{ s: (typeof doc.segments)[number]; startMm: number }>>((items, s) => {
+            const prev = items[items.length - 1];
+            const startMm = prev ? prev.startMm + prev.s.length_mm : 0;
+            items.push({ s, startMm });
+            return items;
+          }, [])
+          .map(({ s, startMm }) => {
+            const cx = x0 + (startMm + s.length_mm / 2) * scale;
             const cy = axisY - (s.diameter_mm / 2) * scale - 8;
-            acc += s.length_mm;
             return (
               <g key={s.id}>
                 <text
@@ -1493,8 +1498,7 @@ function Profile2DBlueprint({
                 </text>
               </g>
             );
-          });
-        })()}
+          })}
       </svg>
     </div>
   );

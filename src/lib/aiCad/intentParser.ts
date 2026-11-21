@@ -7,7 +7,6 @@ import { MATERIALS_CATALOG } from "./validator";
 import type {
   ClarificationQuestion,
   FieldConfidence,
-  MaterialSlug,
   OdSegment,
   TurnedPartDocument,
 } from "./types";
