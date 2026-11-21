@@ -14,7 +14,7 @@
  *    - Converts backend analysis results into interactive 3D viewable models
  */
 
-import type { PartGeometry } from "@/lib/smartQuote/pricing";
+import type { PartGeometry } from "@/lib/smartQuote/pricingFormat";
 import type { CadAnalysisResult } from "@/lib/smartQuote/shared";
 import type { BoreSpec, OdSegment, SemanticDescriptor, TurnedPartDocument } from "./types";
 import { MATERIALS_CATALOG } from "./validator";

@@ -3,12 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import {
-  estimatePart,
   formatInr,
   type GradeRate,
   type PricingSettings,
-} from "@/lib/smartQuote/pricing";
-import { DEFAULT_PART_CONFIG } from "@/lib/smartQuote/options";
+} from "@/lib/smartQuote/pricingFormat";
 import { GOLDEN_PRESETS } from "@/lib/aiCad/intentParser";
 import {
   applyDfmQuickFix,
@@ -350,7 +348,7 @@ export function AiCadStudio({
 
   // Run 7-layer validation & CAPP evaluation on current document
   const evaluation = useMemo(() => evaluateTurnedPart(doc), [doc]);
-  const { issues, capp, geometry, defaultGrade } = evaluation;
+  const { issues, capp, defaultGrade } = evaluation;
 
   // Match material against DB grade rates if available, otherwise fallback to catalog grade
   const activeGrade: GradeRate = useMemo(() => {
@@ -364,23 +362,54 @@ export function AiCadStudio({
 
   const activeSettings = settings ?? DEFAULT_PRICING_SETTINGS;
 
-  // Live price estimate using MECHmetrIQ's core estimatePart() formula
+  // Live interactive turning studio estimate (client-safe preview)
   const priceEstimate = useMemo(() => {
+    const qty = Math.max(1, doc.quantity);
     const threadCount = doc.segments.filter((s) => !!s.thread).length;
-    const cfg = {
-      ...DEFAULT_PART_CONFIG,
-      quantity: doc.quantity,
-      tolerance: doc.general_tolerance,
-      roughness: String(doc.surface_finish_ra),
-      threads_qty: threadCount,
-    };
-    const est = estimatePart(geometry, activeGrade, cfg, activeSettings);
+    const matCost =
+      capp.recommended_stock.stock_mass_kg *
+      activeGrade.rate_per_kg *
+      (1 + activeSettings.scrap_pct / 100);
+    const totalOpMin = capp.operations.reduce((acc, op) => acc + op.est_Minutes, 0);
+    const cycleMin = Math.max(1.5, totalOpMin);
+    const tolFactor =
+      activeSettings.tolerance_multiplier[doc.general_tolerance] ?? 1.0;
+    const raFactor =
+      activeSettings.roughness_multiplier[String(doc.surface_finish_ra)] ?? 1.0;
+    const machCost =
+      (cycleMin * tolFactor * raFactor +
+        threadCount * activeSettings.thread_min_each +
+        activeSettings.handling_min_per_part) *
+      (activeSettings.turning_rate_per_hr / 60);
+    const setupsCount = capp.secondary_setup_required ? 2 : 1;
+    const setupMin =
+      setupsCount * activeSettings.setup_min_per_setup +
+      activeSettings.programming_min;
+    const setupPerPart =
+      (setupMin * (activeSettings.turning_rate_per_hr / 60)) / qty;
+    const baseUnit = Math.max(
+      45,
+      (matCost + machCost + setupPerPart) * (1 + activeSettings.margin_pct / 100)
+    );
+
+    const tiers = activeSettings.tiers.map((t) => {
+      const unit_price = Math.round(baseUnit * t.multiplier);
+      const total = Math.max(
+        activeSettings.min_order_value,
+        Math.round(unit_price * qty)
+      );
+      return {
+        key: t.key,
+        label: t.label,
+        lead_days: t.days,
+        unit_price,
+        total,
+      };
+    });
     const tierObj =
-      est.tiers.find((t) => t.key === selectedTier) ??
-      est.tiers[1] ??
-      est.tiers[0];
-    return { est, tierObj };
-  }, [geometry, activeGrade, activeSettings, doc, selectedTier]);
+      tiers.find((t) => t.key === selectedTier) ?? tiers[1] ?? tiers[0];
+    return { est: { tiers }, tierObj };
+  }, [capp, activeGrade, activeSettings, doc, selectedTier]);
 
   async function sendChatMessage(rawPrompt?: string) {
     const text = (rawPrompt ?? promptInput).trim();

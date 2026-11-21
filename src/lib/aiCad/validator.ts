@@ -4,7 +4,7 @@
  * Adheres to ISO 286, ISO 2768, ISO 21920, and Sandvik/Kennametal turning rules.
  */
 
-import type { PartGeometry, GradeRate, PricingSettings } from "@/lib/smartQuote/pricing";
+import type { PartGeometry, GradeRate, PricingSettings } from "@/lib/smartQuote/pricingFormat";
 import type { CadAnalysisResult } from "@/lib/smartQuote/shared";
 import type {
   CappProcessPlan,

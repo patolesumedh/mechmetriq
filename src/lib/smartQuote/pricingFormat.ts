@@ -36,6 +36,51 @@ export interface GradeOption {
   material_name: string;
 }
 
+export interface GradeRate extends GradeOption {
+  density: number; // g/cm³
+  rate_per_kg: number; // ₹
+}
+
+export interface Tier {
+  key: string;
+  label: string;
+  days: number;
+  multiplier: number;
+}
+
+export interface PricingSettings {
+  currency: string;
+  margin_pct: number;
+  min_order_value: number;
+  milling_rate_per_hr: number;
+  turning_rate_per_hr: number;
+  setup_min_per_setup: number;
+  programming_min: number;
+  handling_min_per_part: number;
+  hours_per_day: number;
+  machines_in_parallel: number;
+  stock_allowance_mm: number;
+  scrap_pct: number;
+  base_mrr_cm3_per_min: number;
+  base_finish_cm2_per_min: number;
+  material_time_factor: Record<string, number>;
+  feature_minutes: Record<FeatureGroup, number>;
+  feature_cap_minutes: Record<FeatureGroup, number>;
+  candidate_weight: number;
+  tolerance_multiplier: Record<string, number>;
+  roughness_multiplier: Record<string, number>;
+  thread_min_each: number;
+  insert_min_each: number;
+  insert_cost_each: number;
+  finish_rate_per_dm2: Record<string, number>;
+  finish_min_lot: number;
+  finish_extra_days: number;
+  inspection_fee: Record<string, number>;
+  certificate_fee: number;
+  marking_fee_per_part: number;
+  tiers: Tier[];
+}
+
 export interface PartConfig {
   quantity: number;
   finish: string;
