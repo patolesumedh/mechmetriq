@@ -55,7 +55,7 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: latest
       - name: Sync baseline migration history if schema already exists
