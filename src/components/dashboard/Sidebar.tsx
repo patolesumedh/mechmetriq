@@ -42,8 +42,8 @@ export function Sidebar({
 
   return (
     <aside className="flex w-[236px] flex-none flex-col border-r border-grid bg-surface p-3.5 print:hidden">
-      <Link href="/" className="mb-1 flex items-center px-2 pb-4 pt-1.5 text-[17px] font-bold tracking-tight">
-        <MechOneHubLogo markSize={26} suffix={logoLabel} />
+      <Link href="/" className="mb-1 flex items-center px-2 pb-4 pt-1.5">
+        <MechOneHubLogo markSize={22} suffix={logoLabel} />
       </Link>
       {switcher && (
         <Link
