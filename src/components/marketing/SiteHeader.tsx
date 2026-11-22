@@ -62,12 +62,9 @@ export function SiteHeader() {
     <header className="sticky top-0 z-10 border-b border-grid bg-surface">
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-3.5 sm:px-8">
         <div>
-          <Link href="/" className="flex items-center text-[20px] font-bold tracking-tight">
+          <Link href="/" className="flex items-center">
             <MechOneHubLogo markSize={30} />
           </Link>
-          <div className="ml-[40px] mt-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">
-            Mechanical Intelligence. Smarter Quotations.
-          </div>
         </div>
         <nav className="hidden items-center gap-7 text-[14px] md:flex">
           {NAV_LINKS.map((link) => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MechOneHubLogo } from "@/components/ui/MechOneHubLogo";
 import { cn } from "@/lib/cn";
 import {
   BANKS,
@@ -265,14 +266,9 @@ export function TestPaymentGateway({
         <aside className="relative flex shrink-0 flex-col justify-between overflow-hidden bg-[#0D1F3B] px-5 py-4 text-white sm:w-[270px] sm:px-6 sm:py-6">
           <div className="relative">
             <div className="flex items-center gap-2.5">
-              <div className="grid h-9 w-9 place-items-center rounded-[7px] bg-[#13284A] border border-[#1F3657] text-[14px] font-black text-white">
-                <span>M<span className="text-[#FF7900]">1</span></span>
-              </div>
               <div className="leading-tight">
-                <div className="text-[14.5px] font-bold">
-                  mech<span className="text-[#FF7900]">one</span>hub
-                </div>
-                <div className="flex items-center gap-1 text-[11px] text-white/70">
+                <MechOneHubLogo theme="dark" markSize={22} />
+                <div className="mt-1 flex items-center gap-1 text-[11px] text-white/70">
                   <ShieldIcon className="h-3 w-3" /> Verified merchant
                 </div>
               </div>
