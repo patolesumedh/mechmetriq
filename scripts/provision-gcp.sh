@@ -7,8 +7,8 @@
 #   - ENV=prod    -> project mechonehub-prod    (GitHub Environment: production + backups)
 #
 # Usage:
-#   ENV=staging GITHUB_REPO=patolesumedh/mechmetriq ./scripts/provision-gcp.sh
-#   ENV=prod    GITHUB_REPO=patolesumedh/mechmetriq ./scripts/provision-gcp.sh
+#   ENV=staging GITHUB_REPO=admin-mechonehub/Mechonehub ./scripts/provision-gcp.sh
+#   ENV=prod    GITHUB_REPO=admin-mechonehub/Mechonehub ./scripts/provision-gcp.sh
 # ==============================================================================
 
 set -euo pipefail
@@ -16,13 +16,13 @@ set -euo pipefail
 ENV="${ENV:-}"
 if [[ "$ENV" != "staging" && "$ENV" != "prod" ]]; then
   echo "Error: ENV must be set to 'staging' or 'prod'." >&2
-  echo "Usage: ENV=staging|prod [GITHUB_REPO=patolesumedh/mechmetriq] [GITHUB_REPO_ID=123456] ./scripts/provision-gcp.sh" >&2
+  echo "Usage: ENV=staging|prod [GITHUB_REPO=admin-mechonehub/Mechonehub] [GITHUB_REPO_ID=1468384222] ./scripts/provision-gcp.sh" >&2
   exit 1
 fi
 
 PROJECT_ID="${PROJECT_ID:-mechonehub-${ENV}}"
 REGION="${REGION:-asia-south1}"
-GITHUB_REPO="${GITHUB_REPO:-patolesumedh/mechmetriq}"
+GITHUB_REPO="${GITHUB_REPO:-admin-mechonehub/Mechonehub}"
 GH_ENV_NAME="$([[ "$ENV" == "prod" ]] && echo "production" || echo "staging")"
 SITE_URL="$([[ "$ENV" == "prod" ]] && echo "https://mechonehub.com" || echo "https://staging.mechonehub.com")"
 CAD_BUCKET="gs://mechonehub-${ENV}-cad-files"
@@ -275,7 +275,7 @@ gcloud pubsub subscriptions add-iam-policy-binding cad-analysis-push-sub \
 
 # 9. Keyless Workload Identity Federation (scoped to numeric repo ID + GitHub Environment)
 echo "==> Configuring Workload Identity Federation for GitHub Actions..."
-REPO_ID="${GITHUB_REPO_ID:-}"
+REPO_ID="${GITHUB_REPO_ID:-1468384222}"
 if [[ -z "$REPO_ID" ]] && command -v gh >/dev/null 2>&1; then
   REPO_ID="$(gh api "repos/${GITHUB_REPO}" --jq .id || true)"
 fi
