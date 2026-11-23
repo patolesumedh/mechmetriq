@@ -1,7 +1,7 @@
 # Require team lead review on security-sensitive paths, database migrations, CI/CD, and edge proxy
-/supabase/migrations/   @patolesumedh
-/.github/               @patolesumedh
-/src/proxy.ts           @patolesumedh
-/src/lib/auth/          @patolesumedh
-/src/lib/security/      @patolesumedh
-/cloudflare-worker/     @patolesumedh
+/supabase/migrations/   @ShrinivasLimaye @admin-mechonehub
+/.github/               @ShrinivasLimaye @admin-mechonehub
+/src/proxy.ts           @ShrinivasLimaye @admin-mechonehub
+/src/lib/auth/          @ShrinivasLimaye @admin-mechonehub
+/src/lib/security/      @ShrinivasLimaye @admin-mechonehub
+/cloudflare-worker/     @ShrinivasLimaye @admin-mechonehub

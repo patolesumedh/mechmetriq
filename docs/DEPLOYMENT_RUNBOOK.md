@@ -33,7 +33,7 @@ Create or log into these accounts and **enable 2-Factor Authentication (Authenti
 6. **Resend** ([resend.com](https://resend.com)) — Free Plan.
 7. **Sentry** ([sentry.io](https://sentry.io)) — Free Developer Plan.
 8. **BetterStack** ([betterstack.com](https://betterstack.com)) — Free Uptime Plan.
-9. **GitHub** ([github.com/patolesumedh/mechmetriq](https://github.com/patolesumedh/mechmetriq)).
+9. **GitHub** ([github.com/admin-mechonehub/Mechonehub](https://github.com/admin-mechonehub/Mechonehub)).
 
 Also install on your computer (or use **Google Cloud Shell** in your browser, which already has `gcloud`, `openssl`, `git`, and `node` pre-installed!):
 - Google Cloud CLI (`gcloud`)
@@ -251,9 +251,9 @@ We included an automated provisioning script (`scripts/provision-gcp.sh`) in thi
 Open **Google Cloud Shell** (or your local terminal logged into `gcloud auth login`), clone this repo, and run:
 
 ```bash
-# Find your GitHub repository's numeric ID once:
-export GITHUB_REPO="patolesumedh/mechmetriq"
-export GITHUB_REPO_ID=$(curl -fsSL "https://api.github.com/repos/${GITHUB_REPO}" | grep -m1 '"id":' | tr -dc '0-9')
+# Set your GitHub repository name and numeric ID (1468384222 for admin-mechonehub/Mechonehub):
+export GITHUB_REPO="admin-mechonehub/Mechonehub"
+export GITHUB_REPO_ID="1468384222"
 echo "Numeric Repo ID: ${GITHUB_REPO_ID}"
 
 # 1. Provision STAGING (mechonehub-staging)
@@ -359,7 +359,7 @@ Go to **GitHub Repo → Settings → Environments**:
      - `SUPABASE_SESSION_POOLER_URL` = `postgresql://postgres.<STAGING_REF>:<PASS>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`
 
 2. **Environment: `production`**
-   - **Required reviewers:** Check this box and add `@patolesumedh` (and a backup approver)
+   - **Required reviewers:** Check this box and add `@admin-mechonehub` and `@ShrinivasLimaye`
    - **Deployment branches:** Selected branches → add `main`
    - **Environment Variables:**
      - `GCP_PROJECT` = `mechonehub-prod`
