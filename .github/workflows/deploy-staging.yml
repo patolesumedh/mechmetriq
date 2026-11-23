@@ -66,8 +66,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: deployer@${{ vars.GCP_PROJECT }}.iam.gserviceaccount.com
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+          service_account: deployer@${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
       - run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
       - uses: docker/setup-buildx-action@v3
@@ -76,12 +76,12 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/web:${{ github.sha }}
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}/mechonehub/web:${{ github.sha }}
           build-args: |
-            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://staging.mechonehub.com' }}
-            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || secrets.NEXT_PUBLIC_SITE_URL || 'https://staging.mechonehub.com' }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Build & push worker image (only if changed)
@@ -90,7 +90,7 @@ jobs:
         with:
           context: services/smartquote
           push: true
-          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
           cache-from: type=gha,scope=worker
           cache-to: type=gha,scope=worker,mode=max
 
@@ -101,21 +101,21 @@ jobs:
     steps:
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: deployer@${{ vars.GCP_PROJECT }}.iam.gserviceaccount.com
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER }}
+          service_account: deployer@${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
       - name: Deploy worker (if changed)
         if: needs.changes.outputs.worker == 'true'
         run: |
-          gcloud run deploy mechonehub-cad-worker --region $REGION --project ${{ vars.GCP_PROJECT }} \
-            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
+          gcloud run deploy mechonehub-cad-worker --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }} \
+            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
       - name: Deploy web as a tagged revision with NO traffic
         run: |
           TAG="sha-${GITHUB_SHA::7}"
-          gcloud run deploy mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT }} \
-            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT }}/mechonehub/web:${{ github.sha }} \
+          gcloud run deploy mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }} \
+            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}/mechonehub/web:${{ github.sha }} \
             --no-traffic --tag "$TAG"
-          SVC=$(gcloud run services describe mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT }} \
+          SVC=$(gcloud run services describe mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }} \
             --format="value(status.url)")
           echo "CANDIDATE_URL=https://${TAG}---${SVC#https://}" >> $GITHUB_ENV
           echo "TAG=$TAG" >> $GITHUB_ENV
@@ -123,7 +123,7 @@ jobs:
         run: curl --fail --retry 10 --retry-delay 3 --retry-all-errors "$CANDIDATE_URL/api/health"
       - name: Shift 100% traffic to the verified candidate
         run: |
-          gcloud run services update-traffic mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT }} \
+          gcloud run services update-traffic mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }} \
             --to-latest
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -141,7 +141,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || '90d6429ee3422c4c82d37f6eebfdfb61' }}
         run: |
           npx --yes wrangler@4 deploy --keep-vars -c wrangler.toml --env staging
-          ORIGIN_SECRET=$(gcloud secrets versions access latest --secret=ORIGIN_VERIFY_SECRET --project="${{ vars.GCP_PROJECT }}" 2>/dev/null | tr -d '\r\n' || true)
+          ORIGIN_SECRET=$(gcloud secrets versions access latest --secret=ORIGIN_VERIFY_SECRET --project="${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}" 2>/dev/null | tr -d '\r\n' || true)
           if [ -n "$ORIGIN_SECRET" ]; then
             printf "%s" "$ORIGIN_SECRET" | npx --yes wrangler@4 secret put ORIGIN_VERIFY_SECRET -c wrangler.toml --env staging
           fi
