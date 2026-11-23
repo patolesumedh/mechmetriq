@@ -114,13 +114,19 @@ jobs:
           TAG="sha-${GITHUB_SHA::7}"
           gcloud run deploy mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }} \
             --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}/mechonehub/web:${{ github.sha }} \
-            --no-traffic --tag "$TAG"
+            --no-traffic --tag "$TAG" --allow-unauthenticated
           SVC=$(gcloud run services describe mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }} \
             --format="value(status.url)")
           echo "CANDIDATE_URL=https://${TAG}---${SVC#https://}" >> $GITHUB_ENV
           echo "TAG=$TAG" >> $GITHUB_ENV
       - name: Health-check the candidate revision (/api/health is exempt from origin lock)
-        run: curl --fail --retry 10 --retry-delay 3 --retry-all-errors "$CANDIDATE_URL/api/health"
+        run: |
+          ORIGIN_SECRET=$(gcloud secrets versions access latest --secret=ORIGIN_VERIFY_SECRET --project="${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }}" 2>/dev/null | tr -d '\r\n' || true)
+          ID_TOKEN=$(gcloud auth print-identity-token 2>/dev/null || true)
+          curl --fail --retry 10 --retry-delay 3 --retry-all-errors \
+            -H "Authorization: Bearer ${ID_TOKEN}" \
+            -H "X-Origin-Verify: ${ORIGIN_SECRET}" \
+            "$CANDIDATE_URL/api/health"
       - name: Shift 100% traffic to the verified candidate
         run: |
           gcloud run services update-traffic mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT }} \

@@ -23,7 +23,7 @@ export async function proxy(request: NextRequest) {
   // Exemptions (both safe to reach directly on *.run.app):
   //  - /api/internal/*: worker->web callback, authenticated by HMAC instead
   //  - /api/health:     returns {"status":"ok"} only; lets CI check a no-traffic revision
-  const exempt = path.startsWith("/api/internal/") || path === "/api/health";
+  const exempt = path.startsWith("/api/internal/") || path.startsWith("/api/health");
   if (!exempt && !isFromEdge(request.headers.get("x-origin-verify"))) {
     return new NextResponse("Forbidden", { status: 403 });
   }
