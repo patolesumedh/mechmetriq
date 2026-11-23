@@ -287,6 +287,33 @@ Add these to **Environment secrets** (our workflows support `vars.KEY || secrets
 - **Cause:** Cloud Run tagged revisions require an authenticated Google Cloud caller identity token (`Authorization: Bearer $(gcloud auth print-identity-token)`) and the application's edge verification header (`X-Origin-Verify`).
 - **Resolution (built into workflow):** The pipeline automatically generates the identity token and pulls `ORIGIN_VERIFY_SECRET` to verify `/api/health` before shifting 100% traffic live!
 
+### ⚠️ Google Workspace Org Policy Issue: "Domain restricted sharing" blocks `allUsers`
+- **Symptoms:**
+  - Running `gcloud run services add-iam-policy-binding mechonehub-web --member="allUsers" ...` fails with:
+    `FAILED_PRECONDITION: One or more users named in the policy do not belong to a permitted customer, perhaps due to an organization policy.`
+  - Direct browser visits to `https://mechonehub.com` display:
+    `Error: Forbidden - Your client does not have permission to get URL / from this server.`
+- **Cause:**
+  When Google Workspace or Cloud Identity manages the domain (`mechonehub.com`), Google Cloud automatically enforces the Organization Policy `constraints/iam.allowedPolicyMemberDomains` ("Domain restricted sharing"). This prevents any IAM binding to `allUsers`.
+- **Resolution:**
+  1. In Google Cloud Console, navigate to **IAM & Admin → Organization Policies**.
+  2. Filter or search for **Domain restricted sharing**.
+  3. Ensure your project (`mechonehub-live` / `MechOneHub prod`) is selected in the top bar.
+  4. Click **Edit policy**:
+     - Under **Policy source**, select **Override parent's policy**.
+     - Under **Rules**, click **Add a rule** (or edit existing rule).
+     - Under **Policy values**, select **Allow all** (or set enforcement to **Off**).
+     - Click **Set policy**.
+  5. Return to Cloud Shell and re-run:
+     ```bash
+     gcloud run services add-iam-policy-binding mechonehub-web \
+       --project=mechonehub-live \
+       --region=asia-south1 \
+       --member="allUsers" \
+       --role="roles/run.invoker"
+     ```
+  6. Re-run the failed GitHub Actions job or refresh `https://mechonehub.com`.
+
 ---
 
 ## STEP 6: Verification & Post-Launch Checklist
