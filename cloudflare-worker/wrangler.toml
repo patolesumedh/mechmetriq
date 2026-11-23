@@ -3,7 +3,7 @@ main = "src/index.js"
 compatibility_date = "2026-01-01"
 
 [vars]
-CLOUD_RUN_HOST = "mechonehub-web-n7nypcxx3a-el.a.run.app"
+CLOUD_RUN_HOST = "mechonehub-web-486135922224.asia-south1.run.app"
 
 [[routes]]
 pattern = "mechonehub.com/*"
@@ -11,5 +11,11 @@ zone_name = "mechonehub.com"
 
 [env.staging]
 name = "mechonehub-edge-proxy-staging"
-vars = { CLOUD_RUN_HOST = "mechonehub-web-yyyyyyyy-el.a.run.app" }
-routes = [ { pattern = "staging.mechonehub.com/*", zone_name = "mechonehub.com" } ]
+
+[env.staging.vars]
+CLOUD_RUN_HOST = "mechonehub-web-486135922224.asia-south1.run.app"
+
+[[env.staging.routes]]
+pattern = "staging.mechonehub.com/*"
+zone_name = "mechonehub.com"
+
