@@ -49,5 +49,6 @@ jobs:
           age -r "$AGE_RECIPIENT" -o "backup_${TS}.dump.age" "backup_${TS}.dump"
           shred -u "backup_${TS}.dump"
           test -s "backup_${TS}.dump.age"
-          gcloud storage cp "backup_${TS}.dump.age" "gs://mechonehub-prod-db-backups/daily/"
+          BACKUP_BUCKET="${{ vars.GCP_BACKUP_BUCKET || 'mechonehub-live-db-backups' }}"
+          gcloud storage cp "backup_${TS}.dump.age" "gs://${BACKUP_BUCKET}/daily/"
           echo "Backup uploaded: backup_${TS}.dump.age"
