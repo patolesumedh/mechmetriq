@@ -198,19 +198,67 @@ ENV=prod \
 - **Cause:** Google Cloud Storage bucket names are globally unique worldwide.
 - **Fix:** The script dynamically names buckets based on your project: `gs://mechonehub-live-cad-files` and `gs://mechonehub-live-db-backups`.
 
-#### Issue 5: "PERMISSION_DENIED: Permission 'iam.serviceAccounts.setIamPolicy' denied"
-- **Cause:** In Google Workspace organizations, users have `Owner (legacy)` by default, which lacks granular permission to bind Workload Identity to service accounts.
+#### Issue 5: "PERMISSION_DENIED: Permission 'iam.serviceAccounts.setIamPolicy' or 'getAccessToken' denied"
+- **Cause:**
+  1. In Google Workspace organizations, users have `Owner (legacy)` by default, which lacks granular permission (`roles/iam.serviceAccountAdmin`) to attach Workload Identity bindings to service accounts.
+  2. GitHub Actions and Docker Artifact Registry push require the `deployer` service account to be bound to the repository ID (`attribute.repository_id/1468384222`), to have `roles/iam.serviceAccountTokenCreator` on itself, and to have `roles/secretmanager.secretAccessor` on `ORIGIN_VERIFY_SECRET`.
 - **Fix:**
   1. Open [console.cloud.google.com/iam-admin/iam?project=mechonehub-live](https://console.cloud.google.com/iam-admin/iam?project=mechonehub-live).
   2. Click the pencil icon next to your email (`admin@mechonehub.com`).
   3. Click **+ Add another role** → select **Service Account Admin**. Click **Save**.
-  4. Run the binding command in Cloud Shell:
+  4. Run the complete IAM binding block in Cloud Shell (now also built into `scripts/provision-gcp.sh`):
      ```bash
-     PROJECT_NUM=$(gcloud projects describe mechonehub-live --format="value(projectNumber)")
-     gcloud iam service-accounts add-iam-policy-binding "deployer@mechonehub-live.iam.gserviceaccount.com" \
-       --project=mechonehub-live \
+     PROJECT_ID="mechonehub-live"
+     PROJECT_NUM=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+
+     # Allow GitHub repo (all branches + production/staging environments) to impersonate deployer
+     gcloud iam service-accounts add-iam-policy-binding "deployer@${PROJECT_ID}.iam.gserviceaccount.com" \
+       --project="$PROJECT_ID" \
+       --role="roles/iam.workloadIdentityUser" \
+       --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUM}/locations/global/workloadIdentityPools/github/attribute.repository_id/1468384222"
+
+     gcloud iam service-accounts add-iam-policy-binding "deployer@${PROJECT_ID}.iam.gserviceaccount.com" \
+       --project="$PROJECT_ID" \
        --role="roles/iam.workloadIdentityUser" \
        --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUM}/locations/global/workloadIdentityPools/github/attribute.environment/production"
+
+     gcloud iam service-accounts add-iam-policy-binding "deployer@${PROJECT_ID}.iam.gserviceaccount.com" \
+       --project="$PROJECT_ID" \
+       --role="roles/iam.workloadIdentityUser" \
+       --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUM}/locations/global/workloadIdentityPools/github/attribute.environment/staging"
+
+     # Allow deployer to mint OAuth2 access tokens and read ORIGIN_VERIFY_SECRET during CI health checks
+     gcloud iam service-accounts add-iam-policy-binding "deployer@${PROJECT_ID}.iam.gserviceaccount.com" \
+       --project="$PROJECT_ID" \
+       --role="roles/iam.serviceAccountTokenCreator" \
+       --member="serviceAccount:deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+
+     gcloud secrets add-iam-policy-binding ORIGIN_VERIFY_SECRET \
+       --project="$PROJECT_ID" \
+       --role="roles/secretmanager.secretAccessor" \
+       --member="serviceAccount:deployer@${PROJECT_ID}.iam.gserviceaccount.com"
+     ```
+
+#### Issue 6: Google Workspace Org Policy "Domain restricted sharing" blocks `allUsers`
+- **Symptoms:**
+  - Running `gcloud run services add-iam-policy-binding mechonehub-web --member="allUsers" ...` fails with:
+    `FAILED_PRECONDITION: One or more users named in the policy do not belong to a permitted customer, perhaps due to an organization policy.`
+  - Visiting `https://mechonehub.com` shows Google's 403 HTML page:
+    `Error: Forbidden - Your client does not have permission to get URL / from this server.`
+- **Cause:**
+  Google Workspace organizations enforce `constraints/iam.allowedPolicyMemberDomains` ("Domain restricted sharing") by default, blocking `allUsers` from being added as a Cloud Run invoker.
+- **Fix:**
+  1. In Google Cloud Console, go to **IAM & Admin → Organization Policies** (ensure your project `MechOneHub prod` / `mechonehub-live` is selected in the top picker).
+  2. Click **Domain restricted sharing** → **Edit policy**.
+  3. Under **Policy source**, select **Override parent's policy**.
+  4. Under **Rules**, click **Add a rule** (or edit the existing rule) → under **Policy values**, select **Allow all** → click **Set policy**.
+  5. In Cloud Shell, grant public invoker access to `mechonehub-web` (remember: `mechonehub-web` is still protected by the `X-Origin-Verify` header injected by Cloudflare):
+     ```bash
+     gcloud run services add-iam-policy-binding mechonehub-web \
+       --project=mechonehub-live \
+       --region=asia-south1 \
+       --member="allUsers" \
+       --role="roles/run.invoker"
      ```
 
 ---
@@ -282,37 +330,39 @@ Add these to **Environment secrets** (our workflows support `vars.KEY || secrets
 
 ---
 
-### ⚠️ Common CI/CD Issue: Candidate Revision Health-Check 403
-- **Symptoms:** GitHub Actions `deploy` step fails with `curl: (22) The requested URL returned error: 403` when probing `$CANDIDATE_URL/api/health`.
-- **Cause:** Cloud Run tagged revisions require an authenticated Google Cloud caller identity token (`Authorization: Bearer $(gcloud auth print-identity-token)`) and the application's edge verification header (`X-Origin-Verify`).
-- **Resolution (built into workflow):** The pipeline automatically generates the identity token and pulls `ORIGIN_VERIFY_SECRET` to verify `/api/health` before shifting 100% traffic live!
+### ⚠️ Common CI/CD Issues & How They Are Solved in Our Workflows
 
-### ⚠️ Google Workspace Org Policy Issue: "Domain restricted sharing" blocks `allUsers`
+#### 1. Supabase CLI Rate-Limit & PostgreSQL 17 (`Invalid db.major_version: 17`)
 - **Symptoms:**
-  - Running `gcloud run services add-iam-policy-binding mechonehub-web --member="allUsers" ...` fails with:
-    `FAILED_PRECONDITION: One or more users named in the policy do not belong to a permitted customer, perhaps due to an organization policy.`
-  - Direct browser visits to `https://mechonehub.com` display:
-    `Error: Forbidden - Your client does not have permission to get URL / from this server.`
+  - `supabase/setup-cli@v1` with `version: latest` fails with `Failed to resolve latest Supabase CLI release: rate limit exceeded`.
+  - Older pinned CLI versions (e.g., `2.15.5`) fail with `Failed reading config: Invalid db.major_version: 17`.
+- **Resolution (built into workflows):**
+  All workflows (`deploy-production.yml`, `deploy-staging.yml`, `ci.yml`) pin `supabase/setup-cli@v1` to **`version: 3.3.0`** (which supports PostgreSQL 17 and downloads the binary asset directly without querying `/releases/latest`) and pass `github-token: ${{ secrets.GITHUB_TOKEN }}`. In addition, the `migrate` step includes an automatic `psql` fallback for idempotent migrations `0023`–`0025`.
+
+#### 2. Docker Push to Artifact Registry (`gcloud.auth.docker-helper` 403 / `getAccessToken` denied)
+- **Symptoms:**
+  - Docker finishes building the Next.js image (`#18 exporting layers done`), then fails during push with:
+    `ERROR: (gcloud.auth.docker-helper) There was a problem refreshing your current auth tokens: ('Unable to acquire impersonated credentials' ... Permission 'iam.serviceAccounts.getAccessToken' denied)`
 - **Cause:**
-  When Google Workspace or Cloud Identity manages the domain (`mechonehub.com`), Google Cloud automatically enforces the Organization Policy `constraints/iam.allowedPolicyMemberDomains` ("Domain restricted sharing"). This prevents any IAM binding to `allUsers`.
-- **Resolution:**
-  1. In Google Cloud Console, navigate to **IAM & Admin → Organization Policies**.
-  2. Filter or search for **Domain restricted sharing**.
-  3. Ensure your project (`mechonehub-live` / `MechOneHub prod`) is selected in the top bar.
-  4. Click **Edit policy**:
-     - Under **Policy source**, select **Override parent's policy**.
-     - Under **Rules**, click **Add a rule** (or edit existing rule).
-     - Under **Policy values**, select **Allow all** (or set enforcement to **Off**).
-     - Click **Set policy**.
-  5. Return to Cloud Shell and re-run:
-     ```bash
-     gcloud run services add-iam-policy-binding mechonehub-web \
-       --project=mechonehub-live \
-       --region=asia-south1 \
-       --member="allUsers" \
-       --role="roles/run.invoker"
-     ```
-  6. Re-run the failed GitHub Actions job or refresh `https://mechonehub.com`.
+  `gcloud auth configure-docker` invokes a sub-process helper inside Docker Buildx that attempts to re-impersonate the `deployer` service account without an active OAuth2 token.
+- **Resolution (built into workflows + IAM):**
+  1. In GCP IAM, `deployer` is granted `roles/iam.serviceAccountTokenCreator` on itself and `roles/iam.workloadIdentityUser` for `attribute.repository_id/1468384222` (see Step 3, Issue 5).
+  2. In `deploy-production.yml` and `deploy-staging.yml`, `google-github-actions/auth@v2` is configured with `token_format: 'access_token'` and paired with `docker/login-action@v3` (`username: oauth2accesstoken`, `password: ${{ steps.auth.outputs.access_token }}`), completely bypassing `gcloud.auth.docker-helper`.
+
+#### 3. Candidate Revision Health-Check 403 & Pinned Traffic on Initial Placeholder Revision
+- **Symptoms:**
+  - GitHub Actions `deploy` step fails with `curl: (22) The requested URL returned error: 403` when probing `$CANDIDATE_URL/api/health`, OR the build & deploy succeed in GitHub Actions, yet visiting `https://mechonehub.com` still shows Google's `"It's running! ... mechonehub-web-00001-qsd"` placeholder screen.
+- **Cause:**
+  When a Cloud Run service has ever been deployed with `--no-traffic`, Cloud Run pins 100% of live traffic to the old revision name (`00001-qsd`) rather than `LATEST`. Subsequent `gcloud run deploy --tag` commands create new revisions without moving live traffic away from the pinned revision.
+- **Resolution (built into workflows):**
+  After deploying the tagged revision and verifying `$CANDIDATE_URL/api/health` (passing both `Authorization: Bearer $ID_TOKEN` and `X-Origin-Verify: $ORIGIN_SECRET`), the workflow explicitly executes:
+  ```bash
+  gcloud run services update-traffic mechonehub-web \
+    --region asia-south1 \
+    --project mechonehub-live \
+    --to-latest
+  ```
+  This shifts 100% of live traffic to the newly verified revision immediately.
 
 ---
 
@@ -321,14 +371,14 @@ Add these to **Environment secrets** (our workflows support `vars.KEY || secrets
 Once GitHub Actions finishes deployment, verify these checks:
 
 ### Functional Checks
-- [ ] **Live Web:** Visit `https://mechonehub.com/` → verify official vector logo, navigation, and pages render.
-- [ ] **Health Endpoint:** Visit `https://mechonehub.com/api/health` → returns `{"status":"ok"}`.
+- [x] **Live Web:** Visit `https://mechonehub.com/` → verify official vector logo, navigation, and pages render (`HTTP 200 OK`).
+- [x] **Health Endpoint:** Visit `https://mechonehub.com/api/health` → returns `{"status":"ok"}`.
 - [ ] **Sign Up / Login:** Sign up a test account. Confirm Cloudflare Turnstile passes, Resend delivers the 6-digit verification code, and login persists.
 - [ ] **CAD Analysis:** Go to `/buyer/quote`, upload a `.STEP` file. Confirm direct upload to `gs://mechonehub-live-cad-files`, Pub/Sub invocation of `mechonehub-cad-worker`, and thumbnail generation.
 
 ### Security Checks
-- [ ] **Direct Cloud Run Lock:** Visiting `https://mechonehub-web-486135922224.asia-south1.run.app/` directly returns **`403 Forbidden`**. All traffic must enter through Cloudflare!
-- [ ] **Internal Endpoints Protected:** Visiting `https://mechonehub.com/api/internal/cad-result` returns `404` or `403`.
+- [x] **Direct Cloud Run Lock:** Visiting `https://mechonehub-web-486135922224.asia-south1.run.app/` directly returns **`403 Forbidden`**. All traffic must enter through Cloudflare!
+- [x] **Internal Endpoints Protected:** Visiting `https://mechonehub.com/api/internal/cad-result` returns **`404`**.
 
 ---
 
@@ -340,8 +390,92 @@ Once GitHub Actions finishes deployment, verify these checks:
    - Build new Docker images and push to Mumbai Artifact Registry.
    - Deploy a zero-downtime tagged revision to Cloud Run.
    - Health-check the candidate revision.
-   - Shift 100% traffic to the new build.
+   - Shift 100% traffic to the latest revision (`--to-latest`).
 2. **Rotating Secrets:**
    Update the secret in Google Secret Manager. Cloud Run automatically mounts `:latest` on every subsequent revision.
 3. **Database Backups:**
    Trigger the `Nightly Database Backup` workflow in GitHub Actions to create encrypted `.dump.age` files in `gs://mechonehub-live-db-backups/daily/`.
+
+---
+
+## STEP 8: Deploying the Isolated Staging Website (`https://staging.mechonehub.com`)
+
+> **Important Note on Staging Isolation:**
+> Until you configure the `staging` environment in GitHub with its own `GCP_PROJECT` variable, `.github/workflows/deploy-staging.yml` safely skips the Cloud Run build & deploy jobs so pushes to the `staging` branch never overwrite your production `mechonehub-live` service.
+
+When you are ready to launch a dedicated staging website at **`https://staging.mechonehub.com`**, you do **NOT** need to repeat GoDaddy DNS migration or Resend domain verification. Only perform these 5 isolated resource steps:
+
+### 8.1 Create Staging Supabase & Upstash Redis (Mumbai `ap-south-1`)
+1. **Supabase:** Create a second Free project named `mechonehub-staging` in Mumbai (`ap-south-1`).
+   - In **Authentication → URL Configuration**: set **Site URL** to `https://staging.mechonehub.com` and **Redirect URL** to `https://staging.mechonehub.com/auth/callback`.
+   - In **Authentication → SMTP Settings**: reuse the exact same Resend SMTP settings (`smtp.resend.com`, port `465`, sender `no-reply@mechonehub.com`).
+   - In **Cloudflare Turnstile**: either add `staging.mechonehub.com` to your Turnstile widget domains or create a `MechOneHub Staging` Turnstile widget, and paste its Secret Key into staging Supabase Auth.
+2. **Upstash Redis:** Create a second Free Redis database named `mechonehub-staging` in Mumbai (`ap-south-1`). Copy its `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+
+### 8.2 Provision the Staging GCP Project (`mechonehub-staging-live`)
+1. In **Google Cloud Shell**, run `scripts/provision-gcp.sh` with `ENV=staging` and a unique project ID:
+   ```bash
+   cd ~/Mechonehub
+   git pull
+
+   ENV=staging \
+     PROJECT_ID="mechonehub-staging-live" \
+     UPSTASH_REDIS_REST_URL="<YOUR_STAGING_UPSTASH_REST_URL>" \
+     ./scripts/provision-gcp.sh
+   ```
+   *(If prompted that billing is not linked, link your billing account to `mechonehub-staging-live` in the GCP Console and re-run the command).*
+2. **Override "Domain restricted sharing" on `mechonehub-staging-live`:**
+   - Go to **IAM & Admin → Organization Policies** (select project `mechonehub-staging-live`).
+   - Click **Domain restricted sharing → Edit policy → Override parent's policy → Rules: Allow all → Set policy**.
+   - Grant `allUsers` invoker on staging `mechonehub-web`:
+     ```bash
+     gcloud run services add-iam-policy-binding mechonehub-web \
+       --project=mechonehub-staging-live \
+       --region=asia-south1 \
+       --member="allUsers" \
+       --role="roles/run.invoker"
+     ```
+3. **Populate Secrets in `mechonehub-staging-live` Secret Manager:**
+   Go to [console.cloud.google.com/security/secret-manager?project=mechonehub-staging-live](https://console.cloud.google.com/security/secret-manager?project=mechonehub-staging-live) and add versions for:
+   - `SUPABASE_SERVICE_ROLE_KEY` (from `mechonehub-staging` Supabase)
+   - `UPSTASH_REDIS_REST_TOKEN` (from `mechonehub-staging` Upstash)
+   - `KYC_ENCRYPTION_KEY`, `SENTRY_DSN`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` (test keys).
+
+### 8.3 Update & Deploy the Staging Cloudflare Worker (`mechonehub-edge-proxy-staging`)
+1. Copy the staging `mechonehub-web` Cloud Run hostname printed at the end of Step 8.2 (e.g., `mechonehub-web-<STAGING_PROJECT_NUM>.asia-south1.run.app`).
+2. Update `[env.staging.vars]` in `cloudflare-worker/wrangler.toml`:
+   ```toml
+   [env.staging.vars]
+   CLOUD_RUN_HOST = "mechonehub-web-<STAGING_PROJECT_NUM>.asia-south1.run.app"
+   ```
+3. In Cloud Shell, deploy the staging worker and attach its `ORIGIN_VERIFY_SECRET`:
+   ```bash
+   cd ~/Mechonehub/cloudflare-worker
+   export CLOUDFLARE_API_TOKEN="<YOUR_CF_API_TOKEN>"
+
+   npx wrangler deploy --env staging
+
+   STAGING_SECRET=$(gcloud secrets versions access latest --secret=ORIGIN_VERIFY_SECRET --project=mechonehub-staging-live)
+   printf "%s" "$STAGING_SECRET" | npx wrangler secret put ORIGIN_VERIFY_SECRET --env staging
+   ```
+
+### 8.4 Configure GitHub Environment: `staging`
+1. Go to [github.com/admin-mechonehub/Mechonehub](https://github.com/admin-mechonehub/Mechonehub) → **Settings → Environments → New environment** → Name: **`staging`**.
+2. Add **`GCP_PROJECT`** = `mechonehub-staging-live` under **Environment variables** (this unlocks the `build` and `deploy` jobs in `deploy-staging.yml`).
+3. Add these under **Environment secrets** (or **Environment variables**):
+   | Name | Value |
+   | :--- | :--- |
+   | **`GCP_PROJECT`** | `mechonehub-staging-live` |
+   | **`GCP_WIF_PROVIDER`** | `projects/<STAGING_PROJECT_NUM>/locations/global/workloadIdentityPools/github/providers/github-actions` |
+   | **`NEXT_PUBLIC_SITE_URL`** | `https://staging.mechonehub.com` |
+   | **`NEXT_PUBLIC_SUPABASE_URL`** | `https://<STAGING_SUPABASE_REF>.supabase.co` |
+   | **`NEXT_PUBLIC_SUPABASE_ANON_KEY`** | Staging Supabase Publishable Key (`sb_pub_...`) |
+   | **`NEXT_PUBLIC_TURNSTILE_SITE_KEY`** | Turnstile Site Key |
+   | **`SUPABASE_SESSION_POOLER_URL`** | `postgresql://postgres.<STAGING_REF>:<PASS>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres` |
+   | **`CLOUDFLARE_API_TOKEN`** | Cloudflare API Token |
+
+4. **(Optional) Lock `staging.mechonehub.com` behind Cloudflare Zero Trust Access:**
+   In Cloudflare Dashboard → **Zero Trust → Access → Applications → Add an application → Self-hosted**:
+   - Application domain: `staging.mechonehub.com`
+   - Policy: **Allow** emails ending in `@mechonehub.com` (One-Time PIN).
+   - Bypass rule for `/api/webhooks/*` and `/api/health`.
