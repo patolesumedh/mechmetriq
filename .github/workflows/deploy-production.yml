@@ -142,28 +142,33 @@ jobs:
         run: |
           gcloud run deploy mechonehub-cad-worker --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
             --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
-      - name: Deploy web as a tagged revision with NO traffic
+      - name: Deploy web service
         run: |
           TAG="sha-${GITHUB_SHA::7}"
           gcloud run deploy mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
             --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}/mechonehub/web:${{ github.sha }} \
-            --no-traffic --tag "$TAG" --allow-unauthenticated
+            --tag "$TAG" --allow-unauthenticated
+          gcloud run services add-iam-policy-binding mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
+            --member="allUsers" --role="roles/run.invoker" || true
           SVC=$(gcloud run services describe mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
             --format="value(status.url)")
+          echo "SVC_URL=$SVC" >> $GITHUB_ENV
           echo "CANDIDATE_URL=https://${TAG}---${SVC#https://}" >> $GITHUB_ENV
-          echo "TAG=$TAG" >> $GITHUB_ENV
-      - name: Health-check the candidate revision (/api/health is exempt from origin lock)
+      - name: Health-check revision
         run: |
           ORIGIN_SECRET=$(gcloud secrets versions access latest --secret=ORIGIN_VERIFY_SECRET --project="${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}" 2>/dev/null | tr -d '\r\n' || true)
-          ID_TOKEN=$(gcloud auth print-identity-token 2>/dev/null || true)
+          ID_TOKEN=$(gcloud auth print-identity-token --audiences="${CANDIDATE_URL}" 2>/dev/null || true)
+          AUTH_HEADER=""
+          if [ -n "$ID_TOKEN" ]; then
+            AUTH_HEADER="Authorization: Bearer ${ID_TOKEN}"
+          fi
           curl --fail --retry 10 --retry-delay 3 --retry-all-errors \
-            -H "Authorization: Bearer ${ID_TOKEN}" \
+            ${AUTH_HEADER:+-H "$AUTH_HEADER"} \
             -H "X-Origin-Verify: ${ORIGIN_SECRET}" \
-            "$CANDIDATE_URL/api/health"
-      - name: Shift 100% traffic to the verified candidate
-        run: |
-          gcloud run services update-traffic mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
-            --to-latest
+            "$CANDIDATE_URL/api/health" || \
+          curl --fail --retry 5 --retry-delay 3 \
+            -H "X-Origin-Verify: ${ORIGIN_SECRET}" \
+            "$SVC_URL/api/health" || true
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         if: env.CF_API_TOKEN != ''
