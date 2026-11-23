@@ -34,7 +34,11 @@ echo "==> Provisioning MechOneHub [${ENV}] in project ${PROJECT_ID} (${REGION}).
 if ! gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
   echo "==> Creating GCP project ${PROJECT_ID}..."
   gcloud projects create "$PROJECT_ID" --name="MechOneHub ${ENV}"
+  if [[ -z "${BILLING_ACCOUNT:-}" ]]; then
+    BILLING_ACCOUNT="$(gcloud billing accounts list --filter='open=true' --format='value(name)' 2>/dev/null | head -n1 || true)"
+  fi
   if [[ -n "${BILLING_ACCOUNT:-}" ]]; then
+    echo "==> Linking billing account ${BILLING_ACCOUNT}..."
     gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT"
   else
     echo "NOTE: Link your billing account in the GCP Console or re-run with BILLING_ACCOUNT=XXXXXX-XXXXXX-XXXXXX."
