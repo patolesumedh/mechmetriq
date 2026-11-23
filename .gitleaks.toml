@@ -1,0 +1,19 @@
+title = "MechOneHub Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow placeholder examples in documentation, provisioning scripts, and example env files"
+commits = [
+  "187fc7c57619dace271b0869a712fcb3c7b82a86",
+]
+paths = [
+  '''\.env(\.local)?\.example$''',
+  '''(^|/)docs/.*\.md$''',
+  '''(^|/)scripts/provision-gcp\.sh$''',
+]
+regexes = [
+  '''REPLACE_WITH_[A-Z0-9_]+''',
+  '''postgresql://[A-Za-z0-9_.<>-]+:[A-Za-z0-9_.<>-]+@''',
+]

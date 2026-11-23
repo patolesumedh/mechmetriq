@@ -1,0 +1,53 @@
+# Nightly Database Backup to GCS (encrypted with age)
+# Security note: Pin google-github-actions/auth and google-github-actions/setup-gcloud to full commit SHAs.
+name: Nightly Database Backup to GCS (encrypted)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # Daily at 02:00 UTC (07:30 IST)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write         # GCP Workload Identity Federation (keyless)
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: backups
+    steps:
+      - name: Install PostgreSQL 17 client (PGDG) + age
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg age
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Authenticate to GCP (Keyless WIF, backup-writer only)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER_PROD }}
+          service_account: backup-writer@mechonehub-prod.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Dump (IPv4 Session Pooler) -> encrypt -> upload
+        env:
+          POOLER_URL: ${{ secrets.PROD_SUPABASE_SESSION_POOLER_URL }}   # port 5432, NOT the direct db.* host
+          AGE_RECIPIENT: ${{ vars.BACKUP_AGE_PUBLIC_KEY }}               # age1... (public key only)
+        run: |
+          set -euo pipefail
+          TS=$(date -u +"%Y%m%d_%H%M%S")
+          pg_dump "$POOLER_URL" --format=custom --no-owner --no-privileges \
+            --schema=public --schema=auth -f "backup_${TS}.dump"
+          age -r "$AGE_RECIPIENT" -o "backup_${TS}.dump.age" "backup_${TS}.dump"
+          shred -u "backup_${TS}.dump"
+          test -s "backup_${TS}.dump.age"
+          gcloud storage cp "backup_${TS}.dump.age" "gs://mechonehub-prod-db-backups/daily/"
+          echo "Backup uploaded: backup_${TS}.dump.age"

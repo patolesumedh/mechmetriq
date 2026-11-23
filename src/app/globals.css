@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------
+   MechOneHub — Design System v1.0 (Navy #102D52 & Orange #FF7900)
+   See docs/design.md for token specification and WCAG AA contrast ratios.
+--------------------------------------------------------------------- */
+@theme {
+  --color-brand: #102d52;
+  --color-brand-dark: #0b2140;
+  --color-brand-light: #e4ecf6;
+  --color-brand-orange: #ff7900;
+
+  --color-accent-orange: #ff7900;
+  --color-accent-orange-bg: #fdf3e1;
+  --color-accent-aqua: #166534;
+  --color-accent-yellow: #8a5300;
+  --color-accent-violet: #1d4e89;
+  --color-accent-magenta: #b34f00;
+  --color-accent-red: #991b1b;
+
+  --color-good: #166534;
+  --color-good-bg: #e6f4ea;
+  --color-warn: #8a5300;
+  --color-warn-bg: #fdf3e1;
+  --color-crit: #991b1b;
+  --color-crit-bg: #fbe9e9;
+
+  --color-surface: #ffffff;
+  --color-plane: #f5f7fa;
+  --color-raised: #eef2f7;
+  --color-ink: #102d52;
+  --color-ink-2: #23324a;
+  --color-muted: #56677e;
+  --color-grid: #d8dfe8;
+  --color-link: #b34f00;
+
+  --font-sans: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-card: 10px;
+}
+
+:root {
+  color-scheme: light;
+
+  /* brand */
+  --brand-navy: #102d52;
+  --brand-orange: #ff7900;
+  --on-orange: #0b2140;
+
+  /* surfaces & text — light */
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --raised: #eef2f7;
+  --border: #d8dfe8;
+  --text-heading: #102d52;
+  --text-body: #23324a;
+  --text-muted: #56677e;
+  --link: #b34f00;
+
+  /* primary */
+  --primary: #ff7900;
+  --primary-hover: #f27300;
+  --primary-pressed: #e66c00;
+  --primary-label: #0b2140;
+
+  /* secondary & ghost */
+  --secondary-bg: #ffffff;
+  --secondary-border: #102d52;
+  --secondary-label: #102d52;
+  --secondary-hover: #eaf0f7;
+  --secondary-pressed: #d9e3ef;
+  --ghost-label: #102d52;
+  --ghost-hover: #eaf0f7;
+  --ghost-pressed: #d9e3ef;
+
+  /* selected / disabled / focus */
+  --selected-bg: #e4ecf6;
+  --selected-label: #102d52;
+  --selected-border: #102d52;
+  --disabled-bg: #e6eaf0;
+  --disabled-label: #94a1b2;
+  --focus-ring: #102d52;
+
+  /* viewer */
+  --viewer-bg: #eef2f7;
+  --viewer-grid: #dce3ec;
+  --viewer-line: #102d52;
+
+  /* status */
+  --status-queued-bg: #eef1f5;
+  --status-queued-fg: #4a5a70;
+  --status-machining-bg: #e4ecf6;
+  --status-machining-fg: #1d4e89;
+  --status-qc-bg: #fdf3e1;
+  --status-qc-fg: #8a5300;
+  --status-done-bg: #e6f4ea;
+  --status-done-fg: #166534;
+  --status-hold-bg: #fbe9e9;
+  --status-hold-fg: #991b1b;
+
+  /* shape */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+}
+
+[data-theme="dark"] {
+  --bg: #07152a;
+  --surface: #0d1f3b;
+  --raised: #13284a;
+  --border: #1f3657;
+  --text-heading: #e7edf5;
+  --text-body: #c9d4e3;
+  --text-muted: #93a4bc;
+  --link: #ffa45c;
+
+  --primary: #ff7900;
+  --primary-hover: #ff8f2e;
+  --primary-pressed: #e66c00;
+  --primary-label: #0b2140;
+
+  --secondary-bg: transparent;
+  --secondary-border: #3a5378;
+  --secondary-label: #e7edf5;
+  --secondary-hover: #162d50;
+  --secondary-pressed: #1d3a63;
+  --ghost-label: #ffa45c;
+  --ghost-hover: #2a2118;
+  --ghost-pressed: #3a2a18;
+
+  --selected-bg: #1d3a63;
+  --selected-label: #ffffff;
+  --selected-border: #6e8db8;
+  --disabled-bg: #13233d;
+  --disabled-label: #52657f;
+  --focus-ring: #ffa45c;
+
+  --viewer-bg: #0a1a31;
+  --viewer-grid: #15294a;
+  --viewer-line: #c9d6e8;
+
+  --status-queued-bg: #16263f;
+  --status-queued-fg: #a9b6c8;
+  --status-machining-bg: #183459;
+  --status-machining-fg: #9ec1f0;
+  --status-qc-bg: #2a2214;
+  --status-qc-fg: #f5c451;
+  --status-done-bg: #12261a;
+  --status-done-fg: #6bd58e;
+  --status-hold-bg: #2c1515;
+  --status-hold-fg: #f28b8b;
+}
+
+body {
+  background: var(--color-plane);
+  color: var(--color-ink-2);
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-ink);
+  letter-spacing: -0.015em;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-label);
+  border: 1px solid var(--primary);
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+.btn-primary:active {
+  background: var(--primary-pressed);
+  border-color: var(--primary-pressed);
+}
+.btn-primary[aria-pressed="true"] {
+  background: var(--selected-bg);
+  color: var(--selected-label);
+  border-color: var(--selected-border);
+}
+.btn-primary:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-label);
+  border-color: var(--disabled-bg);
+  cursor: not-allowed;
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--focus-ring);
+}
+
+/* Shared low-level primitives used across dashboard shells */
+.sidebar-nav-item {
+  @apply flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] font-medium text-ink-2 hover:bg-plane;
+}
+.sidebar-nav-item.active {
+  @apply bg-brand-light font-bold text-ink;
+}
+
+@keyframes field-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-field-in {
+  animation: field-in 420ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-field-in {
+    animation-duration: 1ms;
+  }
+}
+
+/* MechOneHub Pay (test-mode gateway) */
+@keyframes gw-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.gw-pop {
+  animation: gw-pop 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@keyframes gw-check {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.gw-check {
+  stroke-dasharray: 24;
+  animation: gw-check 420ms 180ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gw-pop,
+  .gw-check {
+    animation-duration: 1ms;
+  }
+}

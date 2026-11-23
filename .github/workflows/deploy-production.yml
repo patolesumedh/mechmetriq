@@ -1,0 +1,223 @@
+# Deploy — production
+# Security note: Pin third-party actions (google-github-actions/auth, google-github-actions/setup-gcloud,
+# docker/setup-buildx-action, docker/build-push-action, dorny/paths-filter, supabase/setup-cli)
+# to full 40-char commit SHAs in production. Dependabot (`github-actions` ecosystem) keeps SHAs current.
+#
+# Instant Rollback: Trigger via workflow_dispatch and pass `revision` (e.g., mechonehub-web-00012-abc)
+# to skip migration/build and shift 100% traffic back in seconds (still gated by production reviewers).
+name: Deploy — production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "Optional Cloud Run revision name for instant rollback (skips migrate & build)"
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  REGION: asia-south1
+  DEFAULT_GCP_PROJECT: mechonehub-prod
+  DEFAULT_WIF_PROVIDER: projects/588747153006/locations/global/workloadIdentityPools/github/providers/github-actions
+
+jobs:
+  rollback:
+    name: Instant Traffic Rollback
+    if: github.event_name == 'workflow_dispatch' && inputs.revision != ''
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER || env.DEFAULT_WIF_PROVIDER }}
+          service_account: deployer@${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Shift 100% traffic to target revision
+        env:
+          TARGET_REV: ${{ inputs.revision }}
+        run: |
+          gcloud run services update-traffic mechonehub-web \
+            --region "$REGION" \
+            --project "${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}" \
+            --to-revisions="${TARGET_REV}=100"
+
+  migrate:
+    if: github.event_name != 'workflow_dispatch' || inputs.revision == ''
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Sync baseline migration history if schema already exists
+        run: |
+          HAS_PROFILES=$(psql "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" -tAc "SELECT to_regclass('public.profiles') IS NOT NULL;" 2>/dev/null || echo "f")
+          HAS_0001=$(psql "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" -tAc "SELECT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '0001');" 2>/dev/null || echo "f")
+          if [ "$HAS_PROFILES" = "t" ] && [ "$HAS_0001" != "t" ]; then
+            echo "Existing schema detected without CLI history for 0001..0022; marking 0001..0022 as applied..."
+            for V in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022; do
+              supabase migration repair --status applied "$V" --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --yes || true
+            done
+          fi
+      - name: Show pending migrations (dry run)
+        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --dry-run
+      - name: Apply migrations (IPv4 session pooler)
+        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --yes
+
+  changes:
+    if: github.event_name != 'workflow_dispatch' || inputs.revision == ''
+    runs-on: ubuntu-latest
+    outputs:
+      worker: ${{ steps.f.outputs.worker }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: f
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            worker:
+              - 'services/smartquote/**'
+              - '.github/workflows/deploy-production.yml'
+
+  build:
+    if: github.event_name != 'workflow_dispatch' || inputs.revision == ''
+    needs: [migrate, changes]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER || env.DEFAULT_WIF_PROVIDER }}
+          service_account: deployer@${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
+      - uses: docker/setup-buildx-action@v3
+      - name: Build & push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}/mechonehub/web:${{ github.sha }}
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://lrxxhkxgaacgqbgtcois.supabase.co' }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || secrets.NEXT_PUBLIC_SITE_URL || 'https://mechonehub.com' }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build & push worker image (only if changed)
+        if: needs.changes.outputs.worker == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: services/smartquote
+          push: true
+          tags: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
+          cache-from: type=gha,scope=worker
+          cache-to: type=gha,scope=worker,mode=max
+
+  deploy:
+    if: github.event_name != 'workflow_dispatch' || inputs.revision == ''
+    needs: [build, changes]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER || secrets.GCP_WIF_PROVIDER || env.DEFAULT_WIF_PROVIDER }}
+          service_account: deployer@${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy worker (if changed)
+        if: needs.changes.outputs.worker == 'true'
+        run: |
+          gcloud run deploy mechonehub-cad-worker --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
+            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}/mechonehub/cad-worker:${{ github.sha }}
+      - name: Deploy web as a tagged revision with NO traffic
+        run: |
+          TAG="sha-${GITHUB_SHA::7}"
+          gcloud run deploy mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
+            --image $REGION-docker.pkg.dev/${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}/mechonehub/web:${{ github.sha }} \
+            --no-traffic --tag "$TAG"
+          SVC=$(gcloud run services describe mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
+            --format="value(status.url)")
+          echo "CANDIDATE_URL=https://${TAG}---${SVC#https://}" >> $GITHUB_ENV
+          echo "TAG=$TAG" >> $GITHUB_ENV
+      - name: Health-check the candidate revision (/api/health is exempt from origin lock)
+        run: curl --fail --retry 10 --retry-delay 3 --retry-all-errors "$CANDIDATE_URL/api/health"
+      - name: Shift 100% traffic to the verified candidate
+        run: |
+          gcloud run services update-traffic mechonehub-web --region $REGION --project ${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }} \
+            --to-latest
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        if: env.CF_API_TOKEN != ''
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        with:
+          node-version: 22
+      - name: Sync ORIGIN_VERIFY_SECRET from GCP Secret Manager & Deploy Cloudflare Worker
+        if: env.CF_API_TOKEN != ''
+        working-directory: cloudflare-worker
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID || secrets.CLOUDFLARE_ACCOUNT_ID || '90d6429ee3422c4c82d37f6eebfdfb61' }}
+        run: |
+          npx --yes wrangler@4 deploy --keep-vars -c wrangler.toml
+          ORIGIN_SECRET=$(gcloud secrets versions access latest --secret=ORIGIN_VERIFY_SECRET --project="${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}" 2>/dev/null | tr -d '\r\n' || true)
+          if [ -n "$ORIGIN_SECRET" ]; then
+            printf "%s" "$ORIGIN_SECRET" | npx --yes wrangler@4 secret put ORIGIN_VERIFY_SECRET -c wrangler.toml
+          fi
+
+  release:
+    if: github.event_name != 'workflow_dispatch' || inputs.revision == ''
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag SemVer release from merged PR label (release:major|minor|patch)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          LABELS=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].labels[].name' 2>/dev/null || true)
+          BUMP="patch"
+          if echo "$LABELS" | grep -qx "release:major"; then
+            BUMP="major"
+          elif echo "$LABELS" | grep -qx "release:minor"; then
+            BUMP="minor"
+          fi
+
+          LAST_TAG=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          if [ -z "$LAST_TAG" ]; then
+            MAJOR=0; MINOR=0; PATCH=0
+          else
+            VER="${LAST_TAG#v}"
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$VER"
+          fi
+
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "Creating GitHub Release ${NEW_TAG} (bump: ${BUMP})..."
+          gh release create "$NEW_TAG" --target "${{ github.sha }}" --title "$NEW_TAG" --generate-notes
