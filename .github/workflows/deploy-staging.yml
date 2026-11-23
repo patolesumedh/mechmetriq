@@ -156,6 +156,10 @@ jobs:
           curl --fail --retry 5 --retry-delay 3 \
             -H "X-Origin-Verify: ${ORIGIN_SECRET}" \
             "$SVC_URL/api/health" || true
+          gcloud run services update-traffic mechonehub-web \
+            --region "$REGION" \
+            --project "${{ vars.GCP_PROJECT || secrets.GCP_PROJECT || env.DEFAULT_GCP_PROJECT }}" \
+            --to-latest
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         if: env.CF_API_TOKEN != ''
