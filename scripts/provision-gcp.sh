@@ -25,8 +25,10 @@ REGION="${REGION:-asia-south1}"
 GITHUB_REPO="${GITHUB_REPO:-admin-mechonehub/Mechonehub}"
 GH_ENV_NAME="$([[ "$ENV" == "prod" ]] && echo "production" || echo "staging")"
 SITE_URL="$([[ "$ENV" == "prod" ]] && echo "https://mechonehub.com" || echo "https://staging.mechonehub.com")"
-CAD_BUCKET="gs://mechonehub-${ENV}-cad-files"
-BACKUP_BUCKET="gs://mechonehub-prod-db-backups"
+CAD_BUCKET_NAME="${CAD_BUCKET_NAME:-${PROJECT_ID}-cad-files}"
+CAD_BUCKET="gs://${CAD_BUCKET_NAME}"
+BACKUP_BUCKET_NAME="${BACKUP_BUCKET_NAME:-${PROJECT_ID}-db-backups}"
+BACKUP_BUCKET="gs://${BACKUP_BUCKET_NAME}"
 
 echo "==> Provisioning MechOneHub [${ENV}] in project ${PROJECT_ID} (${REGION})..."
 
@@ -137,7 +139,7 @@ gcloud storage buckets add-iam-policy-binding "$CAD_BUCKET" \
   --member="serviceAccount:${SA_WORKER}" --role="roles/storage.objectViewer" --project="$PROJECT_ID"
 gcloud storage buckets add-iam-policy-binding "$CAD_BUCKET" \
   --member="serviceAccount:${SA_WORKER}" --role="roles/storage.objectCreator" \
-  --condition="title=derived-only,expression=resource.name.startsWith('projects/_/buckets/mechonehub-${ENV}-cad-files/objects/derived/')" \
+  --condition="title=derived-only,expression=resource.name.startsWith('projects/_/buckets/${CAD_BUCKET_NAME}/objects/derived/')" \
   --project="$PROJECT_ID"
 
 # Backups (prod only): write-only objectCreator
@@ -230,7 +232,7 @@ gcloud run deploy mechonehub-cad-worker \
   --max-instances=5 \
   --concurrency=1 \
   --timeout=300s \
-  --set-env-vars="GCS_CAD_BUCKET=mechonehub-${ENV}-cad-files,SMARTQUOTE_MAX_MB=50,WEB_CALLBACK_URL=https://placeholder.invalid" \
+  --set-env-vars="GCS_CAD_BUCKET=${CAD_BUCKET_NAME},SMARTQUOTE_MAX_MB=50,WEB_CALLBACK_URL=https://placeholder.invalid" \
   --set-secrets="CAD_CALLBACK_SECRET=CAD_CALLBACK_SECRET:latest,SENTRY_DSN=SENTRY_DSN:latest" \
   --no-allow-unauthenticated
 
@@ -245,7 +247,7 @@ gcloud run deploy mechonehub-web \
   --max-instances=10 \
   --concurrency=80 \
   --timeout=60s \
-  --set-env-vars="PAYMENTS_MODE=test,NEXT_PUBLIC_SITE_URL=${SITE_URL},GCS_CAD_BUCKET=mechonehub-${ENV}-cad-files,PUBSUB_CAD_TOPIC=cad-analysis-jobs,UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL:-https://replace-me.upstash.io}" \
+  --set-env-vars="PAYMENTS_MODE=test,NEXT_PUBLIC_SITE_URL=${SITE_URL},GCS_CAD_BUCKET=${CAD_BUCKET_NAME},PUBSUB_CAD_TOPIC=cad-analysis-jobs,UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL:-https://replace-me.upstash.io}" \
   --set-secrets="ORIGIN_VERIFY_SECRET=ORIGIN_VERIFY_SECRET:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest,KYC_ENCRYPTION_KEY=KYC_ENCRYPTION_KEY:latest,CAD_CALLBACK_SECRET=CAD_CALLBACK_SECRET:latest,UPSTASH_REDIS_REST_TOKEN=UPSTASH_REDIS_REST_TOKEN:latest,SENTRY_DSN=SENTRY_DSN:latest,RAZORPAY_KEY_ID=RAZORPAY_KEY_ID:latest,RAZORPAY_KEY_SECRET=RAZORPAY_KEY_SECRET:latest,RAZORPAY_WEBHOOK_SECRET=RAZORPAY_WEBHOOK_SECRET:latest" \
   --allow-unauthenticated
 
