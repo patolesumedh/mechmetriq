@@ -154,10 +154,14 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" \
   --member="serviceAccount:${SA_DEPLOYER}" --role="roles/run.developer"
 gcloud artifacts repositories add-iam-policy-binding mechonehub --location="$REGION" \
   --member="serviceAccount:${SA_DEPLOYER}" --role="roles/artifactregistry.writer" --project="$PROJECT_ID"
-for SA in "$SA_WEB" "$SA_WORKER"; do
+for SA in "$SA_WEB" "$SA_WORKER" "$SA_DEPLOYER"; do
   gcloud iam service-accounts add-iam-policy-binding "$SA" \
     --member="serviceAccount:${SA_DEPLOYER}" --role="roles/iam.serviceAccountUser" --project="$PROJECT_ID"
 done
+gcloud iam service-accounts add-iam-policy-binding "$SA_DEPLOYER" \
+  --member="serviceAccount:${SA_DEPLOYER}" --role="roles/iam.serviceAccountTokenCreator" --project="$PROJECT_ID"
+gcloud secrets add-iam-policy-binding ORIGIN_VERIFY_SECRET \
+  --member="serviceAccount:${SA_DEPLOYER}" --role="roles/secretmanager.secretAccessor" --project="$PROJECT_ID"
 
 # 6. Pub/Sub Topics & Dead-Letter Permissions
 echo "==> Configuring Pub/Sub topics and dead-letter IAM..."
