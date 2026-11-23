@@ -29,20 +29,24 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Sync baseline migration history if schema already exists
+      - name: Sync baseline migration history & push schema
+        env:
+          DB_URL: ${{ vars.SUPABASE_SESSION_POOLER_URL || secrets.SUPABASE_SESSION_POOLER_URL }}
         run: |
-          HAS_PROFILES=$(psql "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" -tAc "SELECT to_regclass('public.profiles') IS NOT NULL;" 2>/dev/null || echo "f")
-          HAS_0001=$(psql "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" -tAc "SELECT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '0001');" 2>/dev/null || echo "f")
+          if [ -z "$DB_URL" ]; then
+            echo "::notice ::No SUPABASE_SESSION_POOLER_URL found in staging environment secrets/variables. Skipping DB migration step."
+            exit 0
+          fi
+          HAS_PROFILES=$(psql "$DB_URL" -tAc "SELECT to_regclass('public.profiles') IS NOT NULL;" 2>/dev/null || echo "f")
+          HAS_0001=$(psql "$DB_URL" -tAc "SELECT EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '0001');" 2>/dev/null || echo "f")
           if [ "$HAS_PROFILES" = "t" ] && [ "$HAS_0001" != "t" ]; then
             echo "Existing schema detected without CLI history for 0001..0022; marking 0001..0022 as applied..."
             for V in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022; do
-              supabase migration repair --status applied "$V" --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --yes || true
+              supabase migration repair --status applied "$V" --db-url "$DB_URL" --yes || true
             done
           fi
-      - name: Show pending migrations (dry run)
-        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --dry-run
-      - name: Apply migrations (IPv4 session pooler)
-        run: supabase db push --db-url "${{ secrets.SUPABASE_SESSION_POOLER_URL }}" --yes
+          supabase db push --db-url "$DB_URL" --dry-run
+          supabase db push --db-url "$DB_URL" --yes
 
   changes:
     runs-on: ubuntu-latest
