@@ -308,6 +308,11 @@ else
   gcloud iam service-accounts add-iam-policy-binding "$SA_DEPLOYER" \
     --project="$PROJECT_ID" \
     --role="roles/iam.workloadIdentityUser" \
+    --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUM}/locations/global/workloadIdentityPools/github/attribute.repository_id/${REPO_ID}"
+
+  gcloud iam service-accounts add-iam-policy-binding "$SA_DEPLOYER" \
+    --project="$PROJECT_ID" \
+    --role="roles/iam.workloadIdentityUser" \
     --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUM}/locations/global/workloadIdentityPools/github/attribute.environment/${GH_ENV_NAME}"
 
   if [[ "$ENV" == "prod" ]]; then
