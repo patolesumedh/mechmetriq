@@ -28,7 +28,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.15.5
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Sync baseline migration history & push schema
         env:
           DB_URL: ${{ vars.SUPABASE_SESSION_POOLER_URL || secrets.SUPABASE_SESSION_POOLER_URL }}
