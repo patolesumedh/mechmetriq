@@ -73,7 +73,7 @@ jobs:
           fi
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.15.5
+          version: 3.3.0
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Verify migrations and seed against throwaway local Postgres
         run: |

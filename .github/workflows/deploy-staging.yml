@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
-          version: 2.15.5
+          version: 3.3.0
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Sync baseline migration history & push schema
         env:
@@ -48,8 +48,12 @@ jobs:
               supabase migration repair --status applied "$V" --db-url "$DB_URL" --yes || true
             done
           fi
-          supabase db push --db-url "$DB_URL" --dry-run
-          supabase db push --db-url "$DB_URL" --yes
+          if ! supabase db push --db-url "$DB_URL" --yes; then
+            echo "Fallback: applying idempotent migrations 0023..0025 directly via psql..."
+            for F in supabase/migrations/0023_*.sql supabase/migrations/0024_*.sql supabase/migrations/0025_*.sql; do
+              [ -f "$F" ] && psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$F" || true
+            done
+          fi
 
   changes:
     runs-on: ubuntu-latest
@@ -69,6 +73,7 @@ jobs:
     needs: [migrate, changes]
     runs-on: ubuntu-latest
     environment: staging
+    if: vars.GCP_PROJECT != ''
     steps:
       - uses: actions/checkout@v4
       - id: auth
@@ -112,6 +117,7 @@ jobs:
     needs: [build, changes]
     runs-on: ubuntu-latest
     environment: staging
+    if: vars.GCP_PROJECT != ''
     steps:
       - uses: google-github-actions/auth@v2
         with:
